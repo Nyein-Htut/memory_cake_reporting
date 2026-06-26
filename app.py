@@ -700,6 +700,55 @@ def debug_upload():
     return "<br>".join(lines) + "<br><br><a href='/'>← Back</a>"
 
 
+@app.route('/test-upload-form', methods=['GET', 'POST'])
+@manager_required
+def test_upload_form():
+    """Simple isolated upload test to diagnose form file delivery."""
+    if request.method == 'POST':
+        lines = []
+        file_keys = list(request.files.keys())
+        form_keys = list(request.form.keys())
+        lines.append("<b>Files in request:</b> " + str(file_keys))
+        lines.append("<b>Form fields:</b> " + str(form_keys))
+
+        uploaded = request.files.get('testfile')
+        if not uploaded:
+            lines.append("<b>No file received — form not sending files</b>")
+        elif uploaded.filename == '':
+            lines.append("<b>File received but filename is empty</b>")
+        else:
+            lines.append("<b>File received:</b> " + uploaded.filename + " (" + uploaded.content_type + ")")
+            file_bytes = uploaded.read()
+            lines.append("<b>Bytes read:</b> " + str(len(file_bytes)))
+            if len(file_bytes) > 0:
+                try:
+                    result = cloudinary.uploader.upload(
+                        file_bytes,
+                        folder="memory_cake/test",
+                        public_id="test_real_upload",
+                        overwrite=True,
+                        resource_type="image"
+                    )
+                    url = result['secure_url']
+                    lines.append("<b>Cloudinary upload OK:</b> <a href='" + url + "' target='_blank'>View image</a>")
+                except Exception as e:
+                    lines.append("<b>Cloudinary upload failed:</b> " + str(e))
+            else:
+                lines.append("<b>file_bytes is empty after read()</b>")
+
+        return "<br><br>".join(lines) + "<br><br><a href='/test-upload-form'>Try again</a> | <a href='/'>Back</a>"
+
+    return """
+    <html><body style="font-family:sans-serif;padding:40px">
+    <h2>Upload Test</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="testfile" accept="image/*"><br><br>
+        <button type="submit">Upload to Cloudinary</button>
+    </form>
+    </body></html>
+    """
+
+
 @app.route('/run-migration')
 @manager_required
 def run_migration():
