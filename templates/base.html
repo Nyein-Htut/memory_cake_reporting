@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Memory Cake Data Hub{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,400..700;1,400..700&family=Noto+Serif+SC:wght=400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans Myanmar', 'Noto Serif SC', 'Playfair Display', "Georgia", serif;
+            letter-spacing: 0.01em;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-numeric {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .unicode-text, #ordersTable, #ordersTable td, #ordersTable th {
+            font-family: 'Noto Sans Myanmar', 'Noto Serif SC', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-padding { padding: 4px !important; font-size: 11px !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
+
+    {% if request.endpoint != 'login' %}
+    <nav class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between py-3 md:py-0 md:h-24 gap-3">
+                
+                <div class="flex items-center gap-10 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center gap-3">
+                        <img src="/static/logo.jpg" class="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-md" alt="Memory Cake Logo" onerror="this.src='https://placehold.co/100x100?text=MC';">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-xl sm:text-2xl tracking-[0.12em] text-stone-950 uppercase font-serif">
+                                Memory Cake
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden sm:block md:hidden text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-sans uppercase tracking-widest">Live</div>
+                </div>
+                
+                <div class="flex items-center justify-between w-full md:w-auto border-t border-stone-100 pt-2.5 md:pt-0 md:border-t-0 gap-4">
+                    <div class="flex space-x-1 font-sans text-xs sm:text-sm uppercase tracking-wide overflow-x-auto no-scrollbar max-w-full whitespace-nowrap">
+                        {% if session.get('role') == 'staff' %}
+                        <a href="/staff" class="{% if active_page == 'staff' %}bg-emerald-700 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            每日记录 (Daily)
+                        </a>
+                        {% else %}
+                        <a href="/" class="{% if active_page == 'daily' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            每日记录 (Daily)
+                        </a>
+                        <a href="/monthly" class="{% if active_page == 'monthly' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            月度报表 (Monthly)
+                        </a>
+                        {% endif %}
+                        <a href="/logout" class="text-red-600 hover:bg-red-50 px-3.5 py-2 rounded font-medium transition-all">
+                            安全登出 (Logout)
+                        </a>
+                    </div>
+                    
+                    <div class="hidden lg:block text-xs text-stone-400 font-sans tracking-widest uppercase">
+                        {% if session.get('role') == 'staff' %}Staff Portal{% else %}System Connected{% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="fixed top-4 right-4 z-[9999] space-y-2 max-w-sm w-full font-sans text-sm" id="flashBanner">
+              {% for category, message in messages %}
+                <div class="flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg border
+                  {% if category == 'error' %}bg-rose-50 border-rose-300 text-rose-800
+                  {% else %}bg-emerald-50 border-emerald-300 text-emerald-800{% endif %}">
+                  <span class="flex-1">{{ message }}</span>
+                  <button onclick="this.parentElement.remove()" class="ml-2 font-bold opacity-60 hover:opacity-100">✕</button>
+                </div>
+              {% endfor %}
+            </div>
+            <script>setTimeout(()=>{const b=document.getElementById('flashBanner');if(b)b.remove();},7000);</script>
+          {% endif %}
+        {% endwith %}
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>

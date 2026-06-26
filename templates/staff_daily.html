@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}每日订单记录 — Memory Cake{% endblock %}
+
+{% block content %}
+    <header class="py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="space-y-1">
+                <h1 class="text-3xl sm:text-4xl font-semibold tracking-wide text-stone-900 font-serif">
+                    每日订单流水明细
+                </h1>
+                <p class="text-xs sm:text-sm text-stone-400 tracking-widest font-sans uppercase">
+                    员工只读视图 · Staff Read-Only Access
+                </p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1.5 rounded-full tracking-widest uppercase border border-emerald-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                View Only
+            </span>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <section class="bg-white mb-12 rounded-2xl border border-stone-100 shadow-xs overflow-hidden">
+            <div class="h-1 bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-700"></div>
+            <div class="p-5 bg-gradient-to-r from-stone-900 to-stone-800 border-b border-stone-700 flex justify-between items-center font-sans">
+                <h2 class="text-white text-sm font-semibold tracking-wider uppercase flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base">📋</span>
+                    流水汇总看板
+                </h2>
+            </div>
+
+            {% include 'partials/daily_records.html' %}
+        </section>
+    </div>
+{% endblock %}
