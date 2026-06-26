@@ -22,7 +22,8 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=60),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_REFRESH_EACH_REQUEST=True
+    SESSION_REFRESH_EACH_REQUEST=True,
+    MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16 MB upload limit
 )
 
 # ==========================================
@@ -272,17 +273,16 @@ def add_order():
             f_file = uploaded_flowers[i]
             if f_file and f_file.filename != '':
                 try:
-                    file_bytes = f_file.read()
-                    if len(file_bytes) > 0:
-                        result = cloudinary.uploader.upload(
-                            file_bytes,
-                            folder="memory_cake/flowers",
-                            public_id=f"{timestamp_prefix}_flr_{i}",
-                            overwrite=True,
-                            resource_type="image"
-                        )
-                        flower_url = result['secure_url']
-                        print(f"[Cloudinary] flower uploaded OK: {flower_url}")
+                    f_file.stream.seek(0)
+                    result = cloudinary.uploader.upload(
+                        f_file.stream,
+                        folder="memory_cake/flowers",
+                        public_id=f"{timestamp_prefix}_flr_{i}",
+                        overwrite=True,
+                        resource_type="image"
+                    )
+                    flower_url = result['secure_url']
+                    print(f"[Cloudinary] flower uploaded OK: {flower_url}")
                 except Exception as e:
                     err = f"图片上传失败 flower item {i+1}: {e}"
                     print(f"[Cloudinary ERROR] {err}")
@@ -293,17 +293,16 @@ def add_order():
             c_file = uploaded_cakes[i]
             if c_file and c_file.filename != '':
                 try:
-                    file_bytes = c_file.read()
-                    if len(file_bytes) > 0:
-                        result = cloudinary.uploader.upload(
-                            file_bytes,
-                            folder="memory_cake/cakes",
-                            public_id=f"{timestamp_prefix}_cke_{i}",
-                            overwrite=True,
-                            resource_type="image"
-                        )
-                        cake_url = result['secure_url']
-                        print(f"[Cloudinary] cake uploaded OK: {cake_url}")
+                    c_file.stream.seek(0)
+                    result = cloudinary.uploader.upload(
+                        c_file.stream,
+                        folder="memory_cake/cakes",
+                        public_id=f"{timestamp_prefix}_cke_{i}",
+                        overwrite=True,
+                        resource_type="image"
+                    )
+                    cake_url = result['secure_url']
+                    print(f"[Cloudinary] cake uploaded OK: {cake_url}")
                 except Exception as e:
                     err = f"图片上传失败 cake item {i+1}: {e}"
                     print(f"[Cloudinary ERROR] {err}")
@@ -380,17 +379,16 @@ def edit_order(order_id):
                 c_file = new_cake_files[i]
                 if c_file and c_file.filename != '':
                     try:
-                        file_bytes = c_file.read()
-                        if len(file_bytes) > 0:
-                            result = cloudinary.uploader.upload(
-                                file_bytes,
-                                folder="memory_cake/cakes",
-                                public_id=f"{timestamp_prefix}_editcke_{i}",
-                                overwrite=True,
-                                resource_type="image"
-                            )
-                            cake_url = result['secure_url']
-                            print(f"[Cloudinary] edit cake uploaded OK: {cake_url}")
+                        c_file.stream.seek(0)
+                        result = cloudinary.uploader.upload(
+                            c_file.stream,
+                            folder="memory_cake/cakes",
+                            public_id=f"{timestamp_prefix}_editcke_{i}",
+                            overwrite=True,
+                            resource_type="image"
+                        )
+                        cake_url = result['secure_url']
+                        print(f"[Cloudinary] edit cake uploaded OK: {cake_url}")
                     except Exception as e:
                         err = f"图片上传失败 edit cake item {i+1}: {e}"
                         print(f"[Cloudinary ERROR] {err}")
@@ -401,17 +399,16 @@ def edit_order(order_id):
                 f_file = new_flower_files[i]
                 if f_file and f_file.filename != '':
                     try:
-                        file_bytes = f_file.read()
-                        if len(file_bytes) > 0:
-                            result = cloudinary.uploader.upload(
-                                file_bytes,
-                                folder="memory_cake/flowers",
-                                public_id=f"{timestamp_prefix}_editflr_{i}",
-                                overwrite=True,
-                                resource_type="image"
-                            )
-                            flower_url = result['secure_url']
-                            print(f"[Cloudinary] edit flower uploaded OK: {flower_url}")
+                        f_file.stream.seek(0)
+                        result = cloudinary.uploader.upload(
+                            f_file.stream,
+                            folder="memory_cake/flowers",
+                            public_id=f"{timestamp_prefix}_editflr_{i}",
+                            overwrite=True,
+                            resource_type="image"
+                        )
+                        flower_url = result['secure_url']
+                        print(f"[Cloudinary] edit flower uploaded OK: {flower_url}")
                     except Exception as e:
                         err = f"图片上传失败 edit flower item {i+1}: {e}"
                         print(f"[Cloudinary ERROR] {err}")
@@ -718,7 +715,8 @@ def test_upload_form():
             lines.append("<b>File received but filename is empty</b>")
         else:
             lines.append("<b>File received:</b> " + uploaded.filename + " (" + uploaded.content_type + ")")
-            file_bytes = uploaded.read()
+            uploaded.stream.seek(0)
+            file_bytes = uploaded.stream.read()
             lines.append("<b>Bytes read:</b> " + str(len(file_bytes)))
             if len(file_bytes) > 0:
                 try:
