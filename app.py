@@ -700,46 +700,88 @@ def debug_upload():
 @app.route('/test-upload-form', methods=['GET', 'POST'])
 @manager_required
 def test_upload_form():
-    """Simple isolated upload test to diagnose form file delivery."""
+    """Simple isolated upload test to diagnose form file delivery.
+
+    Use ?mode=raw to inspect the unparsed WSGI body (proves whether bytes
+    arrive at all at the gunicorn/WSGI layer).
+    Use ?mode=files (default) to run the normal Werkzeug file-parsing path.
+    These two modes are mutually exclusive in a single request: reading the
+    raw body first will exhaust the stream and request.files will then
+    always report empty, which would falsely look like the bug itself.
+    """
+    mode = request.args.get('mode', 'files')
+
     if request.method == 'POST':
         lines = []
-        file_keys = list(request.files.keys())
-        form_keys = list(request.form.keys())
-        lines.append("<b>Files in request:</b> " + str(file_keys))
-        lines.append("<b>Form fields:</b> " + str(form_keys))
 
-        uploaded = request.files.get('testfile')
-        if not uploaded:
-            lines.append("<b>No file received — form not sending files</b>")
-        elif uploaded.filename == '':
-            lines.append("<b>File received but filename is empty</b>")
+        # Headers are always safe to read; they don't touch the body stream.
+        environ = request.environ
+        lines.append("<b>Mode:</b> " + mode)
+        lines.append("<b>CONTENT_LENGTH header:</b> " + str(environ.get('CONTENT_LENGTH', '<not set>')))
+        lines.append("<b>CONTENT_TYPE header:</b> " + str(environ.get('CONTENT_TYPE', '<not set>')))
+        lines.append("<b>Transfer-Encoding header:</b> " + str(environ.get('HTTP_TRANSFER_ENCODING', '<not set>')))
+        lines.append("<b>wsgi.input type:</b> " + str(type(environ.get('wsgi.input'))))
+
+        if mode == 'raw':
+            # This branch deliberately does NOT touch request.files/request.form.
+            try:
+                raw_body = request.get_data(cache=True, parse_form_data=False)
+                lines.append("<b>Raw body length via get_data():</b> " + str(len(raw_body)))
+                if len(raw_body) > 0:
+                    lines.append("<b>Raw body first 300 bytes (repr):</b> " + repr(raw_body[:300]))
+                    lines.append("<b>Raw body last 100 bytes (repr):</b> " + repr(raw_body[-100:]))
+                else:
+                    lines.append("<b>Raw body is EMPTY at the WSGI layer — bytes never reached gunicorn/Flask. Look at the reverse proxy / client, not the Python code.</b>")
+            except Exception as e:
+                lines.append("<b>get_data() raised:</b> " + repr(e))
+
         else:
-            lines.append("<b>File received:</b> " + uploaded.filename + " (" + uploaded.content_type + ")")
-            uploaded.stream.seek(0)
-            file_bytes = uploaded.stream.read()
-            lines.append("<b>Bytes read:</b> " + str(len(file_bytes)))
-            if len(file_bytes) > 0:
-                try:
-                    result = cloudinary.uploader.upload(
-                        file_bytes,
-                        folder="memory_cake/test",
-                        public_id="test_real_upload",
-                        overwrite=True,
-                        resource_type="image"
-                    )
-                    url = result['secure_url']
-                    lines.append("<b>Cloudinary upload OK:</b> <a href='" + url + "' target='_blank'>View image</a>")
-                except Exception as e:
-                    lines.append("<b>Cloudinary upload failed:</b> " + str(e))
-            else:
-                lines.append("<b>file_bytes is empty after read()</b>")
+            # Normal high-level Werkzeug form/file parsing path (this is what
+            # the rest of the app actually uses for real uploads).
+            file_keys = list(request.files.keys())
+            form_keys = list(request.form.keys())
+            lines.append("<b>Files in request:</b> " + str(file_keys))
+            lines.append("<b>Form fields:</b> " + str(form_keys))
 
-        return "<br><br>".join(lines) + "<br><br><a href='/test-upload-form'>Try again</a> | <a href='/'>Back</a>"
+            uploaded = request.files.get('testfile')
+            if not uploaded:
+                lines.append("<b>No file received — form not sending files</b>")
+            elif uploaded.filename == '':
+                lines.append("<b>File received but filename is empty</b>")
+            else:
+                lines.append("<b>File received:</b> " + uploaded.filename + " (" + uploaded.content_type + ")")
+                lines.append("<b>uploaded.content_length attr:</b> " + str(getattr(uploaded, 'content_length', '<n/a>')))
+                try:
+                    pos_before = uploaded.stream.tell()
+                    lines.append("<b>stream position before read:</b> " + str(pos_before))
+                except Exception as e:
+                    lines.append("<b>stream.tell() failed:</b> " + repr(e))
+                uploaded.stream.seek(0)
+                file_bytes = uploaded.stream.read()
+                lines.append("<b>Bytes read:</b> " + str(len(file_bytes)))
+                if len(file_bytes) > 0:
+                    try:
+                        result = cloudinary.uploader.upload(
+                            file_bytes,
+                            folder="memory_cake/test",
+                            public_id="test_real_upload",
+                            overwrite=True,
+                            resource_type="image"
+                        )
+                        url = result['secure_url']
+                        lines.append("<b>Cloudinary upload OK:</b> <a href='" + url + "' target='_blank'>View image</a>")
+                    except Exception as e:
+                        lines.append("<b>Cloudinary upload failed:</b> " + str(e))
+                else:
+                    lines.append("<b>file_bytes is empty after read()</b>")
+
+        return "<br><br>".join(lines) + "<br><br><a href='/test-upload-form'>Try again (files mode)</a> | <a href='/test-upload-form?mode=raw'>Try again (raw mode)</a> | <a href='/'>Back</a>"
 
     return """
     <html><body style="font-family:sans-serif;padding:40px">
     <h2>Upload Test</h2>
-    <form method="POST" enctype="multipart/form-data">
+    <p>Mode: """ + mode + """ — <a href='?mode=files'>files mode</a> | <a href='?mode=raw'>raw mode</a></p>
+    <form method="POST" enctype="multipart/form-data" action="?mode=""" + mode + """">
         <input type="file" name="testfile" accept="image/*"><br><br>
         <button type="submit">Upload to Cloudinary</button>
     </form>
