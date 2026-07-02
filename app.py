@@ -805,6 +805,9 @@ def run_migration():
                 results.append(f"{col}: {str(e).split('ERROR:')[-1].strip()}")
     return "<br>".join(results) + "<br><br><a href='/'>Back to app</a>"
 
+@app.route('/health')
+def health():
+    return "OK", 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
