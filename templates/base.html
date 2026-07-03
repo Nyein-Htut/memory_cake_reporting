@@ -194,7 +194,10 @@
                     <div class="flex space-x-1 font-sans text-xs sm:text-sm uppercase tracking-wide overflow-x-auto no-scrollbar max-w-full whitespace-nowrap">
                         {% if session.get('role') == 'staff' %}
                         <a href="/staff" class="{% if active_page == 'staff' %}bg-emerald-700 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
-                            每日记录 (Daily)
+                            နေ့စဉ်မှတ်တမ်း (Daily)
+                        </a>
+                        <a href="/logout" class="text-red-600 hover:bg-red-50 px-3.5 py-2 rounded font-medium transition-all">
+                            အကောင့်ထွက်ရန် (Logout)
                         </a>
                         {% else %}
                         <a href="/" class="{% if active_page == 'daily' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
@@ -203,14 +206,14 @@
                         <a href="/monthly" class="{% if active_page == 'monthly' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
                             月度报表 (Monthly)
                         </a>
-                        {% endif %}
                         <a href="/logout" class="text-red-600 hover:bg-red-50 px-3.5 py-2 rounded font-medium transition-all">
                             安全登出 (Logout)
                         </a>
+                        {% endif %}
                     </div>
                     
                     <div class="hidden lg:block text-xs text-stone-400 font-sans tracking-widest uppercase">
-                        {% if session.get('role') == 'staff' %}Staff Portal{% else %}System Connected{% endif %}
+                        {% if session.get('role') == 'staff' %}ဝန်ထမ်းစာမျက်နှာ{% else %}System Connected{% endif %}
                     </div>
                 </div>
 
