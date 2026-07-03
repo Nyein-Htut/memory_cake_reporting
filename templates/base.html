@@ -80,6 +80,7 @@
         .oc-total-wrap { text-align: right; flex-shrink: 0; }
         .oc-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #a8a29e; }
         .oc-total { font-size: 17px; font-weight: 700; color: #1c1917; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-total-items { font-size: 12px; font-weight: 500; color: #78716c; margin-top: 5px; word-break: break-word; }
 
         .oc-items { flex: 1; }
         .oc-item {
@@ -90,32 +91,24 @@
         }
         .oc-item:last-child { border-bottom: 0; }
 
-        .oc-item-head {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 12px;
-        }
-        .oc-item-price { font-size: 16.5px; font-weight: 700; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .oc-item-name { font-size: 12px; font-weight: 500; color: #a8a29e; margin-top: 3px; word-break: break-word; }
-
         .oc-item-body { display: flex; gap: 16px; align-items: flex-start; }
         .oc-item-images { display: flex; gap: 10px; flex-shrink: 0; }
         .oc-img-slot {
-            width: 92px;
+            width: 128px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
         }
         .oc-img-slot > img, .oc-img-slot > .oc-img-empty {
-            width: 92px;
-            height: 92px;
+            width: 128px;
+            height: 128px;
             border-radius: 12px;
             object-fit: cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 36px;
             background: #fafaf9;
         }
         .oc-img-flower > img, .oc-img-flower > .oc-img-empty { border: 2px solid #fecdd3; }
