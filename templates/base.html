@@ -120,6 +120,17 @@
         .oc-item-size { font-size: 12.5px; color: #57534e; }
         .oc-item-remarks { font-size: 12.5px; color: #be123c; margin-top: 6px; line-height: 1.55; }
 
+        @media (max-width: 480px) {
+            .oc-item-body { flex-direction: column; }
+            .oc-item-meta {
+                width: 100%;
+                padding-top: 12px;
+                margin-top: 4px;
+                border-top: 1px dashed #f0efed;
+            }
+            .oc-item-size, .oc-item-remarks { word-break: break-word; }
+        }
+
         .oc-footer {
             padding: 16px 22px;
             background: rgba(250,250,249,.7);
