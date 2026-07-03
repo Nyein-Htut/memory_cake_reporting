@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Memory Cake Data Hub{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,400..700;1,400..700&family=Noto+Serif+SC:wght=400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans Myanmar', 'Noto Serif SC', 'Playfair Display', "Georgia", serif;
+            letter-spacing: 0.01em;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-numeric {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .unicode-text, .order-card, .order-card * {
+            font-family: 'Noto Sans Myanmar', 'Noto Serif SC', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ===== Daily records: day separator + responsive order-card grid ===== */
+        .day-separator {
+            background: #ababa9;
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        @media (min-width: 640px) {
+            .day-separator { flex-direction: row; align-items: center; justify-content: space-between; }
+        }
+        .day-separator-date { font-weight: 600; letter-spacing: .02em; font-size: 13.5px; }
+        .day-separator-meta { font-size: 11px; opacity: .95; }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 768px) {
+            .orders-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1280px) {
+            .orders-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .order-card {
+            background: #fff;
+            border: 1px solid #e7e5e4;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(28,25,23,.04);
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow .25s ease, transform .25s ease;
+        }
+        .order-card:hover {
+            box-shadow: 0 10px 24px rgba(28,25,23,.08);
+        }
+
+        .oc-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f5f5f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            background: #fafaf9;
+        }
+        .oc-date { font-size: 11px; color: #a8a29e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-customer { font-size: 16px; font-weight: 600; color: #1c1917; margin-top: 2px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
+        .oc-source { font-size: 11px; color: #78716c; margin-top: 3px; }
+        .oc-total-wrap { text-align: right; flex-shrink: 0; }
+        .oc-total-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #a8a29e; }
+        .oc-total { font-size: 14px; font-weight: 700; color: #1c1917; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+        .oc-items { flex: 1; }
+        .oc-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f5f5f4;
+        }
+        .oc-item:last-child { border-bottom: 0; }
+
+        .oc-item-images { display: flex; gap: 8px; flex-shrink: 0; }
+        .oc-img-slot {
+            width: 56px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .oc-img-slot > img, .oc-img-slot > .oc-img-empty {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: #fafaf9;
+        }
+        .oc-img-flower > img, .oc-img-flower > .oc-img-empty { border: 1.5px solid #fecdd3; }
+        .oc-img-cake > img, .oc-img-cake > .oc-img-empty { border: 1.5px solid #e7e5e4; }
+        .oc-img-empty { opacity: .4; }
+        .oc-img-tag { font-size: 9px; color: #a8a29e; text-transform: uppercase; letter-spacing: .04em; }
+
+        .oc-item-info { flex: 1; min-width: 0; }
+        .oc-item-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+        .oc-item-name { font-size: 14px; font-weight: 500; color: #1c1917; word-break: break-word; }
+        .oc-item-price { font-size: 13px; font-weight: 600; color: #292524; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-item-size { font-size: 11px; color: #78716c; margin-top: 4px; }
+        .oc-item-remarks { font-size: 11px; color: #be123c; margin-top: 4px; line-height: 1.5; }
+
+        .oc-footer {
+            padding: 12px 16px;
+            background: rgba(250,250,249,.7);
+            border-top: 1px solid #f5f5f4;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        @media (min-width: 480px) {
+            .oc-footer { flex-direction: row; align-items: center; justify-content: space-between; }
+        }
+        .oc-footer-text { font-size: 11px; color: #78716c; line-height: 1.6; }
+        .oc-time { font-weight: 600; color: #44403c; margin-right: 6px; }
+        .oc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .oc-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background-color .15s ease;
+        }
+        .oc-action-btn svg { width: 14px; height: 14px; }
+        .oc-action-edit { color: #047857; background: #ecfdf5; border-color: #d1fae5; }
+        .oc-action-edit:hover { background: #d1fae5; }
+        .oc-action-delete { color: #be123c; background: #fff1f2; border-color: #ffe4e6; }
+        .oc-action-delete:hover { background: #ffe4e6; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-padding { padding: 4px !important; font-size: 11px !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
+
+    {% if request.endpoint != 'login' %}
+    <nav class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between py-3 md:py-0 md:h-24 gap-3">
+                
+                <div class="flex items-center gap-10 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center gap-3">
+                        <img src="/static/logo.jpg" class="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-md" alt="Memory Cake Logo" onerror="this.src='https://placehold.co/100x100?text=MC';">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-xl sm:text-2xl tracking-[0.12em] text-stone-950 uppercase font-serif">
+                                Memory Cake
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden sm:block md:hidden text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-sans uppercase tracking-widest">Live</div>
+                </div>
+                
+                <div class="flex items-center justify-between w-full md:w-auto border-t border-stone-100 pt-2.5 md:pt-0 md:border-t-0 gap-4">
+                    <div class="flex space-x-1 font-sans text-xs sm:text-sm uppercase tracking-wide overflow-x-auto no-scrollbar max-w-full whitespace-nowrap">
+                        {% if session.get('role') == 'staff' %}
+                        <a href="/staff" class="{% if active_page == 'staff' %}bg-emerald-700 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            每日记录 (Daily)
+                        </a>
+                        {% else %}
+                        <a href="/" class="{% if active_page == 'daily' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            每日记录 (Daily)
+                        </a>
+                        <a href="/monthly" class="{% if active_page == 'monthly' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            月度报表 (Monthly)
+                        </a>
+                        {% endif %}
+                        <a href="/logout" class="text-red-600 hover:bg-red-50 px-3.5 py-2 rounded font-medium transition-all">
+                            安全登出 (Logout)
+                        </a>
+                    </div>
+                    
+                    <div class="hidden lg:block text-xs text-stone-400 font-sans tracking-widest uppercase">
+                        {% if session.get('role') == 'staff' %}Staff Portal{% else %}System Connected{% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="fixed top-4 right-4 z-[9999] space-y-2 max-w-sm w-full font-sans text-sm" id="flashBanner">
+              {% for category, message in messages %}
+                <div class="flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg border
+                  {% if category == 'error' %}bg-rose-50 border-rose-300 text-rose-800
+                  {% else %}bg-emerald-50 border-emerald-300 text-emerald-800{% endif %}">
+                  <span class="flex-1">{{ message }}</span>
+                  <button onclick="this.parentElement.remove()" class="ml-2 font-bold opacity-60 hover:opacity-100">✕</button>
+                </div>
+              {% endfor %}
+            </div>
+            <script>setTimeout(()=>{const b=document.getElementById('flashBanner');if(b)b.remove();},7000);</script>
+          {% endif %}
+        {% endwith %}
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</body>
+</html>
