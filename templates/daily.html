@@ -319,10 +319,9 @@
 
         const { jsPDF } = window.jspdf;
 
-        // Match the live responsive grid: 1 col on phone, 2 on tablet/iPad, 3 on desktop
+        // Match the live responsive grid: 1 col on phone, 2 cols on tablet/PC
         function getColumnsForWidth() {
             const w = window.innerWidth;
-            if (w >= 1280) return 3;
             if (w >= 768) return 2;
             return 1;
         }
