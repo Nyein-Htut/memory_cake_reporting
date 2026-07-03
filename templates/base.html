@@ -28,36 +28,33 @@
         .day-separator {
             background: #ababa9;
             color: #fff;
-            border-radius: 10px;
-            padding: 10px 16px;
+            border-radius: 12px;
+            padding: 12px 18px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            margin-bottom: 14px;
+            gap: 3px;
+            margin-bottom: 16px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         @media (min-width: 640px) {
             .day-separator { flex-direction: row; align-items: center; justify-content: space-between; }
         }
-        .day-separator-date { font-weight: 600; letter-spacing: .02em; font-size: 13.5px; }
-        .day-separator-meta { font-size: 11px; opacity: .95; }
+        .day-separator-date { font-weight: 600; letter-spacing: .02em; font-size: 15px; }
+        .day-separator-meta { font-size: 12.5px; opacity: .95; }
 
         .orders-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 20px;
         }
         @media (min-width: 768px) {
             .orders-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (min-width: 1280px) {
-            .orders-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
         .order-card {
             background: #fff;
             border: 1px solid #e7e5e4;
-            border-radius: 18px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(28,25,23,.04);
             display: flex;
@@ -65,67 +62,73 @@
             transition: box-shadow .25s ease, transform .25s ease;
         }
         .order-card:hover {
-            box-shadow: 0 10px 24px rgba(28,25,23,.08);
+            box-shadow: 0 12px 28px rgba(28,25,23,.09);
         }
 
         .oc-header {
-            padding: 14px 16px;
+            padding: 18px 22px;
             border-bottom: 1px solid #f5f5f4;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 10px;
+            gap: 12px;
             background: #fafaf9;
         }
-        .oc-date { font-size: 11px; color: #a8a29e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .oc-customer { font-size: 16px; font-weight: 600; color: #1c1917; margin-top: 2px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
-        .oc-source { font-size: 11px; color: #78716c; margin-top: 3px; }
+        .oc-date { font-size: 12px; color: #a8a29e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-customer { font-size: 19px; font-weight: 600; color: #1c1917; margin-top: 3px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
+        .oc-source { font-size: 12.5px; color: #78716c; margin-top: 4px; }
         .oc-total-wrap { text-align: right; flex-shrink: 0; }
-        .oc-total-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #a8a29e; }
-        .oc-total { font-size: 14px; font-weight: 700; color: #1c1917; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #a8a29e; }
+        .oc-total { font-size: 17px; font-weight: 700; color: #1c1917; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 
         .oc-items { flex: 1; }
         .oc-item {
             display: flex;
-            gap: 12px;
-            padding: 12px 16px;
+            flex-direction: column;
+            padding: 18px 22px;
             border-bottom: 1px solid #f5f5f4;
         }
         .oc-item:last-child { border-bottom: 0; }
 
-        .oc-item-images { display: flex; gap: 8px; flex-shrink: 0; }
+        .oc-item-head {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 12px;
+        }
+        .oc-item-price { font-size: 16.5px; font-weight: 700; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-item-name { font-size: 12px; font-weight: 500; color: #a8a29e; margin-top: 3px; word-break: break-word; }
+
+        .oc-item-body { display: flex; gap: 16px; align-items: flex-start; }
+        .oc-item-images { display: flex; gap: 10px; flex-shrink: 0; }
         .oc-img-slot {
-            width: 56px;
+            width: 92px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
         .oc-img-slot > img, .oc-img-slot > .oc-img-empty {
-            width: 56px;
-            height: 56px;
-            border-radius: 10px;
+            width: 92px;
+            height: 92px;
+            border-radius: 12px;
             object-fit: cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 30px;
             background: #fafaf9;
         }
-        .oc-img-flower > img, .oc-img-flower > .oc-img-empty { border: 1.5px solid #fecdd3; }
-        .oc-img-cake > img, .oc-img-cake > .oc-img-empty { border: 1.5px solid #e7e5e4; }
+        .oc-img-flower > img, .oc-img-flower > .oc-img-empty { border: 2px solid #fecdd3; }
+        .oc-img-cake > img, .oc-img-cake > .oc-img-empty { border: 2px solid #e7e5e4; }
         .oc-img-empty { opacity: .4; }
-        .oc-img-tag { font-size: 9px; color: #a8a29e; text-transform: uppercase; letter-spacing: .04em; }
+        .oc-img-tag { font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: .04em; }
 
-        .oc-item-info { flex: 1; min-width: 0; }
-        .oc-item-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-        .oc-item-name { font-size: 14px; font-weight: 500; color: #1c1917; word-break: break-word; }
-        .oc-item-price { font-size: 13px; font-weight: 600; color: #292524; flex-shrink: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .oc-item-size { font-size: 11px; color: #78716c; margin-top: 4px; }
-        .oc-item-remarks { font-size: 11px; color: #be123c; margin-top: 4px; line-height: 1.5; }
+        .oc-item-meta { flex: 1; min-width: 0; padding-top: 2px; }
+        .oc-item-size { font-size: 12.5px; color: #57534e; }
+        .oc-item-remarks { font-size: 12.5px; color: #be123c; margin-top: 6px; line-height: 1.55; }
 
         .oc-footer {
-            padding: 12px 16px;
+            padding: 16px 22px;
             background: rgba(250,250,249,.7);
             border-top: 1px solid #f5f5f4;
             display: flex;
@@ -135,22 +138,22 @@
         @media (min-width: 480px) {
             .oc-footer { flex-direction: row; align-items: center; justify-content: space-between; }
         }
-        .oc-footer-text { font-size: 11px; color: #78716c; line-height: 1.6; }
-        .oc-time { font-weight: 600; color: #44403c; margin-right: 6px; }
+        .oc-footer-text { font-size: 12.5px; color: #78716c; line-height: 1.6; }
+        .oc-time { font-weight: 600; color: #44403c; margin-right: 8px; }
         .oc-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .oc-action-btn {
             display: flex;
             align-items: center;
             gap: 4px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            padding: 6px 10px;
-            border-radius: 8px;
+            padding: 7px 12px;
+            border-radius: 9px;
             border: 1px solid transparent;
             cursor: pointer;
             transition: background-color .15s ease;
         }
-        .oc-action-btn svg { width: 14px; height: 14px; }
+        .oc-action-btn svg { width: 15px; height: 15px; }
         .oc-action-edit { color: #047857; background: #ecfdf5; border-color: #d1fae5; }
         .oc-action-edit:hover { background: #d1fae5; }
         .oc-action-delete { color: #be123c; background: #fff1f2; border-color: #ffe4e6; }
