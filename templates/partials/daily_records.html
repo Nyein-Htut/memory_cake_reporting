@@ -1,0 +1,217 @@
+{# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout #}
+
+<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10">
+    <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">筛选方式</label>
+            <select name="filter" id="filterMode" onchange="toggleDailyFilterInputs()"
+                class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white min-w-[140px]">
+                <option value="all" {% if filter_mode == 'all' %}selected{% endif %}>全部记录 (All)</option>
+                <option value="month" {% if filter_mode == 'month' %}selected{% endif %}>按月份 (Month)</option>
+                <option value="day" {% if filter_mode == 'day' %}selected{% endif %}>按日期 (Day)</option>
+            </select>
+        </div>
+
+        <div id="monthFilterWrap" class="{% if filter_mode != 'month' %}hidden{% endif %}">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">选择月份</label>
+            <input type="month" name="month" value="{{ filter_month }}"
+                class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white">
+        </div>
+
+        <div id="dayFilterWrap" class="{% if filter_mode != 'day' %}hidden{% endif %}">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">选择日期</label>
+            <input type="date" name="day" value="{{ filter_day }}"
+                class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white">
+        </div>
+
+        <button type="submit"
+            class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all">
+            应用筛选
+        </button>
+
+        {% if filter_mode != 'all' %}
+        <a href="{{ filter_action }}"
+            class="text-xs text-stone-500 hover:text-stone-800 underline underline-offset-2 py-2.5">
+            清除筛选
+        </a>
+        {% endif %}
+    </form>
+
+    <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
+        <span><strong class="text-stone-900">{{ total_orders }}</strong> 笔订单</span>
+        <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> MMK 合计</span>
+        <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> 天</span>
+    </div>
+</div>
+
+<div id="ordersRoot" class="p-3 sm:p-5">
+    {% for day_group in orders_by_day %}
+    <div class="day-group mb-6 last:mb-0">
+        <div class="day-separator">
+            <span class="day-separator-date">{{ day_group.date_display }}</span>
+            <span class="day-separator-meta">{{ day_group.order_count }} 单 · {{ "{:,}".format(day_group.day_total) }} MMK</span>
+        </div>
+
+        <div class="orders-grid">
+            {% for order in day_group.orders %}
+            <div class="order-card"
+                data-date="{{ order.date }}"
+                data-customer="{{ order.customer }}"
+                data-source="{{ order.source }}"
+                data-time="{{ order.time }}"
+                data-address="{{ order.address }}"
+                data-total="{{ order.total_price }}">
+
+                <div class="oc-header">
+                    <div class="oc-header-main">
+                        <div class="oc-date">{{ order.date }}</div>
+                        <div class="oc-customer">{{ order.customer }}</div>
+                        <div class="oc-source">来源: {{ order.source }}</div>
+                    </div>
+                    <div class="oc-total-wrap">
+                        <div class="oc-total-label">订单总计</div>
+                        <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
+                    </div>
+                </div>
+
+                <div class="oc-items">
+                    {% for item in order.items %}
+                    <div class="oc-item"
+                        data-item-name="{{ item.item_name }}"
+                        data-size="{{ item.size }}"
+                        data-price="{{ item.price }}"
+                        data-remarks="{{ item.remarks }}">
+                        <div class="oc-item-images">
+                            <div class="oc-img-slot oc-img-flower">
+                                {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
+                                <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
+                                {% else %}
+                                <span class="oc-img-empty">💐</span>
+                                {% endif %}
+                                <span class="oc-img-tag">花束</span>
+                            </div>
+                            <div class="oc-img-slot oc-img-cake">
+                                {% if item.image_url and item.image_url.startswith('http') %}
+                                <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
+                                {% else %}
+                                <span class="oc-img-empty">🎂</span>
+                                {% endif %}
+                                <span class="oc-img-tag">蛋糕</span>
+                            </div>
+                        </div>
+                        <div class="oc-item-info">
+                            <div class="oc-item-top">
+                                <span class="oc-item-name">{{ item.item_name }}</span>
+                                <span class="oc-item-price">{{ "{:,}".format(item.price) }} MMK</span>
+                            </div>
+                            {% if item.size and item.size != '-' %}
+                            <div class="oc-item-size">尺寸: {{ item.size }}</div>
+                            {% endif %}
+                            {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
+                            <div class="oc-item-remarks">备注: {{ item.remarks }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="oc-footer">
+                    <div class="oc-footer-text">
+                        <span class="oc-time">时间: {{ order.time }}</span>
+                        <span class="oc-address">{{ order.address }}</span>
+                    </div>
+                    {% if not readonly %}
+                    <div class="oc-actions no-print">
+                        <button type="button"
+                            onclick='openEditModal(
+                                "{{ order.id }}",
+                                "{{ order.date }}",
+                                {{ order.source|tojson }},
+                                {{ order.customer|tojson }},
+                                {{ order.time|tojson }},
+                                {{ order.address|tojson }},
+                                [
+                                    {% for oi in order.items %}
+                                    {
+                                        item_name: {{ oi.item_name|tojson }},
+                                        size: {{ oi.size|tojson }},
+                                        price: {{ oi.price }},
+                                        remarks: {{ oi.remarks|tojson }},
+                                        image_url: {{ oi.image_url|tojson }},
+                                        flower_image_url: {{ oi.flower_image_url|tojson }}
+                                    }{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                ]
+                            )'
+                            class="oc-action-btn oc-action-edit"
+                            title="编辑订单">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            <span>编辑</span>
+                        </button>
+                        <button type="button"
+                            onclick="openDeleteModal('{{ order.id }}', '{{ order.customer|escape }}', '{{ order.date }}')"
+                            class="oc-action-btn oc-action-delete"
+                            title="删除订单">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>删除</span>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-stone-400 italic text-sm">
+        {% if filter_mode != 'all' %}
+        该筛选条件下暂无订单记录。
+        {% elif readonly %}
+        目前没有订单记录。
+        {% else %}
+        云端数据库目前没有数据，请在上方录入单据。
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function toggleDailyFilterInputs() {
+    const mode = document.getElementById('filterMode').value;
+    const monthWrap = document.getElementById('monthFilterWrap');
+    const dayWrap = document.getElementById('dayFilterWrap');
+    if (monthWrap) monthWrap.classList.toggle('hidden', mode !== 'month');
+    if (dayWrap) dayWrap.classList.toggle('hidden', mode !== 'day');
+    if (mode === 'all') {
+        document.getElementById('dailyFilterForm').submit();
+    }
+}
+// On page load: only sync visibility, never auto-submit
+document.addEventListener('DOMContentLoaded', function() {
+    const mode = document.getElementById('filterMode').value;
+    const monthWrap = document.getElementById('monthFilterWrap');
+    const dayWrap = document.getElementById('dayFilterWrap');
+    if (monthWrap) monthWrap.classList.toggle('hidden', mode !== 'month');
+    if (dayWrap) dayWrap.classList.toggle('hidden', mode !== 'day');
+
+    // If the select is already on 'all' and someone re-selects it, onchange won't
+    // fire. Wire up a click-to-current-value fallback via mousedown + click.
+    const filterSelect = document.getElementById('filterMode');
+    if (filterSelect) {
+        let valueOnMousedown = null;
+        filterSelect.addEventListener('mousedown', function() {
+            valueOnMousedown = this.value;
+        });
+        filterSelect.addEventListener('click', function() {
+            // If the user clicked but onchange won't fire (same value), handle it
+            if (this.value === 'all' && valueOnMousedown === 'all') {
+                document.getElementById('dailyFilterForm').submit();
+            }
+        });
+    }
+});
+</script>
