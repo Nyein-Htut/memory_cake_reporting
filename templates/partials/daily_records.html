@@ -71,6 +71,9 @@
                     <div class="oc-total-wrap">
                         <div class="oc-total-label">订单总计</div>
                         <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
+                        <div class="oc-total-items">
+                            {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
+                        </div>
                     </div>
                 </div>
 
@@ -81,10 +84,6 @@
                         data-size="{{ item.size }}"
                         data-price="{{ item.price }}"
                         data-remarks="{{ item.remarks }}">
-                        <div class="oc-item-head">
-                            <span class="oc-item-price">{{ "{:,}".format(item.price) }} MMK</span>
-                            <span class="oc-item-name">{{ item.item_name }}</span>
-                        </div>
                         <div class="oc-item-body">
                             <div class="oc-item-images">
                                 <div class="oc-img-slot oc-img-flower">
