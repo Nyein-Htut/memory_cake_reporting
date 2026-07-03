@@ -3,44 +3,44 @@
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10">
     <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
         <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">筛选方式</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">{% if readonly %}စစ်ထုတ်နည်း{% else %}筛选方式{% endif %}</label>
             <select name="filter" id="filterMode" onchange="toggleDailyFilterInputs()"
                 class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white min-w-[140px]">
-                <option value="all" {% if filter_mode == 'all' %}selected{% endif %}>全部记录 (All)</option>
-                <option value="month" {% if filter_mode == 'month' %}selected{% endif %}>按月份 (Month)</option>
-                <option value="day" {% if filter_mode == 'day' %}selected{% endif %}>按日期 (Day)</option>
+                <option value="all" {% if filter_mode == 'all' %}selected{% endif %}>{% if readonly %}မှတ်တမ်းအားလုံး{% else %}全部记录 (All){% endif %}</option>
+                <option value="month" {% if filter_mode == 'month' %}selected{% endif %}>{% if readonly %}လအလိုက်{% else %}按月份 (Month){% endif %}</option>
+                <option value="day" {% if filter_mode == 'day' %}selected{% endif %}>{% if readonly %}ရက်အလိုက်{% else %}按日期 (Day){% endif %}</option>
             </select>
         </div>
 
         <div id="monthFilterWrap" class="{% if filter_mode != 'month' %}hidden{% endif %}">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">选择月份</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">{% if readonly %}လရွေးပါ{% else %}选择月份{% endif %}</label>
             <input type="month" name="month" value="{{ filter_month }}"
                 class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white">
         </div>
 
         <div id="dayFilterWrap" class="{% if filter_mode != 'day' %}hidden{% endif %}">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">选择日期</label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">{% if readonly %}ရက်စွဲရွေးပါ{% else %}选择日期{% endif %}</label>
             <input type="date" name="day" value="{{ filter_day }}"
                 class="border border-stone-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-stone-900 text-stone-700 bg-white">
         </div>
 
         <button type="submit"
             class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all">
-            应用筛选
+            {% if readonly %}စစ်ထုတ်မည်{% else %}应用筛选{% endif %}
         </button>
 
         {% if filter_mode != 'all' %}
         <a href="{{ filter_action }}"
             class="text-xs text-stone-500 hover:text-stone-800 underline underline-offset-2 py-2.5">
-            清除筛选
+            {% if readonly %}စစ်ထုတ်မှုရှင်းမည်{% else %}清除筛选{% endif %}
         </a>
         {% endif %}
     </form>
 
     <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
-        <span><strong class="text-stone-900">{{ total_orders }}</strong> 笔订单</span>
-        <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> MMK 合计</span>
-        <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> 天</span>
+        <span><strong class="text-stone-900">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
+        <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
+        <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
     </div>
 </div>
 
@@ -49,7 +49,7 @@
     <div class="day-group mb-6 last:mb-0">
         <div class="day-separator">
             <span class="day-separator-date">{{ day_group.date_display }}</span>
-            <span class="day-separator-meta">{{ day_group.order_count }} 单 · {{ "{:,}".format(day_group.day_total) }} MMK</span>
+            <span class="day-separator-meta">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %} · {{ "{:,}".format(day_group.day_total) }} MMK</span>
         </div>
 
         <div class="orders-grid">
@@ -66,10 +66,10 @@
                     <div class="oc-header-main">
                         <div class="oc-date">{{ order.date }}</div>
                         <div class="oc-customer">{{ order.customer }}</div>
-                        <div class="oc-source">来源: {{ order.source }}</div>
+                        <div class="oc-source">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
                     </div>
                     <div class="oc-total-wrap">
-                        <div class="oc-total-label">订单总计</div>
+                        <div class="oc-total-label">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
                         <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
                         <div class="oc-total-items">
                             {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
@@ -92,7 +92,7 @@
                                     {% else %}
                                     <span class="oc-img-empty">💐</span>
                                     {% endif %}
-                                    <span class="oc-img-tag">花束</span>
+                                    <span class="oc-img-tag">{% if readonly %}ပန်းစည်း{% else %}花束{% endif %}</span>
                                 </div>
                                 <div class="oc-img-slot oc-img-cake">
                                     {% if item.image_url and item.image_url.startswith('http') %}
@@ -100,15 +100,15 @@
                                     {% else %}
                                     <span class="oc-img-empty">🎂</span>
                                     {% endif %}
-                                    <span class="oc-img-tag">蛋糕</span>
+                                    <span class="oc-img-tag">{% if readonly %}ကိတ်မုန့်{% else %}蛋糕{% endif %}</span>
                                 </div>
                             </div>
                             <div class="oc-item-meta">
                                 {% if item.size and item.size != '-' %}
-                                <div class="oc-item-size">尺寸: {{ item.size }}</div>
+                                <div class="oc-item-size">{% if readonly %}အရွယ်အစား: {{ item.size }}{% else %}尺寸: {{ item.size }}{% endif %}</div>
                                 {% endif %}
                                 {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
-                                <div class="oc-item-remarks">备注: {{ item.remarks }}</div>
+                                <div class="oc-item-remarks">{% if readonly %}မှတ်ချက်: {{ item.remarks }}{% else %}备注: {{ item.remarks }}{% endif %}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -118,7 +118,7 @@
 
                 <div class="oc-footer">
                     <div class="oc-footer-text">
-                        <span class="oc-time">时间: {{ order.time }}</span>
+                        <span class="oc-time">{% if readonly %}အချိန်: {{ order.time }}{% else %}时间: {{ order.time }}{% endif %}</span>
                         <span class="oc-address">{{ order.address }}</span>
                     </div>
                     {% if not readonly %}
@@ -170,9 +170,9 @@
     {% else %}
     <div class="text-center py-16 text-stone-400 italic text-sm">
         {% if filter_mode != 'all' %}
-        该筛选条件下暂无订单记录。
+        {% if readonly %}ဤစစ်ထုတ်မှုအတွက် အော်ဒါမှတ်တမ်း မရှိသေးပါ။{% else %}该筛选条件下暂无订单记录。{% endif %}
         {% elif readonly %}
-        目前没有订单记录。
+        လောလောဆယ် အော်ဒါမှတ်တမ်း မရှိသေးပါ။
         {% else %}
         云端数据库目前没有数据，请在上方录入单据。
         {% endif %}
