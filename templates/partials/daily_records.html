@@ -81,35 +81,37 @@
                         data-size="{{ item.size }}"
                         data-price="{{ item.price }}"
                         data-remarks="{{ item.remarks }}">
-                        <div class="oc-item-images">
-                            <div class="oc-img-slot oc-img-flower">
-                                {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
-                                <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
-                                {% else %}
-                                <span class="oc-img-empty">💐</span>
-                                {% endif %}
-                                <span class="oc-img-tag">花束</span>
-                            </div>
-                            <div class="oc-img-slot oc-img-cake">
-                                {% if item.image_url and item.image_url.startswith('http') %}
-                                <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
-                                {% else %}
-                                <span class="oc-img-empty">🎂</span>
-                                {% endif %}
-                                <span class="oc-img-tag">蛋糕</span>
-                            </div>
+                        <div class="oc-item-head">
+                            <span class="oc-item-price">{{ "{:,}".format(item.price) }} MMK</span>
+                            <span class="oc-item-name">{{ item.item_name }}</span>
                         </div>
-                        <div class="oc-item-info">
-                            <div class="oc-item-top">
-                                <span class="oc-item-name">{{ item.item_name }}</span>
-                                <span class="oc-item-price">{{ "{:,}".format(item.price) }} MMK</span>
+                        <div class="oc-item-body">
+                            <div class="oc-item-images">
+                                <div class="oc-img-slot oc-img-flower">
+                                    {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
+                                    <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
+                                    {% else %}
+                                    <span class="oc-img-empty">💐</span>
+                                    {% endif %}
+                                    <span class="oc-img-tag">花束</span>
+                                </div>
+                                <div class="oc-img-slot oc-img-cake">
+                                    {% if item.image_url and item.image_url.startswith('http') %}
+                                    <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
+                                    {% else %}
+                                    <span class="oc-img-empty">🎂</span>
+                                    {% endif %}
+                                    <span class="oc-img-tag">蛋糕</span>
+                                </div>
                             </div>
-                            {% if item.size and item.size != '-' %}
-                            <div class="oc-item-size">尺寸: {{ item.size }}</div>
-                            {% endif %}
-                            {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
-                            <div class="oc-item-remarks">备注: {{ item.remarks }}</div>
-                            {% endif %}
+                            <div class="oc-item-meta">
+                                {% if item.size and item.size != '-' %}
+                                <div class="oc-item-size">尺寸: {{ item.size }}</div>
+                                {% endif %}
+                                {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
+                                <div class="oc-item-remarks">备注: {{ item.remarks }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
