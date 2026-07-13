@@ -74,8 +74,13 @@
                         <div class="oc-total-items">
                             {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
                         </div>
+                        {% if order.is_paid %}
+                        <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
+                        {% else %}
+                        <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
+                        {% endif %}
+                        </div>
                     </div>
-                </div>
 
                 <div class="oc-items">
                     {% for item in order.items %}
@@ -131,6 +136,8 @@
                                 {{ order.customer|tojson }},
                                 {{ order.time|tojson }},
                                 {{ order.address|tojson }},
+                                {{ order.is_paid|tojson }},
+                                {{ order.payment_date|tojson }},
                                 [
                                     {% for oi in order.items %}
                                     {
