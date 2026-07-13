@@ -251,7 +251,11 @@
                     </div>
                     <div>
                         <label class="block font-medium text-stone-700 mb-1 text-xs">送达时间 (Time)</label>
-                        <input type="time" name="time" id="editTime" class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                        <input type="hidden" name="time" id="editTimeHidden" value="">
+                        <button type="button" id="editTimeTriggerBtn" class="wp-trigger wp-empty text-xs p-2" onclick="openTimeWheelPicker('editTimeTriggerBtn','editTimeHidden')">
+                            <span>选择时间 Select Time</span>
+                            <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                        </button>
                     </div>
                 </div>
                 <div>
@@ -261,12 +265,15 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="w-full flex items-center gap-2 border border-stone-300 rounded p-2 text-xs bg-stone-50 cursor-pointer">
-                            <input type="checkbox" name="is_paid" id="editIsPaidCheckbox" onchange="togglePaymentDate('editPaymentDateWrap','editPaymentDateInput','editIsPaidCheckbox')" class="w-4 h-4 accent-emerald-600">
+                            <input type="checkbox" name="is_paid" id="editIsPaidCheckbox" onchange="togglePaymentDate('editPaymentDateWrap','editPaymentDateHidden','editPaymentDateTriggerBtn','editIsPaidCheckbox')" class="w-4 h-4 accent-emerald-600">
                             <span>已付款</span>
                         </label>
                     </div>
                     <div id="editPaymentDateWrap" class="hidden">
-                        <input type="date" name="payment_date" id="editPaymentDateInput" class="w-full border border-stone-300 rounded p-2 text-xs">
+                        <input type="hidden" name="payment_date" id="editPaymentDateHidden" value="">
+                        <button type="button" id="editPaymentDateTriggerBtn" class="wp-trigger wp-empty text-xs p-2" onclick="openDateWheelPicker('editPaymentDateTriggerBtn','editPaymentDateHidden')">
+                            <span>选择付款日期</span>
+                        </button>
                     </div>
                 </div>
                 <hr class="border-stone-200">
@@ -468,24 +475,44 @@
         const editOverlay = document.getElementById('editOrderModal');
         const editCard = document.getElementById('editModalCard');
         
-        function openEditModal(orderId, date, source, customer, time, address, items) {
+        function openEditModal(orderId, date, source, customer, time, address, isPaid, paymentDate, items) {
             const container = document.getElementById('editItemsContainer');
             container.innerHTML = '';
-
-            items.forEach(item => {
-                addEditItemRow(item);
-            });
+            items.forEach(item => addEditItemRow(item));
             document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
             document.getElementById('editDate').value = date;
             document.getElementById('editSource').value = source;
             document.getElementById('editCustomer').value = customer;
-            document.getElementById('editTime').value = time;
             document.getElementById('editAddress').value = address;
+        
+            const editTimeHidden = document.getElementById('editTimeHidden');
+            const editTimeBtn = document.getElementById('editTimeTriggerBtn');
+            const editTimeSpan = editTimeBtn.querySelector('span');
+            if (time && /^\d{1,2}:\d{2}$/.test(time)) {
+                editTimeHidden.value = time;
+                editTimeSpan.textContent = time;
+                editTimeBtn.classList.remove('wp-empty');
+            } else {
+                editTimeHidden.value = '';
+                editTimeSpan.textContent = '选择时间 Select Time';
+                editTimeBtn.classList.add('wp-empty');
+            }
+        
             document.getElementById('editIsPaidCheckbox').checked = !!isPaid;
             document.getElementById('editPaymentDateWrap').classList.toggle('hidden', !isPaid);
-            document.getElementById('editPaymentDateInput').value = paymentDate || '';
-
-
+            const editPayHidden = document.getElementById('editPaymentDateHidden');
+            const editPayBtn = document.getElementById('editPaymentDateTriggerBtn');
+            const editPaySpan = editPayBtn.querySelector('span');
+            if (isPaid && paymentDate) {
+                editPayHidden.value = paymentDate;
+                editPaySpan.textContent = wpFormatDisplayFromISO(paymentDate);
+                editPayBtn.classList.remove('wp-empty');
+            } else {
+                editPayHidden.value = '';
+                editPaySpan.textContent = '选择付款日期';
+                editPayBtn.classList.add('wp-empty');
+            }
+        
             editOverlay.classList.remove('hidden');
             editOverlay.classList.add('flex');
             setTimeout(() => {
