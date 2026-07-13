@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
@@ -18,12 +18,12 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-key")
 
 app.config.update(
-    SESSION_PERMANENT=False,
-    PERMANENT_SESSION_LIFETIME=timedelta(minutes=60),
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_REFRESH_EACH_REQUEST=True,
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16 MB upload limit
+    MAX_CONTENT_LENGTH=16 * 1024 * 1024
 )
 
 # ==========================================
@@ -63,6 +63,8 @@ class Order(db.Model):
     total_price = db.Column(db.Integer, nullable=False, default=0)
     time = db.Column(db.String(50), default='-')
     address = db.Column(db.Text, default='-')
+    is_paid = db.Column(db.Boolean, nullable=False, default=False)
+    payment_date = db.Column(db.String(50), default='')
 
     items = db.relationship(
         'OrderItem',
@@ -167,6 +169,16 @@ def _format_date_display(date_str):
     except ValueError:
         return date_str
 
+def _time_sort_key(order):
+    t = (order.time or '').strip()
+    for fmt in ('%H:%M', '%I:%M %p', '%I:%M%p', '%H:%M:%S'):
+        try:
+            parsed = datetime.strptime(t, fmt)
+            return parsed.hour * 60 + parsed.minute
+        except ValueError:
+            continue
+    return 24 * 60  # unparseable/blank times sort last
+
 def _fetch_orders_grouped_by_day(filter_mode='all', filter_month=None, filter_day=None):
     query = Order.query.options(joinedload(Order.items))
 
@@ -174,16 +186,22 @@ def _fetch_orders_grouped_by_day(filter_mode='all', filter_month=None, filter_da
         query = query.filter(Order.date.like(f"{filter_month}%"))
     elif filter_mode == 'day' and filter_day:
         query = query.filter(Order.date == filter_day)
+    elif filter_mode == 'all':
+        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+        query = query.filter(Order.date >= cutoff)
 
     orders = query.order_by(Order.date.desc(), Order.id.desc()).all()
 
+    recent_cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+
     groups = {}
     for order in orders:
+        order.is_recent = order.date >= recent_cutoff  # controls Cloudinary URL visibility
         groups.setdefault(order.date, []).append(order)
 
     orders_by_day = []
     for date in sorted(groups.keys(), reverse=True):
-        day_orders = groups[date]
+        day_orders = sorted(groups[date], key=_time_sort_key)
         orders_by_day.append({
             'date': date,
             'date_display': _format_date_display(date),
@@ -239,8 +257,11 @@ def staff_view():
     return render_template('staff_daily.html', active_page='staff', readonly=True, **ctx)
 
 @app.route('/add_order', methods=['POST'])
-@manager_required
+@login_required
 def add_order():
+    is_paid = request.form.get('is_paid') == 'on'
+    payment_date = request.form.get('payment_date') or ''
+
     order_date = request.form.get('date')
     source = request.form.get('source') or '-'
     customer = request.form.get('customer')
@@ -322,6 +343,8 @@ def add_order():
     new_order.total_price = calculated_total
     db.session.commit()
     db.session.remove()
+    if session.get('role') == 'staff':
+        return redirect(url_for('staff_view'))
     return redirect(url_for('index'))
 
 @app.route('/delete_order/<int:id>', methods=['GET', 'POST'])
@@ -792,18 +815,43 @@ def test_upload_form():
 @app.route('/run-migration')
 @manager_required
 def run_migration():
-    """One-time route: adds image_url and flower_image_url columns if missing."""
     results = []
     with db.engine.connect() as conn:
         from sqlalchemy import text
-        for col, col_type in [('image_url', 'TEXT'), ('flower_image_url', 'TEXT')]:
+        for col, col_type, default in [
+            ('image_url', 'TEXT', "''"),
+            ('flower_image_url', 'TEXT', "''"),
+            ('is_paid', 'BOOLEAN', 'FALSE'),
+            ('payment_date', 'TEXT', "''"),
+        ]:
             try:
-                conn.execute(text(f"ALTER TABLE order_items ADD COLUMN {col} {col_type} DEFAULT ''"))
+                table = 'order_items' if col in ('image_url', 'flower_image_url') else 'orders'
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type} DEFAULT {default}"))
                 conn.commit()
-                results.append(f"Added column: {col}")
+                results.append(f"Added column: {table}.{col}")
             except Exception as e:
                 results.append(f"{col}: {str(e).split('ERROR:')[-1].strip()}")
     return "<br>".join(results) + "<br><br><a href='/'>Back to app</a>"
+
+@app.route('/toggle_payment/<int:order_id>', methods=['POST'])
+@manager_required
+def toggle_payment(order_id):
+    order = Order.query.get_or_404(order_id)
+    data = request.get_json(silent=True) or {}
+    is_paid = bool(data.get('is_paid'))
+
+    order.is_paid = is_paid
+    order.payment_date = datetime.today().strftime('%Y-%m-%d') if is_paid else ''
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'is_paid': order.is_paid, 'payment_date': order.payment_date})
+    except Exception as e:
+        db.session.rollback()
+        print("TOGGLE PAYMENT ERROR:", e)
+        return jsonify({'success': False, 'error': 'Update failed'}), 500
+    finally:
+        db.session.remove()
 
 @app.route('/health')
 def health():
