@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
@@ -9,6 +9,8 @@ load_dotenv()
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import csv
+import io
 
 app = Flask(__name__)
 
@@ -852,7 +854,75 @@ def toggle_payment(order_id):
         return jsonify({'success': False, 'error': 'Update failed'}), 500
     finally:
         db.session.remove()
+        
+@app.route('/admin/archive', methods=['GET'])
+@manager_required
+def archive_view():
+    cutoff = request.args.get('before', (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d'))
+    count = Order.query.filter(Order.date < cutoff).count()
+    return render_template('archive.html', active_page='archive', cutoff=cutoff, count=count)
 
+@app.route('/admin/archive/export')
+@manager_required
+def archive_export():
+    cutoff = request.args.get('before')
+    if not cutoff:
+        flash("Please choose a cutoff date.", 'error')
+        return redirect(url_for('archive_view'))
+
+    orders = (
+        Order.query
+        .options(joinedload(Order.items))
+        .filter(Order.date < cutoff)
+        .order_by(Order.date, Order.id)
+        .all()
+    )
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        'order_id', 'date', 'source', 'customer', 'time', 'address',
+        'is_paid', 'payment_date', 'order_total',
+        'item_name', 'size', 'item_price', 'remarks', 'image_url', 'flower_image_url'
+    ])
+    for o in orders:
+        if not o.items:
+            writer.writerow([o.id, o.date, o.source, o.customer, o.time, o.address,
+                              o.is_paid, o.payment_date, o.total_price, '', '', '', '', '', ''])
+        for item in o.items:
+            writer.writerow([
+                o.id, o.date, o.source, o.customer, o.time, o.address,
+                o.is_paid, o.payment_date, o.total_price,
+                item.item_name, item.size, item.price, item.remarks,
+                item.image_url, item.flower_image_url
+            ])
+
+    mem = io.BytesIO(('\ufeff' + buf.getvalue()).encode('utf-8'))
+    filename = f"Memory_Cake_Archive_before_{cutoff}.csv"
+    return send_file(mem, mimetype='text/csv', as_attachment=True, download_name=filename)
+
+@app.route('/admin/archive/delete', methods=['POST'])
+@manager_required
+def archive_delete():
+    cutoff = request.form.get('before')
+    confirm_text = request.form.get('confirm_text', '')
+    if confirm_text != 'DELETE':
+        flash("You must type DELETE to confirm archival deletion.", 'error')
+        return redirect(url_for('archive_view', before=cutoff))
+
+    try:
+        deleted = Order.query.filter(Order.date < cutoff).delete(synchronize_session=False)
+        db.session.commit()
+        flash(f"Archived and removed {deleted} orders from before {cutoff}.")
+    except Exception as e:
+        db.session.rollback()
+        print("ARCHIVE DELETE ERROR:", e)
+        flash("Archive deletion failed. No data was removed.", 'error')
+    finally:
+        db.session.remove()
+
+    return redirect(url_for('archive_view'))
+    
 @app.route('/health')
 def health():
     return "OK", 200
