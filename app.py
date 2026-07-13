@@ -239,6 +239,32 @@ def _daily_view_context(filter_action):
         'total_revenue': total_revenue,
     }
 
+def _extract_cloudinary_public_id(url):
+    """Given a Cloudinary secure_url, return its public_id (including folder), or None."""
+    if not url or 'cloudinary.com' not in url or '/upload/' not in url:
+        return None
+    try:
+        after_upload = url.split('/upload/', 1)[1]
+        parts = after_upload.split('/')
+        # Drop the version segment, e.g. 'v1728490213'
+        if parts and parts[0].startswith('v') and parts[0][1:].isdigit():
+            parts = parts[1:]
+        path_with_ext = '/'.join(parts)
+        public_id = path_with_ext.rsplit('.', 1)[0]  # strip file extension
+        return public_id or None
+    except Exception:
+        return None
+
+def _delete_cloudinary_asset(url):
+    """Best-effort delete of a Cloudinary image given its stored URL. Never raises."""
+    public_id = _extract_cloudinary_public_id(url)
+    if not public_id:
+        return
+    try:
+        result = cloudinary.uploader.destroy(public_id, resource_type="image")
+        print(f"[Cloudinary] destroy {public_id}: {result.get('result')}")
+    except Exception as e:
+        print(f"[Cloudinary DELETE ERROR] {public_id}: {e}")
 # ==========================================
 # MAIN ROUTES
 # ==========================================
@@ -352,8 +378,14 @@ def add_order():
 @app.route('/delete_order/<int:id>', methods=['GET', 'POST'])
 @manager_required
 def delete_order(id):
-    order = Order.query.get_or_404(id)
+    order = Order.query.options(joinedload(Order.items)).get_or_404(id)
     try:
+        for item in order.items:
+            if item.image_url:
+                _delete_cloudinary_asset(item.image_url)
+            if item.flower_image_url:
+                _delete_cloudinary_asset(item.flower_image_url)
+
         db.session.delete(order)
         db.session.commit()
         flash("Order deleted successfully.")
@@ -374,6 +406,8 @@ def edit_order(order_id):
     order.customer = request.form.get('customer')
     order.time = request.form.get('time') or '-'
     order.address = request.form.get('address') or '-'
+    order.is_paid = request.form.get('is_paid') == 'on'
+    order.payment_date = request.form.get('payment_date') or ''
 
     names = request.form.getlist('edit_item_name[]')
     sizes = request.form.getlist('edit_size[]')
@@ -385,6 +419,17 @@ def edit_order(order_id):
     new_cake_files = request.files.getlist('editCakeImage[]')
     new_flower_files = request.files.getlist('editFlowerImage[]')
     timestamp_prefix = int(datetime.now().timestamp())
+
+    # Snapshot every image URL this order currently owns, BEFORE any DB changes.
+    existing_items = OrderItem.query.filter_by(order_id=order.id).all()
+    urls_before = set()
+    for oi in existing_items:
+        if oi.image_url:
+            urls_before.add(oi.image_url)
+        if oi.flower_image_url:
+            urls_before.add(oi.flower_image_url)
+
+    urls_after = set()
 
     try:
         OrderItem.query.filter_by(order_id=order.id).delete()
@@ -439,6 +484,11 @@ def edit_order(order_id):
                         print(f"[Cloudinary ERROR] {err}")
                         flash(err, 'error')
 
+            if cake_url:
+                urls_after.add(cake_url)
+            if flower_url:
+                urls_after.add(flower_url)
+
             new_item = OrderItem(
                 order_id=order.id,
                 item_name=names[i],
@@ -452,6 +502,12 @@ def edit_order(order_id):
 
         order.total_price = total_price
         db.session.commit()
+
+        # Anything that existed before but isn't referenced anymore = orphaned. Clean it up.
+        orphaned_urls = urls_before - urls_after
+        for url in orphaned_urls:
+            _delete_cloudinary_asset(url)
+
         flash('Order updated successfully.')
     except Exception as e:
         db.session.rollback()
