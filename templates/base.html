@@ -200,21 +200,319 @@
         .oc-payment-date-label { font-weight: 600; opacity: .8; }
         
         .print-only { display: none; }
-@media print {
-    .print-only { display: inline-block; }
-    .oc-payment-toggle { display: none !important; }
-}
-
-.oc-payment-badge { font-size: 10.5px; font-weight: 700; margin-top: 6px; padding: 2px 8px; border-radius: 9999px; display: inline-block; }
-.oc-paid { background: #ecfdf5; color: #047857; }
-.oc-unpaid { background: #fff7ed; color: #b45309; }
         @media print {
-            .no-print { display: none !important; }
-            body { background: white; }
-            .print-padding { padding: 4px !important; font-size: 11px !important; }
+            .print-only { display: inline-block; }
+            .oc-payment-toggle { display: none !important; }
         }
+
+        .oc-payment-badge { font-size: 10.5px; font-weight: 700; margin-top: 6px; padding: 2px 8px; border-radius: 9999px; display: inline-block; }
+        .oc-paid { background: #ecfdf5; color: #047857; }
+        .oc-unpaid { background: #fff7ed; color: #b45309; }
+                @media print {
+                    .no-print { display: none !important; }
+                    body { background: white; }
+                    .print-padding { padding: 4px !important; font-size: 11px !important; }
+                }
+        
+                /* ===== Wheel Picker ===== */
+        .wp-overlay { position: fixed; inset: 0; background: rgba(28,25,23,.45); backdrop-filter: blur(2px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+        .wp-overlay.active { display: flex; }
+        @media (min-width: 640px) { .wp-overlay { align-items: center; } }
+        .wp-sheet { background: #fff; width: 100%; max-width: 420px; border-radius: 24px 24px 0 0; padding: 24px 20px 20px; box-shadow: 0 -8px 30px rgba(0,0,0,.15); transform: translateY(100%); transition: transform .25s ease; }
+        @media (min-width: 640px) { .wp-sheet { border-radius: 20px; transform: translateY(20px); opacity: 0; transition: transform .25s ease, opacity .25s ease; } }
+        .wp-overlay.active .wp-sheet { transform: translateY(0); opacity: 1; }
+        .wp-title { font-size: 15px; font-weight: 700; color: #1c1917; margin-bottom: 14px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
+        .wp-display { text-align: center; font-size: 17px; color: #292524; margin-bottom: 8px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .wp-wheels { display: flex; gap: 6px; position: relative; height: 220px; margin: 8px 0 18px; }
+        .wp-col { flex: 1; position: relative; overflow: hidden; border-radius: 14px; background: #fafaf9; border: 1px solid #f0efed; }
+        .wp-scroll { height: 220px; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; position: relative; z-index: 1; }
+        .wp-scroll::-webkit-scrollbar { display: none; }
+        .wp-pad { height: 88px; }
+        .wp-item { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: 16px; color: #c7c2be; font-weight: 500; transition: color .15s ease, font-weight .15s ease; user-select: none; padding: 0 8px; text-align: center; }
+        .wp-item.wp-active { color: #1c1917; font-weight: 700; font-size: 18px; }
+        .wp-highlight-bar { position: absolute; top: 88px; left: 6px; right: 6px; height: 44px; background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #e7e5e4; pointer-events: none; z-index: 0; }
+        .wp-fade-top, .wp-fade-bottom { position: absolute; left: 0; right: 0; height: 70px; pointer-events: none; z-index: 2; }
+        .wp-fade-top { top: 0; background: linear-gradient(to bottom, #fff 10%, rgba(255,255,255,0)); }
+        .wp-fade-bottom { bottom: 0; background: linear-gradient(to top, #fff 10%, rgba(255,255,255,0)); }
+        .wp-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+        .wp-quick-btn { flex: 1; min-width: 68px; padding: 10px 6px; text-align: center; font-size: 11.5px; font-weight: 600; border-radius: 10px; border: 1.5px solid #e7e5e4; color: #57534e; background: #fff; cursor: pointer; transition: all .15s ease; }
+        .wp-quick-btn:hover { border-color: #059669; color: #059669; background: #ecfdf5; }
+        .wp-actions { display: flex; gap: 10px; }
+        .wp-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; border: none; }
+        .wp-btn-cancel { background: #f5f5f4; color: #57534e; }
+        .wp-btn-cancel:hover { background: #e7e5e4; }
+        .wp-btn-set { background: #059669; color: #fff; }
+        .wp-btn-set:hover { background: #047857; }
+        .wp-trigger { width: 100%; text-align: left; border: 1px solid #d6d3d1; border-radius: 8px; padding: 12px; font-size: 14px; background: #fff; color: #1c1917; display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .wp-trigger:hover { border-color: #a8a29e; }
+        .wp-trigger.wp-empty { color: #a8a29e; }
+        .wp-trigger-icon { opacity: .5; flex-shrink: 0; }
+        body.wp-locked { overflow: hidden; }
     </style>
 </head>
+    <!-- Wheel Picker: Time (Hour / Minute) -->
+<div class="wp-overlay" id="wpTimeOverlay" onclick="if(event.target===this) closeWheelOverlay('wpTimeOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title">送达时间选择 (Set Delivery Time)</div>
+        <div class="wp-display" id="wpTimeDisplay">--:--</div>
+        <div class="wp-wheels">
+            <div class="wp-fade-top"></div>
+            <div class="wp-fade-bottom"></div>
+            <div class="wp-col">
+                <div class="wp-highlight-bar"></div>
+                <div class="wp-scroll" id="wpHourScroll"></div>
+            </div>
+            <div class="wp-col">
+                <div class="wp-highlight-bar"></div>
+                <div class="wp-scroll" id="wpMinScroll"></div>
+            </div>
+        </div>
+        <div class="wp-quick">
+            <div class="wp-quick-btn" data-mins="0">现在 Now</div>
+            <div class="wp-quick-btn" data-mins="30">+30分</div>
+            <div class="wp-quick-btn" data-mins="60">+1小时</div>
+            <div class="wp-quick-btn" data-mins="120">+2小时</div>
+        </div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpTimeCancelBtn">取消 Cancel</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpTimeSetBtn">确定 Set</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wheel Picker: Payment Date (day only, no time) -->
+<div class="wp-overlay" id="wpDateOverlay" onclick="if(event.target===this) closeWheelOverlay('wpDateOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title">付款日期选择 (Set Payment Date)</div>
+        <div class="wp-display" id="wpDateDisplay">--</div>
+        <div class="wp-wheels">
+            <div class="wp-fade-top"></div>
+            <div class="wp-fade-bottom"></div>
+            <div class="wp-col">
+                <div class="wp-highlight-bar"></div>
+                <div class="wp-scroll" id="wpDayScroll"></div>
+            </div>
+        </div>
+        <div class="wp-quick">
+            <div class="wp-quick-btn" data-offset="0">今天 Today</div>
+            <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
+            <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
+        </div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpDateCancelBtn">取消 Cancel</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpDateSetBtn">确定 Set</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ===== Wheel Picker Engine ===== */
+const WP_ITEM_H = 44;
+
+function wpBuildColumn(containerId, items, initialIndex, onSettle) {
+    let container = document.getElementById(containerId);
+    // clone to strip any listeners from a previous open
+    const fresh = container.cloneNode(false);
+    container.parentNode.replaceChild(fresh, container);
+    container = fresh;
+
+    container.innerHTML = '';
+    const topPad = document.createElement('div');
+    topPad.className = 'wp-pad';
+    container.appendChild(topPad);
+
+    items.forEach((it) => {
+        const el = document.createElement('div');
+        el.className = 'wp-item';
+        el.textContent = it.label;
+        container.appendChild(el);
+    });
+
+    const botPad = document.createElement('div');
+    botPad.className = 'wp-pad';
+    container.appendChild(botPad);
+
+    let currentIndex = initialIndex;
+    let settleTimer = null;
+
+    function highlight(idx) {
+        const nodes = container.querySelectorAll('.wp-item');
+        nodes.forEach((el, i) => el.classList.toggle('wp-active', i === idx));
+    }
+
+    function settle(idx, smooth) {
+        idx = Math.max(0, Math.min(items.length - 1, idx));
+        currentIndex = idx;
+        highlight(idx);
+        const target = idx * WP_ITEM_H;
+        if (Math.abs(container.scrollTop - target) > 1) {
+            container.scrollTo({ top: target, behavior: smooth ? 'smooth' : 'auto' });
+        }
+        onSettle(idx);
+    }
+
+    container.addEventListener('scroll', () => {
+        const idx = Math.round(container.scrollTop / WP_ITEM_H);
+        highlight(Math.max(0, Math.min(items.length - 1, idx)));
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => settle(idx, true), 120);
+    });
+
+    container.querySelectorAll('.wp-item').forEach((el, i) => {
+        el.addEventListener('click', () => settle(i, true));
+    });
+
+    settle(initialIndex, false);
+
+    return { get index() { return currentIndex; }, setIndex(i) { settle(i, true); } };
+}
+
+function wpLockBody() { document.body.classList.add('wp-locked'); }
+function wpUnlockBody() { document.body.classList.remove('wp-locked'); }
+
+function closeWheelOverlay(id) {
+    document.getElementById(id).classList.remove('active');
+    wpUnlockBody();
+}
+
+/* ===== Time Picker (Hour / Minute) ===== */
+function openTimeWheelPicker(triggerBtnId, hiddenInputId) {
+    const btn = document.getElementById(triggerBtnId);
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById(hiddenInputId);
+
+    let h, m;
+    if (hidden.value && /^\d{1,2}:\d{2}$/.test(hidden.value)) {
+        [h, m] = hidden.value.split(':').map(v => parseInt(v, 10));
+    } else {
+        const now = new Date();
+        h = now.getHours();
+        m = now.getMinutes();
+    }
+
+    const overlay = document.getElementById('wpTimeOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    const hourItems = Array.from({ length: 24 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
+    const minItems = Array.from({ length: 60 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
+
+    function updateDisplay() {
+        const hh = String(hourItems[hourCol.index].value).padStart(2, '0');
+        const mm = String(minItems[minCol.index].value).padStart(2, '0');
+        document.getElementById('wpTimeDisplay').textContent = `${hh}:${mm}`;
+    }
+
+    const hourCol = wpBuildColumn('wpHourScroll', hourItems, h, updateDisplay);
+    const minCol = wpBuildColumn('wpMinScroll', minItems, m, updateDisplay);
+    updateDisplay();
+
+    document.querySelectorAll('#wpTimeOverlay .wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => {
+            const now2 = new Date();
+            now2.setMinutes(now2.getMinutes() + parseInt(qbtn.dataset.mins, 10));
+            hourCol.setIndex(now2.getHours());
+            minCol.setIndex(now2.getMinutes());
+        };
+    });
+
+    document.getElementById('wpTimeSetBtn').onclick = () => {
+        const hh = String(hourItems[hourCol.index].value).padStart(2, '0');
+        const mm = String(minItems[minCol.index].value).padStart(2, '0');
+        hidden.value = `${hh}:${mm}`;
+        span.textContent = `${hh}:${mm}`;
+        btn.classList.remove('wp-empty');
+        closeWheelOverlay('wpTimeOverlay');
+    };
+    document.getElementById('wpTimeCancelBtn').onclick = () => closeWheelOverlay('wpTimeOverlay');
+}
+
+/* ===== Date Picker (Day only — no time, for payment date) ===== */
+function wpFormatRelativeDay(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (offset === 0) return `Today · ${weekday}`;
+    if (offset === -1) return `Yesterday · ${weekday}`;
+    if (offset === 1) return `Tomorrow · ${weekday}`;
+    return `${dateStr} · ${weekday}`;
+}
+function wpIsoForOffset(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0, 10);
+}
+function wpFormatDisplayFromISO(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((d - today) / 86400000);
+    return wpFormatRelativeDay(diffDays);
+}
+
+function openDateWheelPicker(triggerBtnId, hiddenInputId) {
+    const btn = document.getElementById(triggerBtnId);
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById(hiddenInputId);
+
+    const RANGE_BACK = 120, RANGE_FWD = 14;
+    const dayItems = [];
+    for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
+        dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
+    }
+
+    let initialIndex = RANGE_BACK; // today
+    if (hidden.value) {
+        const idx = dayItems.findIndex(it => it.value === hidden.value);
+        if (idx >= 0) initialIndex = idx;
+    }
+
+    const overlay = document.getElementById('wpDateOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    function updateDisplay() {
+        document.getElementById('wpDateDisplay').textContent = dayItems[dayCol.index].label;
+    }
+    const dayCol = wpBuildColumn('wpDayScroll', dayItems, initialIndex, updateDisplay);
+    updateDisplay();
+
+    document.querySelectorAll('#wpDateOverlay .wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => dayCol.setIndex(RANGE_BACK + parseInt(qbtn.dataset.offset, 10));
+    });
+
+    document.getElementById('wpDateSetBtn').onclick = () => {
+        const chosen = dayItems[dayCol.index];
+        hidden.value = chosen.value;
+        span.textContent = chosen.label;
+        btn.classList.remove('wp-empty');
+        closeWheelOverlay('wpDateOverlay');
+    };
+    document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+}
+
+/* ===== Payment checkbox toggle (updated for wheel-picker trigger) ===== */
+function togglePaymentDate(wrapId, hiddenId, triggerBtnId, checkboxId) {
+    const cb = document.getElementById(checkboxId);
+    const wrap = document.getElementById(wrapId);
+    const hidden = document.getElementById(hiddenId);
+    const btn = document.getElementById(triggerBtnId);
+    const span = btn.querySelector('span');
+
+    wrap.classList.toggle('hidden', !cb.checked);
+
+    if (cb.checked && !hidden.value) {
+        hidden.value = wpIsoForOffset(0);
+        span.textContent = wpFormatRelativeDay(0);
+        btn.classList.remove('wp-empty');
+    }
+    if (!cb.checked) {
+        hidden.value = '';
+        span.textContent = '选择付款日期 Select Payment Date';
+        btn.classList.add('wp-empty');
+    }
+}
+</script>
 <body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
 
     {% if request.endpoint != 'login' %}
