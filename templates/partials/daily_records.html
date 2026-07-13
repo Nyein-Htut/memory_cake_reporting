@@ -93,7 +93,13 @@
                             <div class="oc-item-images">
                                 <div class="oc-img-slot oc-img-flower">
                                     {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
-                                    <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
+                                        {% if order.is_recent %}
+                                        <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
+                                        {% else %}
+                                        <div class="oc-img-hidden" data-url="{{ item.flower_image_url }}">
+                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
+                                        </div>
+                                        {% endif %}
                                     {% else %}
                                     <span class="oc-img-empty">💐</span>
                                     {% endif %}
@@ -101,7 +107,13 @@
                                 </div>
                                 <div class="oc-img-slot oc-img-cake">
                                     {% if item.image_url and item.image_url.startswith('http') %}
-                                    <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
+                                    {% if order.is_recent %}
+                                        <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
+                                        {% else %}
+                                        <div class="oc-img-hidden" data-url="{{ item.flower_image_url }}">
+                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
+                                        </div>
+                                        {% endif %}
                                     {% else %}
                                     <span class="oc-img-empty">🎂</span>
                                     {% endif %}
@@ -222,4 +234,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+    function revealImage(btn) {
+        const wrap = btn.parentElement;
+        const url = wrap.getAttribute('data-url');
+        const img = document.createElement('img');
+        img.src = url;
+        img.crossOrigin = 'anonymous';
+        img.alt = 'Reference Image';
+        wrap.replaceWith(img);
+    }
 </script>
