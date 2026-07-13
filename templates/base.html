@@ -175,7 +175,39 @@
         .oc-action-edit:hover { background: #d1fae5; }
         .oc-action-delete { color: #be123c; background: #fff1f2; border-color: #ffe4e6; }
         .oc-action-delete:hover { background: #ffe4e6; }
+        .oc-payment-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #b45309;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 9999px;
+            padding: 4px 10px;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+            user-select: none;
+        }
+        .oc-payment-toggle.is-paid {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #d1fae5;
+        }
+        .oc-payment-checkbox { width: 13px; height: 13px; accent-color: #047857; cursor: pointer; }
+        .oc-payment-date-label { font-weight: 600; opacity: .8; }
+        
+        .print-only { display: none; }
+@media print {
+    .print-only { display: inline-block; }
+    .oc-payment-toggle { display: none !important; }
+}
 
+.oc-payment-badge { font-size: 10.5px; font-weight: 700; margin-top: 6px; padding: 2px 8px; border-radius: 9999px; display: inline-block; }
+.oc-paid { background: #ecfdf5; color: #047857; }
+.oc-unpaid { background: #fff7ed; color: #b45309; }
         @media print {
             .no-print { display: none !important; }
             body { background: white; }
