@@ -1,0 +1,133 @@
+{# Shared order entry form: used by both manager (daily.html) and staff (staff_daily.html) #}
+<section class="bg-white p-5 sm:p-6 no-print section-card input-section">
+    <div class="section-glow input-glow"></div>
+    <div class="relative z-10">
+        <h2 class="section-title text-emerald-700 mb-6 pb-4 border-b border-emerald-100">
+            <span class="section-icon bg-emerald-100">📝</span>
+            新账单快速录入
+        </h2>
+    </div>
+    <form action="/add_order" method="POST" enctype="multipart/form-data" class="space-y-6 text-sm font-sans">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div>
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">日期 (Date)</label>
+                <input type="date" name="date" id="defaultDate" required class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900 bg-stone-50/40">
+            </div>
+            <div>
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">订单来源 (Source)</label>
+                <input type="text" name="source" placeholder="Memory Cake / Ko Kyaw / Iris" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+            </div>
+            <div>
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">客人姓名 (Customer)</label>
+                <input type="text" name="customer" required placeholder="姓名" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+            </div>
+            <div>
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">送达时间 (Time)</label>
+                <input type="time" name="time" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900 bg-stone-50/40">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">送货地址 & 电话 (Address & Contact)</label>
+                <input type="text" name="address" placeholder="收货详细地址及联络方式" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+            </div>
+            <div>
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">付款状态 (Payment)</label>
+                <label class="w-full flex items-center gap-2 border border-stone-300 rounded p-3 text-sm bg-stone-50/40 cursor-pointer h-[46px]">
+                    <input type="checkbox" name="is_paid" id="isPaidCheckbox" onchange="togglePaymentDate('paymentDateWrap','paymentDateInput','isPaidCheckbox')" class="w-4 h-4 accent-emerald-600">
+                    <span>已付款 (Mark as Paid)</span>
+                </label>
+            </div>
+            <div id="paymentDateWrap" class="hidden">
+                <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">付款日期 (Payment Date)</label>
+                <input type="date" name="payment_date" id="paymentDateInput" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+            </div>
+        </div>
+
+        <div class="border-t border-stone-100 pt-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xs font-bold tracking-widest uppercase text-stone-500">商品清单明细 (Voucher Items)</h3>
+                <button type="button" onclick="addNewItemRow()" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold py-1.5 px-4 rounded transition-colors">
+                    ➕ 添加品类商品
+                </button>
+            </div>
+
+            <div id="itemsContainer" class="space-y-4">
+                <div class="item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative">
+                    <div class="md:col-span-3">
+                        <label class="block text-stone-500 text-[11px] mb-1">商品名称 (e.g. Custom Cake)</label>
+                        <input type="text" name="item_name[]" required placeholder="蛋糕 / 蜡烛 /甜品" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-stone-500 text-[11px] mb-1">尺寸 (Size)</label>
+                        <input type="text" name="size[]" placeholder="6in" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-stone-500 text-[11px] mb-1">单品金额 (Price)</label>
+                        <input type="number" name="item_price[]" required placeholder="MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-stone-500 text-[11px] mb-1">定制备注文字 (Remarks)</label>
+                        <input type="text" name="remarks[]" placeholder="写字要求..." class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-rose-600 font-medium text-[11px] mb-1">💐 花束参考图</label>
+                        <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-stone-500 text-[11px] mb-1">🎂 蛋糕参考图</label>
+                        <input type="file" name="cakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+            <button type="submit" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-10 rounded transition-all shadow-sm">
+                确认保存账单 (Save Order Voucher)
+            </button>
+        </div>
+    </form>
+</section>
+
+<script>
+    const _defDate = document.getElementById('defaultDate');
+    if (_defDate) _defDate.valueAsDate = new Date();
+
+    function togglePaymentDate(wrapId, dateId, checkboxId) {
+        const cb = document.getElementById(checkboxId);
+        const wrap = document.getElementById(wrapId);
+        const dateInput = document.getElementById(dateId);
+        wrap.classList.toggle('hidden', !cb.checked);
+        if (cb.checked && !dateInput.value) {
+            dateInput.valueAsDate = new Date();
+        }
+        if (!cb.checked) dateInput.value = '';
+    }
+
+    function addNewItemRow() {
+        const container = document.getElementById('itemsContainer');
+        const newRow = document.createElement('div');
+        newRow.className = "item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative mt-3";
+        newRow.innerHTML = `
+            <div class="md:col-span-3">
+                <input type="text" name="item_name[]" required placeholder="商品名称" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+            </div>
+            <div class="md:col-span-1">
+                <input type="text" name="size[]" placeholder="尺寸" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+            </div>
+            <div class="md:col-span-2">
+                <input type="number" name="item_price[]" required placeholder="金额 MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+            </div>
+            <div class="md:col-span-2">
+                <input type="text" name="remarks[]" placeholder="备注要求" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+            </div>
+            <div class="md:col-span-2">
+                <input type="file" name="flowerImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+            </div>
+            <div class="md:col-span-2 flex items-center justify-between gap-2">
+                <input type="file" name="cakeImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+                <button type="button" onclick="this.closest('.item-row').remove()" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1">✕</button>
+            </div>
+        `;
+        container.appendChild(newRow);
+    }
+</script>
