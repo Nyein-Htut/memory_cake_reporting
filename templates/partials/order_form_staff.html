@@ -13,11 +13,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">🏷️ အော်ဒါလာသည့်နေရာ (Source)</label>
-                    <input type="text" name="source" placeholder="Memory Cake / Ko Kyaw / Iris" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                    <select name="source" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900 bg-white">
+                        <option value="">ရွေးချယ်ပါ Select Source</option>
+                        <option value="Ko Kyaw">Ko Kyaw</option>
+                        <option value="Memory Cake">Memory Cake</option>
+                        <option value="Iris">Iris</option>
+                        <option value="Ama Gyi">Ama Gyi</option>
+                        <option value="Ama Nge">Ama Nge</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">👤 ဖောက်သည်အမည် (Customer)</label>
-                    <input type="text" name="customer" required placeholder="အမည်" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                    <input type="text" name="customer" placeholder="အမည်" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
                 </div>
             </div>
 
@@ -50,7 +58,7 @@
                 <div class="item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative">
                     <div class="md:col-span-3">
                         <label class="block text-stone-500 text-[11px] mb-1">ပစ္စည်းအမည် (e.g. Custom Cake)</label>
-                        <input type="text" name="item_name[]" required placeholder="ကိတ်မုန့် / ဖယောင်းတိုင် / အချိုပွဲ" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                        <input type="text" name="item_name[]" placeholder="ကိတ်မုန့် / ဖယောင်းတိုင် / အချိုပွဲ" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
                     </div>
                     <div class="md:col-span-1">
                         <label class="block text-stone-500 text-[11px] mb-1">အရွယ်အစား (Size)</label>
@@ -58,7 +66,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-stone-500 text-[11px] mb-1">စျေးနှုန်း (Price)</label>
-                        <input type="number" name="item_price[]" required placeholder="MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                        <input type="number" name="item_price[]" placeholder="MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-stone-500 text-[11px] mb-1">အထူးမှတ်ချက် (Remarks)</label>
@@ -99,13 +107,13 @@
         newRow.className = "item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative mt-3";
         newRow.innerHTML = `
             <div class="md:col-span-3">
-                <input type="text" name="item_name[]" required placeholder="ပစ္စည်းအမည်" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                <input type="text" name="item_name[]" placeholder="ပစ္စည်းအမည်" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
             </div>
             <div class="md:col-span-1">
                 <input type="text" name="size[]" placeholder="အရွယ်အစား" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
             </div>
             <div class="md:col-span-2">
-                <input type="number" name="item_price[]" required placeholder="ငွေပမာဏ MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                <input type="number" name="item_price[]" placeholder="ငွေပမာဏ MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
             </div>
             <div class="md:col-span-2">
                 <input type="text" name="remarks[]" placeholder="မှတ်ချက် လိုအပ်ချက်" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
