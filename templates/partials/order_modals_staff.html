@@ -51,9 +51,7 @@
                     </button>
                 </div>
 
-                <div class="overflow-x-auto w-full border border-stone-200/60 rounded p-2 bg-stone-50/30 max-h-[280px] overflow-y-auto">
-                    <div id="editItemsContainer" class="space-y-3 min-w-[800px]"></div>
-                </div>
+                <div id="editItemsContainer" class="w-full border border-stone-200/60 rounded-xl p-2.5 bg-stone-50/30 max-h-[420px] overflow-y-auto space-y-3"></div>
             </div>
 
             <div class="flex justify-end items-center gap-3 pt-4 border-t border-stone-100 mt-2 sticky bottom-0 bg-white">
@@ -160,45 +158,48 @@
     function addEditItemRow(item = {}) {
         const container = document.getElementById('editItemsContainer');
         const row = document.createElement('div');
-        row.className = 'grid grid-cols-12 gap-4 p-4 bg-stone-50 border border-stone-200 rounded min-w-[900px]';
+        row.className = 'ef-item-card space-y-3';
         row.innerHTML = `
             <input type="hidden" name="old_cake_image[]" value="${item.image_url || ''}">
             <input type="hidden" name="old_flower_image[]" value="${item.flower_image_url || ''}">
 
-            <div class="md:col-span-2">
-                <label class="block text-[11px] text-stone-500 mb-1">ပစ္စည်းအမည်</label>
-                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">ပစ္စည်းတစ်ခု</span>
+                <button type="button" onclick="this.closest('.ef-item-card').remove()" class="text-rose-600 hover:text-rose-800 text-lg font-bold leading-none px-1">✕</button>
             </div>
 
-            <div class="md:col-span-1">
-                <label class="block text-[11px] text-stone-500 mb-1">အရွယ်အစား</label>
-                <input type="text" name="edit_size[]" value="${item.size || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            <div>
+                <label class="ef-item-label">ပစ္စည်းအမည်</label>
+                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" class="ef-input">
             </div>
 
-            <div class="md:col-span-2">
-                <label class="block text-[11px] text-stone-500 mb-1">စျေးနှုန်း</label>
-                <input type="number" name="edit_price[]" value="${item.price || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="ef-item-label">အရွယ်အစား</label>
+                    <input type="text" name="edit_size[]" value="${item.size || ''}" class="ef-input">
+                </div>
+                <div>
+                    <label class="ef-item-label">စျေးနှုန်း</label>
+                    <input type="number" name="edit_price[]" value="${item.price || ''}" class="ef-input">
+                </div>
             </div>
 
-            <div class="md:col-span-2">
-                <label class="block text-[11px] text-stone-500 mb-1">မှတ်ချက်</label>
-                <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            <div>
+                <label class="ef-item-label">မှတ်ချက်</label>
+                <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" class="ef-input">
             </div>
 
-            <div class="md:col-span-2">
-                <label class="block text-[11px] text-rose-600 mb-1">💐 လက်ရှိ ပန်းစည်းပုံ</label>
-                ${item.flower_image_url ? `<img src="${item.flower_image_url}" class="w-20 h-20 object-cover rounded border border-rose-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
-                <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block text-[11px] text-stone-600 mb-1">🎂 လက်ရှိ ကိတ်မုန့်ပုံ</label>
-                ${item.image_url ? `<img src="${item.image_url}" class="w-20 h-20 object-cover rounded border border-stone-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
-                <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
-            </div>
-
-            <div class="md:col-span-1 flex items-center justify-center">
-                <button type="button" onclick="this.closest('.grid').remove()" class="text-rose-600 hover:text-rose-800 text-lg font-bold">✕</button>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="ef-item-label">🎂 လက်ရှိ ကိတ်မုန့်ပုံ</label>
+                    ${item.image_url ? `<img src="${item.image_url}" class="w-16 h-16 object-cover rounded-lg border border-stone-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                    <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+                </div>
+                <div>
+                    <label class="ef-item-label">💐 လက်ရှိ ပန်းစည်းပုံ</label>
+                    ${item.flower_image_url ? `<img src="${item.flower_image_url}" class="w-16 h-16 object-cover rounded-lg border border-rose-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                    <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+                </div>
             </div>
         `;
         container.appendChild(row);
