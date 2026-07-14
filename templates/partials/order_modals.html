@@ -25,7 +25,11 @@
 
             <div class="ef-field">
                 <label class="ef-label">🏷️ 订单来源 <span class="ef-label-en">Source</span></label>
-                <input type="text" name="source" id="editSource" class="ef-input">
+                <input type="hidden" name="source" id="editSourceHidden" value="">
+                <button type="button" id="editSourceTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','订单来源选择 (Select Source)')">
+                    <span>选择订单来源</span>
+                    <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
             </div>
 
             <div class="ef-field">
@@ -120,9 +124,20 @@
         container.innerHTML = '';
         items.forEach(item => addEditItemRow(item));
         document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
-        document.getElementById('editSource').value = source;
         document.getElementById('editCustomer').value = customer;
         document.getElementById('editAddress').value = address;
+
+        const editSourceHidden = document.getElementById('editSourceHidden');
+        const editSourceBtn = document.getElementById('editSourceTriggerBtn');
+        const editSourceSpan = editSourceBtn.querySelector('span');
+        editSourceHidden.value = (source && source !== '-') ? source : '';
+        if (editSourceHidden.value) {
+            editSourceSpan.textContent = editSourceHidden.value;
+            editSourceBtn.classList.remove('wp-empty');
+        } else {
+            editSourceSpan.textContent = '选择订单来源';
+            editSourceBtn.classList.add('wp-empty');
+        }
 
         const editDateHidden = document.getElementById('editDateHidden');
         const editTimeHidden = document.getElementById('editTimeHidden');
