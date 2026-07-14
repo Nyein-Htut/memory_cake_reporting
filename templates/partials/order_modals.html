@@ -24,6 +24,11 @@
             </div>
 
             <div class="ef-field">
+                <label class="ef-label">🚗 车费 <span class="ef-label-en">Delivery Fee</span></label>
+                <input type="text" name="delivery_fee" id="editDeliveryFee" placeholder="备注车费（不计入订单总额）" class="ef-input">
+            </div>
+
+            <div class="ef-field">
                 <label class="ef-label">🏷️ 订单来源 <span class="ef-label-en">Source</span></label>
                 <input type="hidden" name="source" id="editSourceHidden" value="">
                 <button type="button" id="editSourceTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','订单来源选择 (Select Source)')">
@@ -117,13 +122,14 @@
     const editOverlay = document.getElementById('editOrderModal');
     const editCard = document.getElementById('editModalCard');
 
-    function openEditModal(orderId, date, source, customer, time, address, isPaid, paymentDate, items) {
+    function openEditModal(orderId, date, source, customer, time, address, deliveryFee, isPaid, paymentDate, items) {
         const container = document.getElementById('editItemsContainer');
         container.innerHTML = '';
         items.forEach(item => addEditItemRow(item));
         document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
         document.getElementById('editCustomer').value = customer;
         document.getElementById('editAddress').value = address;
+        document.getElementById('editDeliveryFee').value = deliveryFee || '';
 
         const editSourceHidden = document.getElementById('editSourceHidden');
         const editSourceBtn = document.getElementById('editSourceTriggerBtn');
