@@ -67,6 +67,9 @@ class Order(db.Model):
     address = db.Column(db.Text, default='-')
     is_paid = db.Column(db.Boolean, nullable=False, default=False)
     payment_date = db.Column(db.String(50), default='')
+    # Free-text delivery/car fee note. Purely informational — never added
+    # into total_price or any revenue calculation.
+    delivery_fee = db.Column(db.String(100), default='')
 
     items = db.relationship(
         'OrderItem',
@@ -310,6 +313,9 @@ def add_order():
     customer = request.form.get('customer')
     time = request.form.get('time') or '-'
     address = request.form.get('address') or '-'
+    # Free-text car/delivery fee note. Not a number, not added to totals —
+    # both manager and staff forms may send this.
+    delivery_fee = request.form.get('delivery_fee') or ''
 
     item_names = request.form.getlist('item_name[]')
     sizes = request.form.getlist('size[]')
@@ -321,7 +327,7 @@ def add_order():
 
     new_order = Order(
         date=order_date, source=source, customer=customer, total_price=0, time=time, address=address,
-        is_paid=is_paid, payment_date=payment_date
+        is_paid=is_paid, payment_date=payment_date, delivery_fee=delivery_fee
     )
     db.session.add(new_order)
     db.session.flush()
@@ -422,6 +428,8 @@ def edit_order(order_id):
     order.customer = request.form.get('customer')
     order.time = request.form.get('time') or '-'
     order.address = request.form.get('address') or '-'
+    # Free-text car/delivery fee note — editable by both manager and staff.
+    order.delivery_fee = request.form.get('delivery_fee') or ''
 
     # Payment status can only be changed by managers. Staff never see this
     # field in their edit form, so we simply leave the existing values
@@ -899,6 +907,7 @@ def run_migration():
             ('flower_image_url', 'TEXT', "''"),
             ('is_paid', 'BOOLEAN', 'FALSE'),
             ('payment_date', 'TEXT', "''"),
+            ('delivery_fee', 'TEXT', "''"),
         ]:
             try:
                 table = 'order_items' if col in ('image_url', 'flower_image_url') else 'orders'
@@ -956,17 +965,17 @@ def archive_export():
     writer = csv.writer(buf)
     writer.writerow([
         'order_id', 'date', 'source', 'customer', 'time', 'address',
-        'is_paid', 'payment_date', 'order_total',
+        'is_paid', 'payment_date', 'order_total', 'delivery_fee',
         'item_name', 'size', 'item_price', 'remarks', 'image_url', 'flower_image_url'
     ])
     for o in orders:
         if not o.items:
             writer.writerow([o.id, o.date, o.source, o.customer, o.time, o.address,
-                              o.is_paid, o.payment_date, o.total_price, '', '', '', '', '', ''])
+                              o.is_paid, o.payment_date, o.total_price, o.delivery_fee, '', '', '', '', '', ''])
         for item in o.items:
             writer.writerow([
                 o.id, o.date, o.source, o.customer, o.time, o.address,
-                o.is_paid, o.payment_date, o.total_price,
+                o.is_paid, o.payment_date, o.total_price, o.delivery_fee,
                 item.item_name, item.size, item.price, item.remarks,
                 item.image_url, item.flower_image_url
             ])
