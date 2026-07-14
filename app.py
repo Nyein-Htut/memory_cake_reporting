@@ -165,12 +165,23 @@ def refresh_session():
         session.modified = True
 
 def _parse_daily_filters():
-    filter_mode = request.args.get('filter', 'all')
-    if filter_mode not in ('all', 'month', 'day'):
-        filter_mode = 'all'
-    filter_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    filter_day = request.args.get('day', datetime.today().strftime('%Y-%m-%d'))
-    return filter_mode, filter_month, filter_day
+    """Only 'day' filtering is supported now (via the wheel-picker UI).
+    No day chosen -> 'all' mode, which falls back to the last 30 days."""
+    filter_day = (request.args.get('day') or '').strip()
+    if filter_day:
+        return 'day', filter_day
+    return 'all', ''
+
+def _safe_price(prices, i):
+    """Index-safe price lookup. Staff forms omit price fields entirely
+    (prices are manager-only), so `prices` may be shorter than the items
+    list, or empty. Missing/blank/invalid values default to 0."""
+    try:
+        if i < len(prices) and prices[i] not in (None, ''):
+            return int(prices[i])
+    except (ValueError, TypeError):
+        pass
+    return 0
 
 def _format_date_display(date_str):
     try:
@@ -190,14 +201,12 @@ def _time_sort_key(order):
             continue
     return 24 * 60  # unparseable/blank times sort last
 
-def _fetch_orders_grouped_by_day(filter_mode='all', filter_month=None, filter_day=None):
+def _fetch_orders_grouped_by_day(filter_mode='all', filter_day=None):
     query = Order.query.options(joinedload(Order.items))
 
-    if filter_mode == 'month' and filter_month:
-        query = query.filter(Order.date.like(f"{filter_month}%"))
-    elif filter_mode == 'day' and filter_day:
+    if filter_mode == 'day' and filter_day:
         query = query.filter(Order.date == filter_day)
-    elif filter_mode == 'all':
+    else:
         cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
         query = query.filter(Order.date >= cutoff)
 
@@ -224,26 +233,16 @@ def _fetch_orders_grouped_by_day(filter_mode='all', filter_month=None, filter_da
     return orders_by_day
 
 def _daily_view_context(filter_action):
-    filter_mode, filter_month, filter_day = _parse_daily_filters()
-    orders_by_day = _fetch_orders_grouped_by_day(filter_mode, filter_month, filter_day)
+    filter_mode, filter_day = _parse_daily_filters()
+    orders_by_day = _fetch_orders_grouped_by_day(filter_mode, filter_day)
     total_orders = sum(d['order_count'] for d in orders_by_day)
     total_revenue = sum(d['day_total'] for d in orders_by_day)
-
-    available_months = sorted({
-        r[0][:7]
-        for r in Order.query.with_entities(Order.date).distinct().all()
-        if r[0] and len(r[0]) >= 7
-    }, reverse=True)
-    if not available_months:
-        available_months = [datetime.today().strftime('%Y-%m')]
 
     return {
         'orders_by_day': orders_by_day,
         'filter_mode': filter_mode,
-        'filter_month': filter_month,
         'filter_day': filter_day,
         'filter_action': filter_action,
-        'available_months': available_months,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
     }
@@ -331,7 +330,7 @@ def add_order():
     timestamp_prefix = int(datetime.now().timestamp())
 
     for i in range(len(item_names)):
-        item_price = int(prices[i] if prices[i] else 0)
+        item_price = _safe_price(prices, i)
         calculated_total += item_price
 
         flower_url = ""
@@ -460,10 +459,7 @@ def edit_order(order_id):
         for i in range(len(names)):
             if not names[i].strip():
                 continue
-            try:
-                price = int(prices[i]) if prices[i] else 0
-            except:
-                price = 0
+            price = _safe_price(prices, i)
             total_price += price
 
             cake_url = old_cake_images[i] if i < len(old_cake_images) else ''
