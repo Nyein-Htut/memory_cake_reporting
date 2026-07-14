@@ -142,7 +142,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        async function downloadTableAsPDF() {
+     async function downloadTableAsPDF() {
     const btn = document.getElementById('pdfExportBtn');
     if (btn) { btn.disabled = true; btn.textContent = '截图中…'; }
     try {
@@ -151,20 +151,24 @@
 
         const { jsPDF } = window.jspdf;
 
-        // Match the live responsive grid: 1 col on phone, 2 cols on tablet/PC
-        function getColumnsForWidth() {
-            const w = window.innerWidth;
-            if (w >= 768) return 2;
-            return 1;
-        }
-        const columns = getColumnsForWidth();
-        const orientation = columns === 1 ? 'portrait' : 'landscape';
-        const pageW = orientation === 'landscape' ? 297 : 210;
-        const pageH = orientation === 'landscape' ? 210 : 297;
-        const margin = 8;
-        const gap = 5;
+        // Cards are printed at a FIXED width, independent of the exporting
+        // device's screen size. Tying column count to window.innerWidth
+        // meant a narrow phone produced a 1-column PDF with every card
+        // stretched to the full page width — huge images, tiny content
+        // density, one order per page. A fixed print width keeps the PDF
+        // looking the same (2 tidy columns) no matter what triggered it.
+        const CARD_TARGET_W_MM = 88;
+
+        const orientation = 'portrait';
+        const pageW = 210;
+        const pageH = 297;
+        const margin = 10;
+        const gap = 6;
         const usableW = pageW - margin * 2;
         const usableH = pageH - margin * 2;
+
+        const columns = Math.max(1, Math.floor((usableW + gap) / (CARD_TARGET_W_MM + gap)));
+        const perCardW = (usableW - gap * (columns - 1)) / columns;
 
         const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
 
@@ -201,25 +205,55 @@
             dayHeaderH = mmHeightFor(sepCanvas, usableW);
             dayHeaderData = sepCanvas.toDataURL('image/jpeg', 0.95);
 
-            if (curY + dayHeaderH > margin + usableH) {
+            const cards = Array.from(group.querySelectorAll('.orders-grid > .order-card'));
+
+            // Pre-capture the first row so the header and its first row of
+            // cards are judged as one unit — the header is never stranded
+            // alone at the bottom of a page.
+            let firstCanvases = [];
+            let firstHeights = [];
+            let firstRowH = 0;
+            if (cards.length > 0) {
+                const firstChunk = cards.slice(0, columns);
+                for (const card of firstChunk) {
+                    firstCanvases.push(await captureCanvas(card, '#ffffff'));
+                }
+                firstHeights = firstCanvases.map(c => mmHeightFor(c, perCardW));
+                firstRowH = Math.max(...firstHeights);
+            }
+
+            const neededH = dayHeaderH + (cards.length > 0 ? firstRowH + gap : 0);
+
+            // Only break to a new page if this page already has content on
+            // it (curY > margin). If the page is still empty, there's
+            // nothing to gain by skipping it — draw here even if it runs
+            // long, rather than leaving an entirely blank page behind.
+            if (curY > margin && curY + neededH > margin + usableH) {
                 pdf.addPage();
                 curY = margin;
             }
             placeDayHeader();
 
-            const cards = Array.from(group.querySelectorAll('.orders-grid > .order-card'));
-            for (let i = 0; i < cards.length; i += columns) {
+            let startIndex = 0;
+            if (cards.length > 0) {
+                firstCanvases.forEach((canvas, idx) => {
+                    const x = margin + idx * (perCardW + gap);
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, curY, perCardW, firstHeights[idx]);
+                });
+                curY += firstRowH + gap;
+                startIndex = columns;
+            }
+
+            for (let i = startIndex; i < cards.length; i += columns) {
                 const chunk = cards.slice(i, i + columns);
                 const canvases = [];
                 for (const card of chunk) {
                     canvases.push(await captureCanvas(card, '#ffffff'));
                 }
-                const perCardW = (usableW - gap * (columns - 1)) / columns;
                 const heights = canvases.map(c => mmHeightFor(c, perCardW));
                 const rowH = Math.max(...heights);
 
-                // Never split a card across pages
-                if (curY + rowH > margin + usableH) {
+                if (curY > margin && curY + rowH > margin + usableH) {
                     pdf.addPage();
                     curY = margin;
                     placeDayHeader();
