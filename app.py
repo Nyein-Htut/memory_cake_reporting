@@ -107,6 +107,15 @@ def manager_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def _is_manager():
+    return session.get('role') == 'manager'
+
+def _role_home_redirect():
+    """Send the user back to whichever daily view matches their role."""
+    if session.get('role') == 'staff':
+        return redirect(url_for('staff_view'))
+    return redirect(url_for('index'))
+
 # ==========================================
 # AUTHENTICATION ROUTES
 # ==========================================
@@ -273,7 +282,7 @@ def _delete_cloudinary_asset(url):
 def index():
     db.session.remove()
     ctx = _daily_view_context(url_for('index'))
-    return render_template('daily.html', active_page='daily', readonly=False, **ctx)
+    return render_template('daily.html', active_page='daily', readonly=False, show_payment=True, **ctx)
 
 @app.route('/staff')
 @login_required
@@ -282,13 +291,20 @@ def staff_view():
         return redirect(url_for('index'))
     db.session.remove()
     ctx = _daily_view_context(url_for('staff_view'))
-    return render_template('staff_daily.html', active_page='staff', readonly=True, **ctx)
+    return render_template('staff_daily.html', active_page='staff', readonly=True, show_payment=False, **ctx)
 
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
-    is_paid = request.form.get('is_paid') == 'on'
-    payment_date = request.form.get('payment_date') or ''
+    # Only managers are allowed to mark an order as paid. Staff never send
+    # this field at all (it's removed from their form), but we also guard
+    # server-side in case of a crafted request.
+    if _is_manager():
+        is_paid = request.form.get('is_paid') == 'on'
+        payment_date = request.form.get('payment_date') or ''
+    else:
+        is_paid = False
+        payment_date = ''
 
     order_date = request.form.get('date')
     source = request.form.get('source') or '-'
@@ -305,7 +321,8 @@ def add_order():
     uploaded_cakes = request.files.getlist('cakeImage[]')
 
     new_order = Order(
-        date=order_date, source=source, customer=customer, total_price=0, time=time, address=address
+        date=order_date, source=source, customer=customer, total_price=0, time=time, address=address,
+        is_paid=is_paid, payment_date=payment_date
     )
     db.session.add(new_order)
     db.session.flush()
@@ -376,7 +393,7 @@ def add_order():
     return redirect(url_for('index'))
 
 @app.route('/delete_order/<int:id>', methods=['GET', 'POST'])
-@manager_required
+@login_required
 def delete_order(id):
     order = Order.query.options(joinedload(Order.items)).get_or_404(id)
     try:
@@ -395,10 +412,10 @@ def delete_order(id):
         flash("Failed to delete order. Please try again.")
     finally:
         db.session.remove()
-    return redirect(url_for('index'))
+    return _role_home_redirect()
 
 @app.route('/edit_order/<int:order_id>', methods=['POST'])
-@manager_required
+@login_required
 def edit_order(order_id):
     order = Order.query.get_or_404(order_id)
     order.date = request.form.get('date')
@@ -406,8 +423,13 @@ def edit_order(order_id):
     order.customer = request.form.get('customer')
     order.time = request.form.get('time') or '-'
     order.address = request.form.get('address') or '-'
-    order.is_paid = request.form.get('is_paid') == 'on'
-    order.payment_date = request.form.get('payment_date') or ''
+
+    # Payment status can only be changed by managers. Staff never see this
+    # field in their edit form, so we simply leave the existing values
+    # untouched for them instead of trusting form data that isn't sent.
+    if _is_manager():
+        order.is_paid = request.form.get('is_paid') == 'on'
+        order.payment_date = request.form.get('payment_date') or ''
 
     names = request.form.getlist('edit_item_name[]')
     sizes = request.form.getlist('edit_size[]')
@@ -516,7 +538,7 @@ def edit_order(order_id):
     finally:
         db.session.remove()
 
-    return redirect(url_for('index'))
+    return _role_home_redirect()
 
 # ==========================================
 # REPORTING
@@ -771,7 +793,7 @@ def debug_upload():
             overwrite=True,
             resource_type="image"
         )
-        lines.append(f"<b>test upload:</b> ✅ <a href='{result["secure_url"]}' target='_blank'>{result['secure_url']}</a>")
+        lines.append(f"<b>test upload:</b> ✅ <a href='{result['secure_url']}' target='_blank'>{result['secure_url']}</a>")
     except Exception as e:
         lines.append(f"<b>test upload:</b> ❌ {e}")
 
