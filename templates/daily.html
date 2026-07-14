@@ -42,12 +42,6 @@
             z-index: 0;
         }
 
-        .input-glow {
-            top: -40px;
-            right: -40px;
-            background: #e4fbef;
-        }
-
         .section-title {
             display: flex;
             align-items: center;
@@ -116,8 +110,86 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+        <section class="bg-white p-5 sm:p-6 no-print section-card input-section">
+            <div class="relative z-10">
+                <h2 class="section-title text-emerald-700 mb-6 pb-4 border-b border-emerald-100">
+                    <span class="section-icon bg-emerald-100">📝</span>
+                    新账单快速录入
+                </h2>
+            </div>   
+            <form action="/add_order" method="POST" enctype="multipart/form-data" class="space-y-6 text-sm font-sans">
+                <div class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">订单来源 (Source)</label>
+                            <input type="text" name="source" placeholder="Memory Cake / Ko Kyaw / Iris" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                        </div>
+                        <div>
+                            <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">客人姓名 (Customer)</label>
+                            <input type="text" name="customer" required placeholder="姓名" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">送货地址 & 电话 (Address & Contact)</label>
+                        <input type="text" name="address" placeholder="收货详细地址及联络方式" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">日期 (Date)</label>
+                            <input type="date" name="date" id="defaultDate" required class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900 bg-stone-50/40">
+                        </div>
+                        <div>
+                            <label class="block font-bold tracking-wider text-stone-700 mb-1.5 uppercase text-xs">送达时间 (Time)</label>
+                            <input type="text" name="time" placeholder="11:30 AM" class="w-full border border-stone-300 rounded p-3 text-sm outline-none focus:border-stone-900">
+                        </div>
+                    </div>
+                </div>
 
-        {% include 'partials/order_form.html' %}
+                <div class="border-t border-stone-100 pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold tracking-widest uppercase text-stone-500">商品清单明细 (Voucher Items)</h3>
+                        <button type="button" onclick="addNewItemRow()" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold py-1.5 px-4 rounded transition-colors">
+                            ➕ 添加品类商品
+                        </button>
+                    </div>
+
+                    <div id="itemsContainer" class="space-y-4">
+                        <div class="item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative">
+                            <div class="md:col-span-3">
+                                <label class="block text-stone-500 text-[11px] mb-1">商品名称 (e.g. Custom Cake)</label>
+                                <input type="text" name="item_name[]" required placeholder="蛋糕 / 蜡烛 /甜品" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-stone-500 text-[11px] mb-1">尺寸 (Size)</label>
+                                <input type="text" name="size[]" placeholder="6in" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-stone-500 text-[11px] mb-1">单品金额 (Price)</label>
+                                <input type="number" name="item_price[]" required placeholder="MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-stone-500 text-[11px] mb-1">定制备注文字 (Remarks)</label>
+                                <input type="text" name="remarks[]" placeholder="写字要求..." class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-rose-600 font-medium text-[11px] mb-1">💐 花束参考图</label>
+                                <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-stone-500 text-[11px] mb-1">🎂 蛋糕参考图</label>
+                                <input type="file" name="cakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-10 rounded transition-all shadow-sm">
+                        确认保存账单 (Save Order Voucher)
+                    </button>
+                </div>
+            </form>
+        </section>
 
         <div class="divider-label no-print">
             <span>DATA DASHBOARD</span>
@@ -125,7 +197,6 @@
 
         <section class="bg-white mb-12 section-card dashboard-section">
             <div class="h-1 bg-gradient-to-r from-stone-900 via-stone-500 to-stone-900"></div>
-            <div class="section-glow dashboard-glow"></div>    
             <div class="p-5 bg-gradient-to-r from-stone-900 to-stone-800 border-b border-stone-700 flex justify-between items-center no-print font-sans relative z-10">
                 <h2 class="section-title text-white">
                     <span class="section-icon bg-white/10">📊</span>
@@ -137,11 +208,104 @@
         </section>
     </div>
 
-    {% include 'partials/order_modals.html' %}
+    <div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
+        <div class="bg-white max-w-lg w-full rounded border border-stone-200 shadow-xl overflow-hidden p-6 transform scale-95 transition-transform duration-200" id="editModalCard">
+            <div class="flex justify-between items-start border-b border-stone-100 pb-3 mb-4">
+                <div>
+                    <h3 class="text-base font-semibold text-stone-900 font-sans">修改账单基础数据</h3>
+                    <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">Modify Voucher Metrics</h4>
+                </div>
+                <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm">✕</button>
+            </div>
 
+            <form id="editOrderForm" method="POST" enctype="multipart/form-data" class="space-y-5 text-sm font-sans">    
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-stone-700 mb-1 text-xs">日期 (Date)</label>
+                        <input type="date" name="date" id="editDate" required class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-stone-700 mb-1 text-xs">订单来源 (Source)</label>
+                        <input type="text" name="source" id="editSource" class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-stone-700 mb-1 text-xs">客人姓名 (Customer)</label>
+                        <input type="text" name="customer" id="editCustomer" required class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-stone-700 mb-1 text-xs">送达时间 (Time)</label>
+                        <input type="text" name="time" id="editTime" class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-stone-700 mb-1 text-xs">送货地址 & 电话 (Address & Contact)</label>
+                    <input type="text" name="address" id="editAddress" class="w-full border border-stone-300 rounded p-2 text-xs outline-none focus:border-stone-900">
+                </div>
+
+                <hr class="border-stone-200">
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-semibold text-stone-700 text-xs tracking-wider uppercase">商品明细 (Order Items)</h4>
+                        <button type="button" onclick="addEditItemRow()" class="bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold px-3 py-1.5 rounded text-xs transition-colors">
+                            ➕ 添加商品
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto w-full border border-stone-200/60 rounded p-2 bg-stone-50/30 max-h-[280px] overflow-y-auto">
+                        <div id="editItemsContainer" class="space-y-3 min-w-[800px]"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end items-center gap-3 pt-4 border-t border-stone-100 mt-4">
+                    <button type="button" onclick="closeEditModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded transition-all">
+                        取消
+                    </button>
+                    <button type="submit" class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-5 rounded transition-all shadow-sm">
+                        保存修改 (Update)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteConfirmationModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
+        <div class="bg-white max-w-md w-full rounded border border-stone-200 shadow-xl overflow-hidden p-6 space-y-6 transform scale-95 transition-transform duration-200" id="modalCard">
+            <div class="flex items-start gap-4">
+                <div class="bg-rose-50 p-2 rounded-full text-rose-600 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-base font-semibold text-stone-900 font-sans">确认删除账单记录？</h3>
+                    <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">Confirm Voucher Deletion?</h4>
+                </div>
+            </div>
+
+            <div class="bg-stone-50 border border-stone-200/60 rounded p-3.5 text-xs text-stone-600 space-y-1 font-sans">
+                <p>您正在尝试永久删除该笔客户账单。此操作不可逆，云端数据库及关联的商品条目将同步移除。</p>
+                <p class="text-stone-400 italic">You are about to permanently delete this customer voucher. This action cannot be undone; cloud records and all sub-items will be removed immediately.</p>
+                <div class="pt-2 mt-2 border-t border-stone-200/60 font-numeric text-stone-800 flex justify-between">
+                    <span>订单目标 (Target): <strong id="modalCustomerName" class="font-semibold text-stone-950"></strong></span>
+                    <span id="modalOrderDate" class="text-stone-400"></span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
+                <button type="button" onclick="closeDeleteModal()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-2.5 px-5 rounded transition-all font-sans order-2 sm:order-1 cursor-pointer">取消 / Cancel</button>
+                <a id="modalDeleteConfirmBtn" href="#" class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-2.5 px-6 rounded transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">确认移除 / Permanently Delete</a>
+            </div>
+        </div>
+    </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+        const _defDate = document.getElementById('defaultDate');
+        if (_defDate) _defDate.valueAsDate = new Date();
+
         async function downloadTableAsPDF() {
     const btn = document.getElementById('pdfExportBtn');
     if (btn) { btn.disabled = true; btn.textContent = '截图中…'; }
@@ -248,6 +412,146 @@
         if (btn) { btn.disabled = false; btn.textContent = '下载 PDF 报表'; }
     }
 }
+        function addNewItemRow() {
+            const container = document.getElementById('itemsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = "item-row grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-stone-50/40 border border-stone-200/60 rounded relative mt-3";
+            newRow.innerHTML = `
+                <div class="md:col-span-3">
+                    <input type="text" name="item_name[]" required placeholder="商品名称" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                </div>
+                <div class="md:col-span-1">
+                    <input type="text" name="size[]" placeholder="尺寸" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <input type="number" name="item_price[]" required placeholder="金额 MMK" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <input type="text" name="remarks[]" placeholder="备注要求" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <input type="file" name="flowerImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+                </div>
+                <div class="md:col-span-2 flex items-center justify-between gap-2">
+                    <input type="file" name="cakeImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+                    <button type="button" onclick="this.closest('.item-row').remove()" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1">✕</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        }
+
+        const editOverlay = document.getElementById('editOrderModal');
+        const editCard = document.getElementById('editModalCard');
+        
+        function openEditModal(orderId, date, source, customer, time, address, items) {
+            const container = document.getElementById('editItemsContainer');
+            container.innerHTML = '';
+
+            items.forEach(item => {
+                addEditItemRow(item);
+            });
+            document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
+            document.getElementById('editDate').value = date;
+            document.getElementById('editSource').value = source;
+            document.getElementById('editCustomer').value = customer;
+            document.getElementById('editTime').value = time;
+            document.getElementById('editAddress').value = address;
+
+            editOverlay.classList.remove('hidden');
+            editOverlay.classList.add('flex');
+            setTimeout(() => {
+                editCard.classList.remove('scale-95');
+                editCard.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeEditModal() {
+            editCard.classList.remove('scale-100');
+            editCard.classList.add('scale-95');
+            setTimeout(() => {
+                editOverlay.classList.remove('flex');
+                editOverlay.classList.add('hidden');
+            }, 150);
+        }
+
+        function addEditItemRow(item = {}) {
+            const container = document.getElementById('editItemsContainer');
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-12 gap-4 p-4 bg-stone-50 border border-stone-200 rounded min-w-[900px]';
+            row.innerHTML = `
+                <input type="hidden" name="old_cake_image[]" value="${item.image_url || ''}">
+                <input type="hidden" name="old_flower_image[]" value="${item.flower_image_url || ''}">
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-stone-500 mb-1">商品名称</label>
+                    <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+                </div>
+
+                <div class="md:col-span-1">
+                    <label class="block text-[11px] text-stone-500 mb-1">尺寸</label>
+                    <input type="text" name="edit_size[]" value="${item.size || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-stone-500 mb-1">金额</label>
+                    <input type="number" name="edit_price[]" value="${item.price || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-stone-500 mb-1">备注</label>
+                    <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-rose-600 mb-1">💐 当前花束图</label>
+                    ${item.flower_image_url ? `<img src="${item.flower_image_url}" class="w-20 h-20 object-cover rounded border border-rose-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">无图片</div>`}
+                    <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-stone-600 mb-1">🎂 当前蛋糕图</label>
+                    ${item.image_url ? `<img src="${item.image_url}" class="w-20 h-20 object-cover rounded border border-stone-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">无图片</div>`}
+                    <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+                </div>
+
+                <div class="md:col-span-1 flex items-center justify-center">
+                    <button type="button" onclick="this.closest('.grid').remove()" class="text-rose-600 hover:text-rose-800 text-lg font-bold">✕</button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        const modalOverlay = document.getElementById('deleteConfirmationModal');
+        const mCard = document.getElementById('modalCard');
+        const mCust = document.getElementById('modalCustomerName');
+        const mDate = document.getElementById('modalOrderDate');
+        const mBtn = document.getElementById('modalDeleteConfirmBtn');
+
+        function openDeleteModal(orderId, customerName, orderDate) {
+            mCust.textContent = customerName;
+            mDate.textContent = orderDate;
+            mBtn.setAttribute('href', `/delete_order/${orderId}`);
+            modalOverlay.classList.remove('hidden');
+            modalOverlay.classList.add('flex');
+            setTimeout(() => {
+                mCard.classList.remove('scale-95');
+                mCard.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDeleteModal() {
+            mCard.classList.remove('scale-100');
+            mCard.classList.add('scale-95');
+            setTimeout(() => {
+                modalOverlay.classList.remove('flex');
+                modalOverlay.classList.add('hidden');
+            }, 150);
+        }
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) closeDeleteModal();
+            if (e.target === editOverlay && !editOverlay.classList.contains('hidden')) closeEditModal();
+        });
 
         function exportTableToCSV() {
             const cards = Array.from(document.querySelectorAll('#ordersRoot .order-card'));
