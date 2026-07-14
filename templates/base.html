@@ -213,6 +213,68 @@
                     body { background: white; }
                     .print-padding { padding: 4px !important; font-size: 11px !important; }
                 }
+
+                /* ===== Edit-form card fields (vertical, mobile-friendly) ===== */
+                .ef-field {
+                    background: #fafaf9;
+                    border: 1px solid #f0efed;
+                    border-radius: 14px;
+                    padding: 13px 15px;
+                }
+                .ef-label {
+                    display: flex;
+                    align-items: baseline;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: .04em;
+                    text-transform: uppercase;
+                    color: #57534e;
+                    margin-bottom: 7px;
+                }
+                .ef-label-en {
+                    font-size: 9px;
+                    font-weight: 500;
+                    color: #a8a29e;
+                    text-transform: none;
+                    letter-spacing: 0;
+                }
+                .ef-input {
+                    width: 100%;
+                    border: 1px solid #d6d3d1;
+                    border-radius: 9px;
+                    padding: 10px 12px;
+                    font-size: 13px;
+                    background: #fff;
+                    outline: none;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                }
+                .ef-input:focus { border-color: #1c1917; }
+                .ef-checkbox-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #1c1917;
+                    cursor: pointer;
+                }
+                .ef-item-card {
+                    background: #fff;
+                    border: 1px solid #e7e5e4;
+                    border-radius: 14px;
+                    padding: 14px;
+                }
+                .ef-item-label {
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    color: #a8a29e;
+                    text-transform: uppercase;
+                    letter-spacing: .04em;
+                    margin-bottom: 4px;
+                    display: block;
+                }
         
                 /* ===== Wheel Picker ===== */
         .wp-overlay { position: fixed; inset: 0; background: rgba(28,25,23,.45); backdrop-filter: blur(2px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
@@ -280,10 +342,10 @@
     </div>
 </div>
 
-<!-- Wheel Picker: Payment Date (day only, no time) -->
+<!-- Wheel Picker: Date (day only — reused for both Payment Date and Delivery Date) -->
 <div class="wp-overlay" id="wpDateOverlay" onclick="if(event.target===this) closeWheelOverlay('wpDateOverlay')">
     <div class="wp-sheet">
-        <div class="wp-title">付款日期选择 (Set Payment Date)</div>
+        <div class="wp-title" id="wpDateTitle">付款日期选择 (Set Payment Date)</div>
         <div class="wp-display" id="wpDateDisplay">--</div>
         <div class="wp-wheels">
             <div class="wp-fade-top"></div>
@@ -293,7 +355,7 @@
                 <div class="wp-scroll" id="wpDayScroll"></div>
             </div>
         </div>
-        <div class="wp-quick">
+        <div class="wp-quick" id="wpDateQuick">
             <div class="wp-quick-btn" data-offset="0">今天 Today</div>
             <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
             <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
@@ -375,7 +437,7 @@ function closeWheelOverlay(id) {
     wpUnlockBody();
 }
 
-/* ===== Time Picker (Hour / Minute) ===== */
+/* ===== Time Picker (Hour / Minute) — standalone, single-purpose ===== */
 function openTimeWheelPicker(triggerBtnId, hiddenInputId) {
     const btn = document.getElementById(triggerBtnId);
     const span = btn.querySelector('span');
@@ -397,10 +459,6 @@ function openTimeWheelPicker(triggerBtnId, hiddenInputId) {
     const hourItems = Array.from({ length: 24 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
     const minItems = Array.from({ length: 60 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
 
-    // NOTE: wpBuildColumn fires onSettle synchronously *before* it returns,
-    // so we can't reference the hourCol/minCol variables themselves inside
-    // updateDisplay (they'd still be uninitialized on the first call). Track
-    // the selected indices in a plain object created up front instead.
     const state = { hourIdx: h, minIdx: m };
 
     function updateDisplay() {
@@ -433,7 +491,7 @@ function openTimeWheelPicker(triggerBtnId, hiddenInputId) {
     document.getElementById('wpTimeCancelBtn').onclick = () => closeWheelOverlay('wpTimeOverlay');
 }
 
-/* ===== Date Picker (Day only — no time, for payment date) ===== */
+/* ===== Date Picker (Day only) — standalone, used for Payment Date ===== */
 function wpFormatRelativeDay(offset) {
     const d = new Date();
     d.setDate(d.getDate() + offset);
@@ -455,11 +513,31 @@ function wpFormatDisplayFromISO(iso) {
     const diffDays = Math.round((d - today) / 86400000);
     return wpFormatRelativeDay(diffDays);
 }
+// Short label without the weekday suffix, handy for combined date+time triggers.
+function wpShortDayLabel(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((d - today) / 86400000);
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function openDateWheelPicker(triggerBtnId, hiddenInputId) {
     const btn = document.getElementById(triggerBtnId);
     const span = btn.querySelector('span');
     const hidden = document.getElementById(hiddenInputId);
+
+    // Reset the shared date overlay back to its default (payment-date) context,
+    // in case the delivery date+time flow left it customized.
+    document.getElementById('wpDateTitle').textContent = '付款日期选择 (Set Payment Date)';
+    const quickWrap = document.getElementById('wpDateQuick');
+    quickWrap.innerHTML = `
+        <div class="wp-quick-btn" data-offset="0">今天 Today</div>
+        <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
+        <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
+    `;
 
     const RANGE_BACK = 120, RANGE_FWD = 14;
     const dayItems = [];
@@ -477,8 +555,6 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
     overlay.classList.add('active');
     wpLockBody();
 
-    // Same fix as openTimeWheelPicker: don't reference dayCol before it's
-    // assigned. wpBuildColumn calls onSettle synchronously on construction.
     const state = { idx: initialIndex };
 
     function updateDisplay() {
@@ -487,7 +563,7 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
     const dayCol = wpBuildColumn('wpDayScroll', dayItems, initialIndex, (idx) => { state.idx = idx; updateDisplay(); });
     updateDisplay();
 
-    document.querySelectorAll('#wpDateOverlay .wp-quick-btn').forEach(qbtn => {
+    quickWrap.querySelectorAll('.wp-quick-btn').forEach(qbtn => {
         qbtn.onclick = () => dayCol.setIndex(RANGE_BACK + parseInt(qbtn.dataset.offset, 10));
     });
 
@@ -499,6 +575,110 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
         closeWheelOverlay('wpDateOverlay');
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+}
+
+/* ===== Combined Delivery Date + Time picker =====
+   Tapping the single "Delivery Date & Time" trigger opens a scrollable
+   date wheel first; confirming that date immediately opens the time wheel;
+   confirming the time sets both hidden inputs and updates the trigger label. */
+function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
+    const dateHidden = document.getElementById(dateHiddenId);
+
+    // Customize the shared date overlay for delivery (forward-looking) use.
+    document.getElementById('wpDateTitle').textContent = '送达日期选择 (Set Delivery Date)';
+    const quickWrap = document.getElementById('wpDateQuick');
+    quickWrap.innerHTML = `
+        <div class="wp-quick-btn" data-offset="0">今天 Today</div>
+        <div class="wp-quick-btn" data-offset="1">明天 Tomorrow</div>
+        <div class="wp-quick-btn" data-offset="2">后天 +2 Days</div>
+    `;
+
+    const RANGE_BACK = 7, RANGE_FWD = 90;
+    const dayItems = [];
+    for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
+        dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
+    }
+
+    let initialIndex = RANGE_BACK; // today
+    if (dateHidden.value) {
+        const idx = dayItems.findIndex(it => it.value === dateHidden.value);
+        if (idx >= 0) initialIndex = idx;
+    }
+
+    const overlay = document.getElementById('wpDateOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    const state = { idx: initialIndex };
+    function updateDisplay() {
+        document.getElementById('wpDateDisplay').textContent = dayItems[state.idx].label;
+    }
+    const dayCol = wpBuildColumn('wpDayScroll', dayItems, initialIndex, (idx) => { state.idx = idx; updateDisplay(); });
+    updateDisplay();
+
+    quickWrap.querySelectorAll('.wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => dayCol.setIndex(RANGE_BACK + parseInt(qbtn.dataset.offset, 10));
+    });
+
+    document.getElementById('wpDateSetBtn').onclick = () => {
+        const chosenDate = dayItems[dayCol.index];
+        dateHidden.value = chosenDate.value;
+        closeWheelOverlay('wpDateOverlay');
+        // Chain straight into the time wheel.
+        _openDeliveryTimeStep(triggerBtnId, timeHiddenId, chosenDate.value);
+    };
+    document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+}
+
+function _openDeliveryTimeStep(triggerBtnId, timeHiddenId, dateIso) {
+    const btn = document.getElementById(triggerBtnId);
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById(timeHiddenId);
+
+    let h, m;
+    if (hidden.value && /^\d{1,2}:\d{2}$/.test(hidden.value)) {
+        [h, m] = hidden.value.split(':').map(v => parseInt(v, 10));
+    } else {
+        const now = new Date();
+        h = now.getHours();
+        m = now.getMinutes();
+    }
+
+    const overlay = document.getElementById('wpTimeOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    const hourItems = Array.from({ length: 24 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
+    const minItems = Array.from({ length: 60 }, (_, i) => ({ label: String(i).padStart(2, '0'), value: i }));
+
+    const state = { hourIdx: h, minIdx: m };
+    function updateDisplay() {
+        const hh = String(hourItems[state.hourIdx].value).padStart(2, '0');
+        const mm = String(minItems[state.minIdx].value).padStart(2, '0');
+        document.getElementById('wpTimeDisplay').textContent = `${hh}:${mm}`;
+    }
+    const hourCol = wpBuildColumn('wpHourScroll', hourItems, h, (idx) => { state.hourIdx = idx; updateDisplay(); });
+    const minCol = wpBuildColumn('wpMinScroll', minItems, m, (idx) => { state.minIdx = idx; updateDisplay(); });
+    updateDisplay();
+
+    document.querySelectorAll('#wpTimeOverlay .wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => {
+            const now2 = new Date();
+            now2.setMinutes(now2.getMinutes() + parseInt(qbtn.dataset.mins, 10));
+            hourCol.setIndex(now2.getHours());
+            minCol.setIndex(now2.getMinutes());
+        };
+    });
+
+    document.getElementById('wpTimeSetBtn').onclick = () => {
+        const hh = String(hourItems[hourCol.index].value).padStart(2, '0');
+        const mm = String(minItems[minCol.index].value).padStart(2, '0');
+        hidden.value = `${hh}:${mm}`;
+        span.textContent = `${wpShortDayLabel(dateIso)} · ${hh}:${mm}`;
+        btn.classList.remove('wp-empty');
+        closeWheelOverlay('wpTimeOverlay');
+    };
+    document.getElementById('wpTimeCancelBtn').onclick = () => closeWheelOverlay('wpTimeOverlay');
 }
 
 /* ===== Payment checkbox toggle (updated for wheel-picker trigger) ===== */
