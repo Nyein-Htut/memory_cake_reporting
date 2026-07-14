@@ -25,6 +25,11 @@
             </div>
 
             <div class="ef-field">
+                <label class="ef-label">🚗 ကားခ <span class="ef-label-en">Delivery Fee</span></label>
+                <input type="text" name="delivery_fee" id="editDeliveryFee" placeholder="ကားခ မှတ်ချက် (ဈေးနှုန်းတွင် မပါဝင်ပါ)" class="ef-input">
+            </div>
+
+            <div class="ef-field">
                 <label class="ef-label">🏷️ အော်ဒါလာသည့်နေရာ <span class="ef-label-en">Source</span></label>
                 <input type="hidden" name="source" id="editSourceHidden" value="">
                 <button type="button" id="editSourceTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)')">
@@ -101,13 +106,14 @@
     const editOverlay = document.getElementById('editOrderModal');
     const editCard = document.getElementById('editModalCard');
 
-    function openEditModal(orderId, date, source, customer, time, address, isPaid, paymentDate, items) {
+    function openEditModal(orderId, date, source, customer, time, address, deliveryFee, isPaid, paymentDate, items) {
         const container = document.getElementById('editItemsContainer');
         container.innerHTML = '';
         items.forEach(item => addEditItemRow(item));
         document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
         document.getElementById('editCustomer').value = customer;
         document.getElementById('editAddress').value = address;
+        document.getElementById('editDeliveryFee').value = deliveryFee || '';
 
         const editSourceHidden = document.getElementById('editSourceHidden');
         const editSourceBtn = document.getElementById('editSourceTriggerBtn');
