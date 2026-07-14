@@ -1,4 +1,6 @@
-{# Staff edit + delete modals (Burmese). Payment is manager-only, so it's omitted entirely. #}
+{# Staff edit + delete modals (Burmese). Payment and price are manager-only, so they're omitted from the UI.
+   Note: price is kept as a hidden field (not shown/editable) so that editing an order as staff never
+   wipes out a price the manager already entered — it just gets resubmitted unchanged. #}
 
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
     <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
@@ -162,6 +164,7 @@
         row.innerHTML = `
             <input type="hidden" name="old_cake_image[]" value="${item.image_url || ''}">
             <input type="hidden" name="old_flower_image[]" value="${item.flower_image_url || ''}">
+            <input type="hidden" name="edit_price[]" value="${item.price || 0}">
 
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">ပစ္စည်းတစ်ခု</span>
@@ -173,15 +176,9 @@
                 <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" class="ef-input">
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="ef-item-label">အရွယ်အစား</label>
-                    <input type="text" name="edit_size[]" value="${item.size || ''}" class="ef-input">
-                </div>
-                <div>
-                    <label class="ef-item-label">စျေးနှုန်း</label>
-                    <input type="number" name="edit_price[]" value="${item.price || ''}" class="ef-input">
-                </div>
+            <div>
+                <label class="ef-item-label">အရွယ်အစား</label>
+                <input type="text" name="edit_size[]" value="${item.size || ''}" class="ef-input">
             </div>
 
             <div>
