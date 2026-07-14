@@ -242,10 +242,10 @@
                 }
                 .ef-input {
                     width: 100%;
-                    border: 1px solid #d6d3d1;
-                    border-radius: 9px;
-                    padding: 10px 12px;
-                    font-size: 13px;
+                    border: 1.5px solid #d6d3d1;
+                    border-radius: 10px;
+                    padding: 12px 14px;
+                    font-size: 15px;
                     background: #fff;
                     outline: none;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -328,7 +328,7 @@
     <!-- Wheel Picker: Time (Hour / Minute) -->
 <div class="wp-overlay" id="wpTimeOverlay" onclick="if(event.target===this) closeWheelOverlay('wpTimeOverlay')">
     <div class="wp-sheet">
-        <div class="wp-title">送达时间选择 (Set Delivery Time)</div>
+        <div class="wp-title">{% if readonly %}ပေးပို့မည့် အချိန် ရွေးပါ (Set Delivery Time){% else %}送达时间选择 (Set Delivery Time){% endif %}</div>
         <div class="wp-display" id="wpTimeDisplay">--:--</div>
         <div class="wp-wheels">
             <div class="wp-fade-top"></div>
@@ -343,14 +343,14 @@
             </div>
         </div>
         <div class="wp-quick">
-            <div class="wp-quick-btn" data-mins="0">现在 Now</div>
-            <div class="wp-quick-btn" data-mins="30">+30分</div>
-            <div class="wp-quick-btn" data-mins="60">+1小时</div>
-            <div class="wp-quick-btn" data-mins="120">+2小时</div>
+            <div class="wp-quick-btn" data-mins="0">{% if readonly %}ယခု Now{% else %}现在 Now{% endif %}</div>
+            <div class="wp-quick-btn" data-mins="30">{% if readonly %}+30 မိနစ်{% else %}+30分{% endif %}</div>
+            <div class="wp-quick-btn" data-mins="60">{% if readonly %}+1 နာရီ{% else %}+1小时{% endif %}</div>
+            <div class="wp-quick-btn" data-mins="120">{% if readonly %}+2 နာရီ{% else %}+2小时{% endif %}</div>
         </div>
         <div class="wp-actions">
-            <button type="button" class="wp-btn wp-btn-cancel" id="wpTimeCancelBtn">取消 Cancel</button>
-            <button type="button" class="wp-btn wp-btn-set" id="wpTimeSetBtn">确定 Set</button>
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpTimeCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpTimeSetBtn">{% if readonly %}သတ်မှတ် Set{% else %}确定 Set{% endif %}</button>
         </div>
     </div>
 </div>
@@ -358,7 +358,7 @@
 <!-- Wheel Picker: Date (day only — reused for both Payment Date and Delivery Date) -->
 <div class="wp-overlay" id="wpDateOverlay" onclick="if(event.target===this) closeWheelOverlay('wpDateOverlay')">
     <div class="wp-sheet">
-        <div class="wp-title" id="wpDateTitle">付款日期选择 (Set Payment Date)</div>
+        <div class="wp-title" id="wpDateTitle">{% if readonly %}ရက်စွဲ ရွေးပါ (Set Date){% else %}付款日期选择 (Set Payment Date){% endif %}</div>
         <div class="wp-display" id="wpDateDisplay">--</div>
         <div class="wp-wheels">
             <div class="wp-fade-top"></div>
@@ -369,13 +369,13 @@
             </div>
         </div>
         <div class="wp-quick" id="wpDateQuick">
-            <div class="wp-quick-btn" data-offset="0">今天 Today</div>
-            <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
-            <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
+            <div class="wp-quick-btn" data-offset="0">{% if readonly %}ယနေ့ Today{% else %}今天 Today{% endif %}</div>
+            <div class="wp-quick-btn" data-offset="-1">{% if readonly %}မနေ့က Yesterday{% else %}昨天 Yesterday{% endif %}</div>
+            <div class="wp-quick-btn" data-offset="-7">{% if readonly %}တစ်ပတ်ခန့် 1wk ago{% else %}一周前 1wk ago{% endif %}</div>
         </div>
         <div class="wp-actions">
-            <button type="button" class="wp-btn wp-btn-cancel" id="wpDateCancelBtn">取消 Cancel</button>
-            <button type="button" class="wp-btn wp-btn-set" id="wpDateSetBtn">确定 Set</button>
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpDateCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpDateSetBtn">{% if readonly %}သတ်မှတ် Set{% else %}确定 Set{% endif %}</button>
         </div>
     </div>
 </div>
@@ -383,10 +383,10 @@
 <!-- Source Picker: static option list in the same bottom-sheet shell as the date/time pickers -->
 <div class="wp-overlay" id="wpSourceOverlay" onclick="if(event.target===this) closeWheelOverlay('wpSourceOverlay')">
     <div class="wp-sheet">
-        <div class="wp-title" id="wpSourceTitle">订单来源选择 (Select Source)</div>
+        <div class="wp-title" id="wpSourceTitle">{% if readonly %}အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source){% else %}订单来源选择 (Select Source){% endif %}</div>
         <div class="wp-source-list" id="wpSourceList"></div>
         <div class="wp-actions">
-            <button type="button" class="wp-btn wp-btn-cancel" id="wpSourceCancelBtn">取消 Cancel</button>
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpSourceCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
         </div>
     </div>
 </div>
@@ -645,13 +645,17 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     const dateHidden = document.getElementById(dateHiddenId);
 
     // Customize the shared date overlay for delivery (forward-looking) use.
-    document.getElementById('wpDateTitle').textContent = '送达日期选择 (Set Delivery Date)';
+    document.getElementById('wpDateTitle').textContent = {% if readonly %}'ပေးပို့မည့် ရက်စွဲ ရွေးပါ (Set Delivery Date)'{% else %}'送达日期选择 (Set Delivery Date)'{% endif %};
     const quickWrap = document.getElementById('wpDateQuick');
-    quickWrap.innerHTML = `
+    quickWrap.innerHTML = {% if readonly %}`
+        <div class="wp-quick-btn" data-offset="0">ယနေ့ Today</div>
+        <div class="wp-quick-btn" data-offset="1">မနက်ဖြန် Tomorrow</div>
+        <div class="wp-quick-btn" data-offset="2">တစ်ရက်ကျော် +2 Days</div>
+    `{% else %}`
         <div class="wp-quick-btn" data-offset="0">今天 Today</div>
         <div class="wp-quick-btn" data-offset="1">明天 Tomorrow</div>
         <div class="wp-quick-btn" data-offset="2">后天 +2 Days</div>
-    `;
+    `{% endif %};
 
     const RANGE_BACK = 7, RANGE_FWD = 90;
     const dayItems = [];
