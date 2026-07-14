@@ -291,7 +291,8 @@
             const headers = [
                 '日期 (Date)', '客人姓名 (Customer)', '订单来源 (Source)', '商品名称 (Item Name)', 
                 '尺寸 (Size)', '单项金额 (Price MMK)', '对应品类备注要求 (Remarks)', 
-                '送达时间 (Delivery Time)', '派送物流详细地址 (Address)', '总单总计 (Voucher Total)'
+                '送达时间 (Delivery Time)', '派送物流详细地址 (Address)', '总单总计 (Voucher Total)',
+                '车费备注 (Delivery Fee)'
             ];
 
             csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
@@ -303,6 +304,7 @@
                 const time = card.getAttribute('data-time') || '';
                 const address = card.getAttribute('data-address') || '';
                 const total = card.getAttribute('data-total') || '';
+                const deliveryFee = card.getAttribute('data-delivery-fee') || '';
 
                 const items = Array.from(card.querySelectorAll('.oc-item'));
                 items.forEach((item, idx) => {
@@ -314,7 +316,8 @@
                     const rowData = [
                         date, customer, source, itemName, size,
                         price, remarks, time, address,
-                        idx === 0 ? total : ''
+                        idx === 0 ? total : '',
+                        idx === 0 ? deliveryFee : ''
                     ];
                     csvRows.push(rowData.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','));
                 });
