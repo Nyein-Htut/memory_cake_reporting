@@ -355,7 +355,7 @@
     </div>
 </div>
 
-<!-- Wheel Picker: Date (day only — reused for both Payment Date and Delivery Date) -->
+<!-- Wheel Picker: Date (day only — reused for Payment Date, Delivery Date, and the records Filter-by-day) -->
 <div class="wp-overlay" id="wpDateOverlay" onclick="if(event.target===this) closeWheelOverlay('wpDateOverlay')">
     <div class="wp-sheet">
         <div class="wp-title" id="wpDateTitle">{% if readonly %}ရက်စွဲ ရွေးပါ (Set Date){% else %}付款日期选择 (Set Payment Date){% endif %}</div>
@@ -590,7 +590,7 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
     const hidden = document.getElementById(hiddenInputId);
 
     // Reset the shared date overlay back to its default (payment-date) context,
-    // in case the delivery date+time flow left it customized.
+    // in case another flow (delivery date, filter-by-day) left it customized.
     document.getElementById('wpDateTitle').textContent = '付款日期选择 (Set Payment Date)';
     const quickWrap = document.getElementById('wpDateQuick');
     quickWrap.innerHTML = `
@@ -633,6 +633,66 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
         span.textContent = chosen.label;
         btn.classList.remove('wp-empty');
         closeWheelOverlay('wpDateOverlay');
+    };
+    document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+}
+
+/* ===== Filter-by-day picker (Daily Records filter bar) =====
+   Reuses the same date-wheel overlay as Payment Date / Delivery Date, but
+   picking a day here submits the filter form immediately instead of
+   waiting for a separate "Apply" click — this is the *only* filter mode
+   the daily records dashboard supports now. */
+function openFilterDayPicker() {
+    const btn = document.getElementById('filterDayTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('filterDayHidden');
+
+    document.getElementById('wpDateTitle').textContent = {% if readonly %}'ရက်စွဲ ရွေးပါ (Filter by Day)'{% else %}'按日期筛选 (Filter by Day)'{% endif %};
+    const quickWrap = document.getElementById('wpDateQuick');
+    quickWrap.innerHTML = {% if readonly %}`
+        <div class="wp-quick-btn" data-offset="0">ယနေ့ Today</div>
+        <div class="wp-quick-btn" data-offset="-1">မနေ့က Yesterday</div>
+        <div class="wp-quick-btn" data-offset="-7">တစ်ပတ်ခန့် 1wk ago</div>
+    `{% else %}`
+        <div class="wp-quick-btn" data-offset="0">今天 Today</div>
+        <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
+        <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
+    `{% endif %};
+
+    const RANGE_BACK = 180, RANGE_FWD = 60;
+    const dayItems = [];
+    for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
+        dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
+    }
+
+    let initialIndex = RANGE_BACK; // today
+    if (hidden.value) {
+        const idx = dayItems.findIndex(it => it.value === hidden.value);
+        if (idx >= 0) initialIndex = idx;
+    }
+
+    const overlay = document.getElementById('wpDateOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    const state = { idx: initialIndex };
+    function updateDisplay() {
+        document.getElementById('wpDateDisplay').textContent = dayItems[state.idx].label;
+    }
+    const dayCol = wpBuildColumn('wpDayScroll', dayItems, initialIndex, (idx) => { state.idx = idx; updateDisplay(); });
+    updateDisplay();
+
+    quickWrap.querySelectorAll('.wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => dayCol.setIndex(RANGE_BACK + parseInt(qbtn.dataset.offset, 10));
+    });
+
+    document.getElementById('wpDateSetBtn').onclick = () => {
+        const chosen = dayItems[dayCol.index];
+        hidden.value = chosen.value;
+        span.textContent = chosen.label;
+        btn.classList.remove('wp-empty');
+        closeWheelOverlay('wpDateOverlay');
+        document.getElementById('dailyFilterForm').submit();
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
 }
