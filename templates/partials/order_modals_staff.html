@@ -1,0 +1,223 @@
+{# Staff edit + delete modals (Burmese). Payment is manager-only, so it's omitted entirely. #}
+
+<div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
+    <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
+        <div class="flex justify-between items-start px-6 pt-5 pb-4 border-b border-stone-100 bg-stone-50/60 shrink-0">
+            <div>
+                <h3 class="text-base font-semibold text-stone-900 font-sans">အော်ဒါ အချက်အလက် ပြင်ဆင်ရန်</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">ကုန်ပစ္စည်း အချက်အလက်များ ပြင်ဆင်ရန်</h4>
+            </div>
+            <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm">✕</button>
+        </div>
+
+        <form id="editOrderForm" method="POST" enctype="multipart/form-data" class="text-sm font-sans p-6 overflow-y-auto space-y-4">
+
+            <div class="ef-field">
+                <label class="ef-label">📅 ပေးပို့မည့် ရက်စွဲ &amp; အချိန် <span class="ef-label-en">Delivery Date &amp; Time</span></label>
+                <input type="hidden" name="date" id="editDateHidden" value="">
+                <input type="hidden" name="time" id="editTimeHidden" value="">
+                <button type="button" id="editTimeTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openDeliveryDateWheelPicker('editTimeTriggerBtn','editDateHidden','editTimeHidden')">
+                    <span>ရက်စွဲ နှင့် အချိန် ရွေးပါ</span>
+                    <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div class="ef-field">
+                <label class="ef-label">🏷️ အော်ဒါလာသည့်နေရာ <span class="ef-label-en">Source</span></label>
+                <input type="text" name="source" id="editSource" class="ef-input">
+            </div>
+
+            <div class="ef-field">
+                <label class="ef-label">👤 ဖောက်သည်အမည် <span class="ef-label-en">Customer</span></label>
+                <input type="text" name="customer" id="editCustomer" required class="ef-input">
+            </div>
+
+            <div class="ef-field">
+                <label class="ef-label">📍 လိပ်စာ &amp; ဆက်သွယ်ရန် <span class="ef-label-en">Address &amp; Contact</span></label>
+                <input type="text" name="address" id="editAddress" class="ef-input">
+            </div>
+
+            <hr class="border-stone-200">
+
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <h4 class="font-semibold text-stone-700 text-xs tracking-wider uppercase">🎂 ပစ္စည်းအသေးစိတ် (Order Items)</h4>
+                    <button type="button" onclick="addEditItemRow()" class="bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold px-3 py-1.5 rounded text-xs transition-colors">
+                        ➕ ပစ္စည်းထည့်ရန်
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto w-full border border-stone-200/60 rounded p-2 bg-stone-50/30 max-h-[280px] overflow-y-auto">
+                    <div id="editItemsContainer" class="space-y-3 min-w-[800px]"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end items-center gap-3 pt-4 border-t border-stone-100 mt-2 sticky bottom-0 bg-white">
+                <button type="button" onclick="closeEditModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded transition-all">
+                    ပယ်ဖျက်
+                </button>
+                <button type="submit" class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-5 rounded transition-all shadow-sm">
+                    မွမ်းမံမည် (Update)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteConfirmationModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
+    <div class="bg-white max-w-md w-full rounded border border-stone-200 shadow-xl overflow-hidden p-6 space-y-6 transform scale-95 transition-transform duration-200" id="modalCard">
+        <div class="flex items-start gap-4">
+            <div class="bg-rose-50 p-2 rounded-full text-rose-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-base font-semibold text-stone-900 font-sans">အော်ဒါ မှတ်တမ်း ဖျက်ရန် သေချာပါသလား?</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">အတည်ပြု ဖျက်ရန်</h4>
+            </div>
+        </div>
+
+        <div class="bg-stone-50 border border-stone-200/60 rounded p-3.5 text-xs text-stone-600 space-y-1 font-sans">
+            <p>ဤဖောက်သည်၏ အော်ဒါ မှတ်တမ်းကို အပြီးတိုင် ဖျက်ရန် ဖြစ်ပါသည်။ ဤလုပ်ဆောင်ချက်ကို နောက်ပြန်လှည့်၍ မရပါ။</p>
+            <div class="pt-2 mt-2 border-t border-stone-200/60 font-numeric text-stone-800 flex justify-between">
+                <span>ပစ်မှတ်: <strong id="modalCustomerName" class="font-semibold text-stone-950"></strong></span>
+                <span id="modalOrderDate" class="text-stone-400"></span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
+            <button type="button" onclick="closeDeleteModal()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-2.5 px-5 rounded transition-all font-sans order-2 sm:order-1 cursor-pointer">ပယ်ဖျက်</button>
+            <a id="modalDeleteConfirmBtn" href="#" class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-2.5 px-6 rounded transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">အတည်ပြု ဖျက်မည်</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const editOverlay = document.getElementById('editOrderModal');
+    const editCard = document.getElementById('editModalCard');
+
+    function openEditModal(orderId, date, source, customer, time, address, isPaid, paymentDate, items) {
+        const container = document.getElementById('editItemsContainer');
+        container.innerHTML = '';
+        items.forEach(item => addEditItemRow(item));
+        document.getElementById('editOrderForm').setAttribute('action', `/edit_order/${orderId}`);
+        document.getElementById('editSource').value = source;
+        document.getElementById('editCustomer').value = customer;
+        document.getElementById('editAddress').value = address;
+
+        const editDateHidden = document.getElementById('editDateHidden');
+        const editTimeHidden = document.getElementById('editTimeHidden');
+        const editBtn = document.getElementById('editTimeTriggerBtn');
+        const editSpan = editBtn.querySelector('span');
+
+        editDateHidden.value = date || '';
+        editTimeHidden.value = (time && /^\d{1,2}:\d{2}$/.test(time)) ? time : '';
+
+        if (editDateHidden.value && editTimeHidden.value) {
+            editSpan.textContent = `${wpShortDayLabel(editDateHidden.value)} · ${editTimeHidden.value}`;
+            editBtn.classList.remove('wp-empty');
+        } else if (editDateHidden.value) {
+            editSpan.textContent = `${wpShortDayLabel(editDateHidden.value)} · --:--`;
+            editBtn.classList.remove('wp-empty');
+        } else {
+            editSpan.textContent = 'ရက်စွဲ နှင့် အချိန် ရွေးပါ';
+            editBtn.classList.add('wp-empty');
+        }
+
+        editOverlay.classList.remove('hidden');
+        editOverlay.classList.add('flex');
+        setTimeout(() => {
+            editCard.classList.remove('scale-95');
+            editCard.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeEditModal() {
+        editCard.classList.remove('scale-100');
+        editCard.classList.add('scale-95');
+        setTimeout(() => {
+            editOverlay.classList.remove('flex');
+            editOverlay.classList.add('hidden');
+        }, 150);
+    }
+
+    function addEditItemRow(item = {}) {
+        const container = document.getElementById('editItemsContainer');
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-12 gap-4 p-4 bg-stone-50 border border-stone-200 rounded min-w-[900px]';
+        row.innerHTML = `
+            <input type="hidden" name="old_cake_image[]" value="${item.image_url || ''}">
+            <input type="hidden" name="old_flower_image[]" value="${item.flower_image_url || ''}">
+
+            <div class="md:col-span-2">
+                <label class="block text-[11px] text-stone-500 mb-1">ပစ္စည်းအမည်</label>
+                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            </div>
+
+            <div class="md:col-span-1">
+                <label class="block text-[11px] text-stone-500 mb-1">အရွယ်အစား</label>
+                <input type="text" name="edit_size[]" value="${item.size || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[11px] text-stone-500 mb-1">စျေးနှုန်း</label>
+                <input type="number" name="edit_price[]" value="${item.price || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[11px] text-stone-500 mb-1">မှတ်ချက်</label>
+                <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" class="w-full border border-stone-300 rounded p-2 text-xs">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[11px] text-rose-600 mb-1">💐 လက်ရှိ ပန်းစည်းပုံ</label>
+                ${item.flower_image_url ? `<img src="${item.flower_image_url}" class="w-20 h-20 object-cover rounded border border-rose-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[11px] text-stone-600 mb-1">🎂 လက်ရှိ ကိတ်မုန့်ပုံ</label>
+                ${item.image_url ? `<img src="${item.image_url}" class="w-20 h-20 object-cover rounded border border-stone-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+            </div>
+
+            <div class="md:col-span-1 flex items-center justify-center">
+                <button type="button" onclick="this.closest('.grid').remove()" class="text-rose-600 hover:text-rose-800 text-lg font-bold">✕</button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+
+    const modalOverlay = document.getElementById('deleteConfirmationModal');
+    const mCard = document.getElementById('modalCard');
+    const mCust = document.getElementById('modalCustomerName');
+    const mDate = document.getElementById('modalOrderDate');
+    const mBtn = document.getElementById('modalDeleteConfirmBtn');
+
+    function openDeleteModal(orderId, customerName, orderDate) {
+        mCust.textContent = customerName;
+        mDate.textContent = orderDate;
+        mBtn.setAttribute('href', `/delete_order/${orderId}`);
+        modalOverlay.classList.remove('hidden');
+        modalOverlay.classList.add('flex');
+        setTimeout(() => {
+            mCard.classList.remove('scale-95');
+            mCard.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeDeleteModal() {
+        mCard.classList.remove('scale-100');
+        mCard.classList.add('scale-95');
+        setTimeout(() => {
+            modalOverlay.classList.remove('flex');
+            modalOverlay.classList.add('hidden');
+        }, 150);
+    }
+
+    window.addEventListener('click', function(e) {
+        if (e.target === modalOverlay) closeDeleteModal();
+        if (e.target === editOverlay && !editOverlay.classList.contains('hidden')) closeEditModal();
+    });
+</script>
