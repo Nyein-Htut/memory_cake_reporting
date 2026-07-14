@@ -69,12 +69,12 @@
                         <input type="text" name="remarks[]" placeholder="ရေးသားချက် လိုအပ်ချက်..." class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-rose-600 font-medium text-[11px] mb-1">💐 ပန်းစည်း ကိုးကားပုံ</label>
-                        <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
-                    </div>
-                    <div class="md:col-span-2">
                         <label class="block text-stone-500 text-[11px] mb-1">🎂 ကိတ်မုန့် ကိုးကားပုံ</label>
                         <input type="file" name="cakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-rose-600 font-medium text-[11px] mb-1">💐 ပန်းစည်း ကိုးကားပုံ</label>
+                        <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:rounded file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -115,10 +115,10 @@
                 <input type="text" name="remarks[]" placeholder="မှတ်ချက် လိုအပ်ချက်" class="w-full border border-stone-300 rounded p-2 text-xs bg-white outline-none">
             </div>
             <div class="md:col-span-2">
-                <input type="file" name="flowerImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+                <input type="file" name="cakeImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
             </div>
             <div class="md:col-span-2 flex items-center justify-between gap-2">
-                <input type="file" name="cakeImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
+                <input type="file" name="flowerImage[]" accept="image/*" class="text-xs text-stone-400 w-full file:py-1 file:px-2 file:border-0 file:bg-stone-200 cursor-pointer">
                 <button type="button" onclick="this.closest('.item-row').remove()" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1">✕</button>
             </div>
         `;
