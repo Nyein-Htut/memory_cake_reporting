@@ -91,6 +91,20 @@
                         data-remarks="{{ item.remarks }}">
                         <div class="oc-item-body">
                             <div class="oc-item-images">
+                                <div class="oc-img-slot oc-img-cake">
+                                    {% if item.image_url and item.image_url.startswith('http') %}
+                                    {% if order.is_recent %}
+                                        <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
+                                        {% else %}
+                                        <div class="oc-img-hidden" data-url="{{ item.image_url }}">
+                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="oc-img-empty">🎂</span>
+                                    {% endif %}
+                                    <span class="oc-img-tag">{% if readonly %}ကိတ်မုန့်{% else %}蛋糕{% endif %}</span>
+                                </div>
                                 <div class="oc-img-slot oc-img-flower">
                                     {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
                                         {% if order.is_recent %}
@@ -104,20 +118,6 @@
                                     <span class="oc-img-empty">💐</span>
                                     {% endif %}
                                     <span class="oc-img-tag">{% if readonly %}ပန်းစည်း{% else %}花束{% endif %}</span>
-                                </div>
-                                <div class="oc-img-slot oc-img-cake">
-                                    {% if item.image_url and item.image_url.startswith('http') %}
-                                    {% if order.is_recent %}
-                                        <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
-                                        {% else %}
-                                        <div class="oc-img-hidden" data-url="{{ item.flower_image_url }}">
-                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
-                                        </div>
-                                        {% endif %}
-                                    {% else %}
-                                    <span class="oc-img-empty">🎂</span>
-                                    {% endif %}
-                                    <span class="oc-img-tag">{% if readonly %}ကိတ်မုန့်{% else %}蛋糕{% endif %}</span>
                                 </div>
                             </div>
                             <div class="oc-item-meta">
