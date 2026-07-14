@@ -310,6 +310,19 @@
         .wp-trigger.wp-empty { color: #a8a29e; }
         .wp-trigger-icon { opacity: .5; flex-shrink: 0; }
         body.wp-locked { overflow: hidden; }
+
+        /* ===== Source Picker (bottom-sheet option list, matches wheel-picker language) ===== */
+        .wp-source-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; max-height: 320px; overflow-y: auto; padding-right: 2px; }
+        .wp-source-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 13px 16px; border: 1.5px solid #e7e5e4; border-radius: 12px;
+            font-size: 14px; font-weight: 600; color: #44403c; background: #fff;
+            cursor: pointer; transition: all .15s ease; user-select: none;
+        }
+        .wp-source-item:hover { border-color: #a8a29e; background: #fafaf9; }
+        .wp-source-item.wp-source-selected { border-color: #059669; background: #ecfdf5; color: #047857; }
+        .wp-source-check { opacity: 0; color: #059669; font-weight: 700; transition: opacity .15s ease; }
+        .wp-source-item.wp-source-selected .wp-source-check { opacity: 1; }
     </style>
 </head>
     <!-- Wheel Picker: Time (Hour / Minute) -->
@@ -363,6 +376,17 @@
         <div class="wp-actions">
             <button type="button" class="wp-btn wp-btn-cancel" id="wpDateCancelBtn">取消 Cancel</button>
             <button type="button" class="wp-btn wp-btn-set" id="wpDateSetBtn">确定 Set</button>
+        </div>
+    </div>
+</div>
+
+<!-- Source Picker: static option list in the same bottom-sheet shell as the date/time pickers -->
+<div class="wp-overlay" id="wpSourceOverlay" onclick="if(event.target===this) closeWheelOverlay('wpSourceOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title" id="wpSourceTitle">订单来源选择 (Select Source)</div>
+        <div class="wp-source-list" id="wpSourceList"></div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpSourceCancelBtn">取消 Cancel</button>
         </div>
     </div>
 </div>
@@ -435,6 +459,42 @@ function wpUnlockBody() { document.body.classList.remove('wp-locked'); }
 function closeWheelOverlay(id) {
     document.getElementById(id).classList.remove('active');
     wpUnlockBody();
+}
+
+/* ===== Source Picker (static option list, WhatsApp-sheet style) =====
+   Reuses the same overlay shell as the date/time pickers, but the content
+   is just a list of tappable rows instead of a scrolling wheel — the
+   dataset is fixed and short, so a scroll wheel would be overkill. */
+const WP_SOURCE_OPTIONS = ['Ko Kyaw', 'Memory Cake', 'Iris', 'Ama Gyi', 'Ama Nge', 'Other'];
+
+function openSourcePicker(triggerBtnId, hiddenInputId, titleText) {
+    const btn = document.getElementById(triggerBtnId);
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById(hiddenInputId);
+    const listEl = document.getElementById('wpSourceList');
+
+    if (titleText) {
+        document.getElementById('wpSourceTitle').textContent = titleText;
+    }
+
+    listEl.innerHTML = '';
+    WP_SOURCE_OPTIONS.forEach((opt) => {
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (hidden.value === opt ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${opt}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            hidden.value = opt;
+            span.textContent = opt;
+            btn.classList.remove('wp-empty');
+            closeWheelOverlay('wpSourceOverlay');
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
 }
 
 /* ===== Time Picker (Hour / Minute) — standalone, single-purpose ===== */
