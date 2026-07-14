@@ -44,7 +44,8 @@
                 data-source="{{ order.source }}"
                 data-time="{{ order.time }}"
                 data-address="{{ order.address }}"
-                data-total="{{ order.total_price }}">
+                data-total="{{ order.total_price }}"
+                data-delivery-fee="{{ order.delivery_fee }}">
 
                 <div class="oc-header">
                     <div class="oc-header-main">
@@ -123,6 +124,9 @@
                     <div class="oc-footer-text">
                         <span class="oc-time">{% if readonly %}အချိန်: {{ order.time }}{% else %}时间: {{ order.time }}{% endif %}</span>
                         <span class="oc-address">{{ order.address }}</span>
+                        {% if order.delivery_fee and order.delivery_fee != '' %}
+                        <span class="oc-delivery-fee">🚗 {% if readonly %}ကားခ: {{ order.delivery_fee }}{% else %}车费: {{ order.delivery_fee }}{% endif %}</span>
+                        {% endif %}
                     </div>
                     <div class="oc-actions no-print">
                         <button type="button"
@@ -133,6 +137,7 @@
                                 {{ order.customer|tojson }},
                                 {{ order.time|tojson }},
                                 {{ order.address|tojson }},
+                                {{ order.delivery_fee|tojson }},
                                 {{ order.is_paid|tojson }},
                                 {{ order.payment_date|tojson }},
                                 [
