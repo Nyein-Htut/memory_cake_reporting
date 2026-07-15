@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -52,10 +52,6 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 db = SQLAlchemy(app)
-def get_myanmar_today_str():
-    """Returns today's date string in Asia/Yangon timezone (UTC+6:30)"""
-    myanmar_tz = timezone(timedelta(hours=6, minutes=30))
-    return datetime.now(myanmar_tz).strftime('%Y-%m-%d')
 
 # ==========================================
 # DATABASE MODELS
@@ -63,8 +59,7 @@ def get_myanmar_today_str():
 class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
-    # Fix: Default order date is now locked to Myanmar local time!
-    date = db.Column(db.String(50), nullable=False, default=get_myanmar_today_str)
+    date = db.Column(db.String(50), nullable=False, default=lambda: datetime.today().strftime('%Y-%m-%d'))
     source = db.Column(db.String(100), default='-')
     customer = db.Column(db.String(100), nullable=False)
     total_price = db.Column(db.Integer, nullable=False, default=0)
@@ -80,6 +75,7 @@ class Order(db.Model):
         cascade="all, delete-orphan",
         lazy='selectin'
     )
+
 class OrderItem(db.Model):
     __tablename__ = 'order_items'
     id = db.Column(db.Integer, primary_key=True)
@@ -170,36 +166,16 @@ def refresh_session():
         session.modified = True
 
 def _parse_daily_filters():
-    """
-    Default fallback is 'day' mode targeting today's Myanmar date, 
-    unless another day parameter or the 'all' override is explicitly requested.
-    """
+    """Two filter modes are supported via the wheel-picker UI:
+    - 'day'   -> exact date match (input name `day`, e.g. 2026-07-14)
+    No filter chosen -> 'all' mode, which falls back to the last 30 days.
+    (Exporting a whole month/year of orders as a PDF is handled separately
+    by /api/export_orders, which fetches data directly rather than
+    re-rendering this page — see that route below.)"""
     filter_day = (request.args.get('day') or '').strip()
-    
-    # If a specific day is requested by the datepicker, show that day
     if filter_day:
         return 'day', filter_day
-        
-    # If they explicitly click to see all 30 days
-    if request.args.get('view') == 'all':
-        return 'all', ''
-        
-    # DEFAULT: Automatically load today's Myanmar orders instantly
-    return 'day', get_myanmar_today_str()
-
-
-def _fetch_orders_grouped_by_day(filter_mode='day', filter_value=None):
-    query = Order.query.options(joinedload(Order.items))
-
-    if filter_mode == 'day' and filter_value:
-        query = query.filter(Order.date == filter_value)
-    else:
-        # Falls back to Myanmar time to compute the 30-day cutoff
-        today_local = datetime.now(timezone(timedelta(hours=6, minutes=30)))
-        cutoff = (today_local - timedelta(days=30)).strftime('%Y-%m-%d')
-        query = query.filter(Order.date >= cutoff)
-
-    return _group_query_by_day(query)
+    return 'all', ''
 
 def _safe_price(prices, i):
     """Index-safe price lookup. Staff forms omit price fields entirely
@@ -277,8 +253,7 @@ def _daily_view_context(filter_action):
     return {
         'orders_by_day': orders_by_day,
         'filter_mode': filter_mode,
-        # Ensure the active day value is sent back so the date button matches
-        'filter_day': filter_value if filter_mode == 'day' else '', 
+        'filter_day': filter_value if filter_mode == 'day' else '',
         'filter_action': filter_action,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
