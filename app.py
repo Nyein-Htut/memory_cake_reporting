@@ -65,6 +65,7 @@ class Order(db.Model):
     total_price = db.Column(db.Integer, nullable=False, default=0)
     time = db.Column(db.String(50), default='-')
     address = db.Column(db.Text, default='-')
+    delivery_fee = db.Column(db.Text, default='')
     is_paid = db.Column(db.Boolean, nullable=False, default=False)
     payment_date = db.Column(db.String(50), default='')
 
@@ -283,6 +284,7 @@ def _serialize_order_for_export(o):
         'source': o.source,
         'time': o.time,
         'address': o.address,
+        'delivery_fee': o.delivery_fee or '',
         'total_price': o.total_price,
         'is_paid': bool(o.is_paid),
         'payment_date': o.payment_date or '',
@@ -412,6 +414,7 @@ def add_order():
     customer = request.form.get('customer')
     time = request.form.get('time') or '-'
     address = request.form.get('address') or '-'
+    delivery_fee = request.form.get('delivery_fee') or ''
 
     item_names = request.form.getlist('item_name[]')
     sizes = request.form.getlist('size[]')
@@ -423,7 +426,7 @@ def add_order():
 
     new_order = Order(
         date=order_date, source=source, customer=customer, total_price=0, time=time, address=address,
-        is_paid=is_paid, payment_date=payment_date
+        delivery_fee=delivery_fee, is_paid=is_paid, payment_date=payment_date
     )
     db.session.add(new_order)
     db.session.flush()
@@ -524,6 +527,7 @@ def edit_order(order_id):
     order.customer = request.form.get('customer')
     order.time = request.form.get('time') or '-'
     order.address = request.form.get('address') or '-'
+    order.delivery_fee = request.form.get('delivery_fee') or ''
 
     # Payment status can only be changed by managers. Staff never see this
     # field in their edit form, so we simply leave the existing values
@@ -1068,6 +1072,7 @@ def run_migration():
             ('flower_image_url', 'TEXT', "''"),
             ('is_paid', 'BOOLEAN', 'FALSE'),
             ('payment_date', 'TEXT', "''"),
+            ('delivery_fee', 'TEXT', "''"),
         ]:
             try:
                 table = 'order_items' if col in ('image_url', 'flower_image_url') else 'orders'
@@ -1097,7 +1102,7 @@ def toggle_payment(order_id):
         return jsonify({'success': False, 'error': 'Update failed'}), 500
     finally:
         db.session.remove()
-        
+
 @app.route('/admin/archive', methods=['GET'])
 @manager_required
 def archive_view():
