@@ -171,16 +171,23 @@ def refresh_session():
         session.modified = True
 
 def _parse_daily_filters():
-    """Two filter modes are supported via the wheel-picker UI:
-    - 'day'   -> exact date match (input name `day`, e.g. 2026-07-14)
-    No filter chosen -> 'all' mode, which falls back to the last 30 days.
-    (Exporting a whole month/year of orders as a PDF is handled separately
-    by /api/export_orders, which fetches data directly rather than
-    re-rendering this page — see that route below.)"""
+    """
+    Returns filter mode and value.
+    If no parameter is passed, instantly defaults to today's date in Myanmar timezone.
+    """
     filter_day = (request.args.get('day') or '').strip()
+    
+    # 1. If there's an active calendar day filter, use it
     if filter_day:
         return 'day', filter_day
-    return 'all', ''
+        
+    # 2. If they clicked the "Show All" / Clear button
+    if request.args.get('view') == 'all':
+        return 'all', ''
+        
+    # 3. DEFAULT: Use local Myanmar Today instead of 'all'
+    today_str = get_myanmar_now().strftime('%Y-%m-%d')
+    return 'day', today_str
 
 def _safe_price(prices, i):
     """Index-safe price lookup. Staff forms omit price fields entirely
