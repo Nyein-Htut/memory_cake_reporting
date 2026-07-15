@@ -11,6 +11,7 @@ import cloudinary.uploader
 import cloudinary.api
 import csv
 import io
+import pytz 
 
 app = Flask(__name__)
 
@@ -166,16 +167,28 @@ def refresh_session():
         session.modified = True
 
 def _parse_daily_filters():
-    """Two filter modes are supported via the wheel-picker UI:
-    - 'day'   -> exact date match (input name `day`, e.g. 2026-07-14)
-    No filter chosen -> 'all' mode, which falls back to the last 30 days.
-    (Exporting a whole month/year of orders as a PDF is handled separately
-    by /api/export_orders, which fetches data directly rather than
-    re-rendering this page — see that route below.)"""
+    """
+    Instantly returns 'day' mode with today's date as the default 
+    if no specific date or 'all' override filter is requested.
+    """
     filter_day = (request.args.get('day') or '').strip()
+    
     if filter_day:
         return 'day', filter_day
-    return 'all', ''
+        
+    # Check if they explicitly wanted to view all (e.g. clicked "Show All")
+    if request.args.get('view') == 'all':
+        return 'all', ''
+        
+    # DEFAULT: Instantly use today's local date in Myanmar timezone (GMT+6:30)
+    try:
+        local_tz = pytz.timezone('Asia/Yangon')
+        today_str = datetime.now(local_tz).strftime('%Y-%m-%d')
+    except Exception:
+        # Fallback if pytz is not installed
+        today_str = (datetime.today() + timedelta(hours=6, minutes=30)).strftime('%Y-%m-%d')
+        
+    return 'day', today_str
 
 def _safe_price(prices, i):
     """Index-safe price lookup. Staff forms omit price fields entirely
@@ -253,7 +266,7 @@ def _daily_view_context(filter_action):
     return {
         'orders_by_day': orders_by_day,
         'filter_mode': filter_mode,
-        'filter_day': filter_value if filter_mode == 'day' else '',
+        'filter_day': filter_value, 
         'filter_action': filter_action,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
