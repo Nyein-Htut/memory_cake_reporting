@@ -108,7 +108,7 @@
                 <button onclick="exportTableToCSV()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-6 rounded transition-all shadow-xs border border-stone-300/60 cursor-pointer">
                     导出 CSV 表格
                 </button>
-                <button id="pdfExportBtn" type="button" onclick="downloadTableAsPDF()" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-8 rounded transition-all shadow-sm cursor-pointer">
+                <button id="pdfExportBtn" type="button" onclick="openPdfMonthPicker()" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-8 rounded transition-all shadow-sm cursor-pointer">
                     下载 PDF 报表
                 </button>
             </div>
@@ -139,160 +139,59 @@
 
     {% include 'partials/order_modals.html' %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-     async function downloadTableAsPDF() {
-    const btn = document.getElementById('pdfExportBtn');
-    if (btn) { btn.disabled = true; btn.textContent = '截图中…'; }
-    try {
-        const noPrints = document.querySelectorAll('.no-print');
-        noPrints.forEach(el => el.style.display = 'none');
+     /* ===== "Export PDF for a month" flow =====
+        Opens the shared month wheel-picker, then fetches that month's
+        orders as JSON from /api/export_orders and hands them straight to
+        the fast native-jsPDF card renderer (see base.html) — no page
+        reload, no DOM screenshotting, so it stays quick even for a full
+        month of orders with photos. */
+     function openPdfMonthPicker() {
+        openMonthWheelPicker({
+            title: '选择要导出的月份 (Select Month to Export as PDF)',
+            initialValue: wpMonthValue(0),
+            onConfirm: (value) => { runDailyPdfExport(value); }
+        });
+     }
 
-        const { jsPDF } = window.jspdf;
-
-        // Cards are printed at a FIXED width, independent of the exporting
-        // device's screen size. Tying column count to window.innerWidth
-        // meant a narrow phone produced a 1-column PDF with every card
-        // stretched to the full page width — huge images, tiny content
-        // density, one order per page. A fixed print width keeps the PDF
-        // looking the same (2 tidy columns) no matter what triggered it.
-        const CARD_TARGET_W_MM = 88;
-
-        const orientation = 'portrait';
-        const pageW = 210;
-        const pageH = 297;
-        const margin = 10;
-        const gap = 6;
-        const usableW = pageW - margin * 2;
-        const usableH = pageH - margin * 2;
-
-        const columns = Math.max(1, Math.floor((usableW + gap) / (CARD_TARGET_W_MM + gap)));
-        const perCardW = (usableW - gap * (columns - 1)) / columns;
-
-        const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-
-        async function captureCanvas(el, bg) {
-            return await html2canvas(el, {
-                scale: 2, useCORS: true, allowTaint: true,
-                backgroundColor: bg, logging: false,
-                windowWidth: el.scrollWidth, width: el.scrollWidth,
+     async function runDailyPdfExport(monthValue) {
+        const btn = document.getElementById('pdfExportBtn');
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '加载中…';
+        try {
+            const data = await fetchOrdersForExport({ month: monthValue });
+            await renderOrderCardsPDF({
+                ordersByDay: data.orders_by_day,
+                filename: `Memory_Cake_Orders_${monthValue}.pdf`,
+                showPayment: {{ show_payment | tojson | safe }},
+                emptyMessage: `No orders found for ${monthValue}.`,
+                onProgress: (loaded, total) => {
+                    btn.textContent = total ? `生成中… (${loaded}/${total})` : '生成中…';
+                }
             });
+        } catch (err) {
+            alert('PDF 导出失败，请重试。\n' + (err.message || ''));
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = original;
         }
-        function mmHeightFor(canvas, widthMM) {
-            return (canvas.height / canvas.width) * widthMM;
-        }
-
-        let curY = margin;
-        let dayHeaderData = null;
-        let dayHeaderH = 0;
-
-        function placeDayHeader() {
-            pdf.addImage(dayHeaderData, 'JPEG', margin, curY, usableW, dayHeaderH);
-            curY += dayHeaderH + 3;
-        }
-
-        const dayGroups = document.querySelectorAll('#ordersRoot .day-group');
-
-        if (dayGroups.length === 0) {
-            pdf.setFontSize(12);
-            pdf.text('No records for the selected filter.', margin, margin + 6);
-        }
-
-        for (const group of dayGroups) {
-            const sepEl = group.querySelector('.day-separator');
-            const sepCanvas = await captureCanvas(sepEl, '#ababa9');
-            dayHeaderH = mmHeightFor(sepCanvas, usableW);
-            dayHeaderData = sepCanvas.toDataURL('image/jpeg', 0.95);
-
-            const cards = Array.from(group.querySelectorAll('.orders-grid > .order-card'));
-
-            // Pre-capture the first row so the header and its first row of
-            // cards are judged as one unit — the header is never stranded
-            // alone at the bottom of a page.
-            let firstCanvases = [];
-            let firstHeights = [];
-            let firstRowH = 0;
-            if (cards.length > 0) {
-                const firstChunk = cards.slice(0, columns);
-                for (const card of firstChunk) {
-                    firstCanvases.push(await captureCanvas(card, '#ffffff'));
-                }
-                firstHeights = firstCanvases.map(c => mmHeightFor(c, perCardW));
-                firstRowH = Math.max(...firstHeights);
-            }
-
-            const neededH = dayHeaderH + (cards.length > 0 ? firstRowH + gap : 0);
-
-            // Only break to a new page if this page already has content on
-            // it (curY > margin). If the page is still empty, there's
-            // nothing to gain by skipping it — draw here even if it runs
-            // long, rather than leaving an entirely blank page behind.
-            if (curY > margin && curY + neededH > margin + usableH) {
-                pdf.addPage();
-                curY = margin;
-            }
-            placeDayHeader();
-
-            let startIndex = 0;
-            if (cards.length > 0) {
-                firstCanvases.forEach((canvas, idx) => {
-                    const x = margin + idx * (perCardW + gap);
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, curY, perCardW, firstHeights[idx]);
-                });
-                curY += firstRowH + gap;
-                startIndex = columns;
-            }
-
-            for (let i = startIndex; i < cards.length; i += columns) {
-                const chunk = cards.slice(i, i + columns);
-                const canvases = [];
-                for (const card of chunk) {
-                    canvases.push(await captureCanvas(card, '#ffffff'));
-                }
-                const heights = canvases.map(c => mmHeightFor(c, perCardW));
-                const rowH = Math.max(...heights);
-
-                if (curY > margin && curY + rowH > margin + usableH) {
-                    pdf.addPage();
-                    curY = margin;
-                    placeDayHeader();
-                }
-
-                canvases.forEach((canvas, idx) => {
-                    const x = margin + idx * (perCardW + gap);
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, curY, perCardW, heights[idx]);
-                });
-
-                curY += rowH + gap;
-            }
-
-            curY += 4;
-        }
-
-        noPrints.forEach(el => el.style.display = '');
-        const date = new Date().toISOString().slice(0, 10);
-        pdf.save('Memory_Cake_Orders_' + date + '.pdf');
-
-    } catch(err) {
-        document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
-        alert('PDF 导出失败，请重试。\n' + (err.message || ''));
-        console.error(err);
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '下载 PDF 报表'; }
-    }
-}
+     }
 
         function exportTableToCSV() {
             const cards = Array.from(document.querySelectorAll('#ordersRoot .order-card'));
-            if (cards.length === 0) return;
+            if (cards.length === 0) {
+                alert('当前筛选范围内没有可导出的订单。\n(No orders in the current filter to export.)');
+                return;
+            }
 
             const csvRows = [];
             const headers = [
                 '日期 (Date)', '客人姓名 (Customer)', '订单来源 (Source)', '商品名称 (Item Name)', 
                 '尺寸 (Size)', '单项金额 (Price MMK)', '对应品类备注要求 (Remarks)', 
-                '送达时间 (Delivery Time)', '派送物流详细地址 (Address)', '总单总计 (Voucher Total)',
-                '车费备注 (Delivery Fee)'
+                '送达时间 (Delivery Time)', '派送物流详细地址 (Address)', '总单总计 (Voucher Total)'
             ];
 
             csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
@@ -304,7 +203,6 @@
                 const time = card.getAttribute('data-time') || '';
                 const address = card.getAttribute('data-address') || '';
                 const total = card.getAttribute('data-total') || '';
-                const deliveryFee = card.getAttribute('data-delivery-fee') || '';
 
                 const items = Array.from(card.querySelectorAll('.oc-item'));
                 items.forEach((item, idx) => {
@@ -316,8 +214,7 @@
                     const rowData = [
                         date, customer, source, itemName, size,
                         price, remarks, time, address,
-                        idx === 0 ? total : '',
-                        idx === 0 ? deliveryFee : ''
+                        idx === 0 ? total : ''
                     ];
                     csvRows.push(rowData.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','));
                 });
@@ -325,15 +222,30 @@
 
             const csvContent = "\uFEFF" + csvRows.join("\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const filename = `Memory_Cake_Orders_${new Date().toISOString().slice(0, 10)}.csv`;
+
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                // Old Edge/IE.
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+                return;
+            }
+
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
                 link.setAttribute("href", url);
-                link.setAttribute("download", `Memory_Cake_Orders_${new Date().toISOString().slice(0, 10)}.csv`);
+                link.setAttribute("download", filename);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 4000);
+            } else {
+                // Fallback for embedded/in-app browsers that don't support the
+                // `download` attribute at all — open the CSV in a new tab so
+                // the person can save it manually instead of the button
+                // silently doing nothing.
+                window.open(url, '_blank');
             }
         }
     </script>

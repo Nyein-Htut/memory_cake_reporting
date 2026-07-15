@@ -76,12 +76,11 @@
             background: #fafaf9;
         }
         .oc-date { font-size: 12px; color: #a8a29e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .oc-delivery-fee { font-weight: 600; color: #b45309; margin-left: 8px; }
-        .oc-customer { font-size: 15px; font-weight: 600; color: #1c1917; margin-top: 3px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
-        .oc-source { font-size: 14.5px; color: #78716c; margin-top: 4px; }
+        .oc-customer { font-size: 19px; font-weight: 600; color: #1c1917; margin-top: 3px; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
+        .oc-source { font-size: 12.5px; color: #78716c; margin-top: 4px; }
         .oc-total-wrap { text-align: right; flex-shrink: 0; }
         .oc-total-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #a8a29e; }
-        .oc-total { font-size: 14px; font-weight: 700; color: #1c1917; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .oc-total { font-size: 17px; font-weight: 700; color: #1c1917; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .oc-total-items { font-size: 12px; font-weight: 500; color: #78716c; margin-top: 5px; word-break: break-word; }
         .oc-payment-badge { font-size: 10.5px; font-weight: 700; margin-top: 6px; padding: 2px 8px; border-radius: 9999px; display: inline-block; }
         .oc-paid { background: #ecfdf5; color: #047857; }
@@ -121,8 +120,8 @@
         .oc-img-tag { font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: .04em; }
 
         .oc-item-meta { flex: 1; min-width: 0; padding-top: 2px; }
-        .oc-item-size { font-size: 14.5px; color: #57534e; }
-        .oc-item-remarks { font-size: 14.5px; color: #be123c; margin-top: 6px; line-height: 1.55; }
+        .oc-item-size { font-size: 12.5px; color: #57534e; }
+        .oc-item-remarks { font-size: 12.5px; color: #be123c; margin-top: 6px; line-height: 1.55; }
         .oc-img-hidden {
             width: 128px; height: 128px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
@@ -156,7 +155,7 @@
         @media (min-width: 480px) {
             .oc-footer { flex-direction: row; align-items: center; justify-content: space-between; }
         }
-        .oc-footer-text { font-size: 14.5px; color: #78716c; line-height: 1.6; }
+        .oc-footer-text { font-size: 12.5px; color: #78716c; line-height: 1.6; }
         .oc-time { font-weight: 600; color: #44403c; margin-right: 8px; }
         .oc-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .oc-action-btn {
@@ -388,6 +387,46 @@
         <div class="wp-source-list" id="wpSourceList"></div>
         <div class="wp-actions">
             <button type="button" class="wp-btn wp-btn-cancel" id="wpSourceCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
+        </div>
+    </div>
+</div>
+
+<!-- Month Picker: scrollable wheel of months (YYYY-MM). Reused by: the
+     Monthly Report filter (month mode) and the "Export PDF for a month"
+     flow on the Daily Records page. -->
+<div class="wp-overlay" id="wpMonthOverlay" onclick="if(event.target===this) closeWheelOverlay('wpMonthOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title" id="wpMonthTitle">{% if readonly %}လ ရွေးပါ (Select Month){% else %}月份选择 (Select Month){% endif %}</div>
+        <div class="wp-display" id="wpMonthDisplay">--</div>
+        <div class="wp-wheels">
+            <div class="wp-fade-top"></div>
+            <div class="wp-fade-bottom"></div>
+            <div class="wp-col">
+                <div class="wp-highlight-bar"></div>
+                <div class="wp-scroll" id="wpMonthScroll"></div>
+            </div>
+        </div>
+        <div class="wp-quick" id="wpMonthQuick">
+            <div class="wp-quick-btn" data-offset="0">{% if readonly %}ယခုလ This Month{% else %}本月 This Month{% endif %}</div>
+            <div class="wp-quick-btn" data-offset="-1">{% if readonly %}ပြီးခဲ့သောလ Last Month{% else %}上月 Last Month{% endif %}</div>
+            <div class="wp-quick-btn" data-offset="-12">{% if readonly %}တစ်နှစ်ခန့် 1yr ago{% else %}一年前 1yr ago{% endif %}</div>
+        </div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpMonthCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpMonthSetBtn">{% if readonly %}သတ်မှတ် Set{% else %}确定 Set{% endif %}</button>
+        </div>
+    </div>
+</div>
+
+<!-- Year Picker: static option list (like the Source picker) — the dataset
+     is just the handful of years that actually have data, so a plain
+     tappable list reads better than a long scroll wheel. -->
+<div class="wp-overlay" id="wpYearOverlay" onclick="if(event.target===this) closeWheelOverlay('wpYearOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title" id="wpYearTitle">{% if readonly %}နှစ် ရွေးပါ (Select Year){% else %}年份选择 (Select Year){% endif %}</div>
+        <div class="wp-source-list" id="wpYearList"></div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpYearCancelBtn">{% if readonly %}ပယ်ဖျက် Cancel{% else %}取消 Cancel{% endif %}</button>
         </div>
     </div>
 </div>
@@ -804,6 +843,405 @@ function _openDeliveryTimeStep(triggerBtnId, timeHiddenId, dateIso) {
         closeWheelOverlay('wpTimeOverlay');
     };
     document.getElementById('wpTimeCancelBtn').onclick = () => closeWheelOverlay('wpTimeOverlay');
+}
+
+/* ===== Month Picker (YYYY-MM wheel) =====
+   Generic, reusable in two ways:
+   1. Simple mode — openMonthWheelPicker(triggerBtnId, hiddenInputId) — sets
+      the hidden input + trigger label directly (used by the Monthly Report
+      filter bar).
+   2. Config mode — openMonthWheelPicker({ title, initialValue, onConfirm })
+      — hands the chosen 'YYYY-MM' value to a callback instead (used by the
+      Daily Records "Export PDF for a month" flow, which needs to redirect
+      rather than fill in a form field). */
+function wpMonthLabel(offsetMonths) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offsetMonths);
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+function wpMonthValue(offsetMonths) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offsetMonths);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function openMonthWheelPicker(triggerBtnIdOrCfg, hiddenInputId) {
+    let cfg;
+    if (typeof triggerBtnIdOrCfg === 'object') {
+        cfg = triggerBtnIdOrCfg;
+    } else {
+        const btn = document.getElementById(triggerBtnIdOrCfg);
+        const span = btn.querySelector('span');
+        const hidden = document.getElementById(hiddenInputId);
+        cfg = {
+            initialValue: hidden.value,
+            onConfirm: (value, label) => {
+                hidden.value = value;
+                span.textContent = label;
+                btn.classList.remove('wp-empty');
+            }
+        };
+    }
+
+    if (cfg.title) {
+        document.getElementById('wpMonthTitle').textContent = cfg.title;
+    }
+
+    const RANGE_BACK = 36, RANGE_FWD = 2;
+    const monthItems = [];
+    for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
+        monthItems.push({ label: wpMonthLabel(o), value: wpMonthValue(o) });
+    }
+
+    let initialIndex = RANGE_BACK; // this month
+    if (cfg.initialValue) {
+        const idx = monthItems.findIndex(it => it.value === cfg.initialValue);
+        if (idx >= 0) initialIndex = idx;
+    }
+
+    const overlay = document.getElementById('wpMonthOverlay');
+    overlay.classList.add('active');
+    wpLockBody();
+
+    const state = { idx: initialIndex };
+    function updateDisplay() {
+        document.getElementById('wpMonthDisplay').textContent = monthItems[state.idx].label;
+    }
+    const monthCol = wpBuildColumn('wpMonthScroll', monthItems, initialIndex, (idx) => { state.idx = idx; updateDisplay(); });
+    updateDisplay();
+
+    document.querySelectorAll('#wpMonthOverlay .wp-quick-btn').forEach(qbtn => {
+        qbtn.onclick = () => monthCol.setIndex(RANGE_BACK + parseInt(qbtn.dataset.offset, 10));
+    });
+
+    document.getElementById('wpMonthSetBtn').onclick = () => {
+        const chosen = monthItems[monthCol.index];
+        closeWheelOverlay('wpMonthOverlay');
+        cfg.onConfirm(chosen.value, chosen.label);
+    };
+    document.getElementById('wpMonthCancelBtn').onclick = () => closeWheelOverlay('wpMonthOverlay');
+}
+
+/* ===== Year Picker (tappable list, like the Source picker) =====
+   Simple mode: openYearListPicker(triggerBtnId, hiddenInputId, years)
+   Config mode: openYearListPicker({ years, initialValue, title, onConfirm }) */
+function openYearListPicker(triggerBtnIdOrCfg, hiddenInputId, years) {
+    let cfg;
+    if (typeof triggerBtnIdOrCfg === 'object') {
+        cfg = triggerBtnIdOrCfg;
+    } else {
+        const btn = document.getElementById(triggerBtnIdOrCfg);
+        const span = btn.querySelector('span');
+        const hidden = document.getElementById(hiddenInputId);
+        cfg = {
+            years: years,
+            initialValue: hidden.value,
+            onConfirm: (value) => {
+                hidden.value = value;
+                span.textContent = value;
+                btn.classList.remove('wp-empty');
+            }
+        };
+    }
+
+    if (cfg.title) {
+        document.getElementById('wpYearTitle').textContent = cfg.title;
+    }
+
+    const listEl = document.getElementById('wpYearList');
+    listEl.innerHTML = '';
+    (cfg.years || []).forEach((yr) => {
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (String(cfg.initialValue) === String(yr) ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${yr}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            closeWheelOverlay('wpYearOverlay');
+            cfg.onConfirm(String(yr));
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpYearOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpYearCancelBtn').onclick = () => closeWheelOverlay('wpYearOverlay');
+}
+
+/* ===== Fast native-PDF order export (no html2canvas) =====
+   Renders the same "order card" look as the Daily Records page directly
+   with jsPDF's own drawing primitives (text + images) instead of
+   screenshotting DOM nodes with html2canvas. This is what keeps large
+   exports (a full month or year, hundreds of orders) fast:
+     - no per-card DOM rasterization (the slow part of the old approach)
+     - every image is pre-fetched in parallel, as a small Cloudinary
+       thumbnail, before any drawing starts
+     - drawing text/rectangles with jsPDF is essentially instant, so once
+       images are loaded, hundreds of pages build in a couple of seconds */
+
+async function fetchOrdersForExport(params) {
+    const url = '/api/export_orders?' + new URLSearchParams(params).toString();
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Failed to load export data (HTTP ' + res.status + ')');
+    return res.json();
+}
+
+function wpCloudinaryThumb(url, size) {
+    if (!url || url.indexOf('/upload/') === -1) return url;
+    return url.replace('/upload/', `/upload/w_${size},h_${size},c_fill,q_auto,f_jpg/`);
+}
+
+function _wpLoadImage(url) {
+    return new Promise((resolve) => {
+        if (!url) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null); // one bad image should never fail the whole export
+        img.src = url;
+    });
+}
+
+// Small concurrency pool: loads many images in parallel (fast) without
+// firing hundreds of simultaneous requests at once (which tends to be
+// *slower* in practice, not faster, once you exceed the browser's
+// effective per-host connection limit).
+async function _wpPreloadImages(urls, onProgress, concurrency = 10) {
+    const map = new Map();
+    const unique = [...new Set(urls.filter(Boolean))];
+    let done = 0;
+    const queue = unique.slice();
+    async function worker() {
+        while (queue.length) {
+            const url = queue.shift();
+            const img = await _wpLoadImage(wpCloudinaryThumb(url, 240));
+            map.set(url, img);
+            done++;
+            if (onProgress) onProgress(done, unique.length);
+        }
+    }
+    await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(unique.length, 1)) }, worker));
+    return map;
+}
+
+/**
+ * Renders a jsPDF document of order cards, grouped by day, matching the
+ * visual language of the on-page order-card grid (2 columns, cake + flower
+ * thumbnails, size/remarks, time/address footer) — and saves it.
+ *
+ * @param {Object} opts
+ * @param {Array}  opts.ordersByDay  Same shape as /api/export_orders' orders_by_day.
+ * @param {String} opts.filename
+ * @param {Boolean} opts.showPayment Whether to print totals + paid/unpaid badges.
+ * @param {String} [opts.emptyMessage]
+ * @param {Function} [opts.onProgress] (loadedImages, totalImages) => void
+ */
+async function renderOrderCardsPDF(opts) {
+    const { ordersByDay, filename, showPayment, emptyMessage, onProgress } = opts;
+    if (typeof window.jspdf === 'undefined') {
+        alert('PDF 组件加载失败，请检查网络连接后重试。\n(PDF library failed to load — check your network connection and try again.)');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW = 210, pageH = 297, margin = 10, gap = 5;
+    const usableW = pageW - margin * 2;
+    const usableH = pageH - margin * 2;
+    const columns = 2;
+    const cardW = (usableW - gap * (columns - 1)) / columns;
+    const imgSize = 26; // mm square thumbnail
+
+    const allUrls = [];
+    (ordersByDay || []).forEach(g => (g.orders || []).forEach(o => (o.items || []).forEach(it => {
+        if (it.image_url) allUrls.push(it.image_url);
+        if (it.flower_image_url) allUrls.push(it.flower_image_url);
+    })));
+    const imageMap = await _wpPreloadImages(allUrls, onProgress);
+
+    function textLines(text, maxWidth, size) {
+        pdf.setFontSize(size);
+        return pdf.splitTextToSize(String(text || ''), maxWidth);
+    }
+
+    function itemBlockHeight(item, metaW) {
+        const sizeLines = (item.size && item.size !== '-') ? textLines('Size: ' + item.size, metaW, 8) : [];
+        const remarkLines = (item.remarks && item.remarks !== '-') ? textLines('Note: ' + item.remarks, metaW, 8) : [];
+        const nameLines = textLines(item.item_name || 'Item', metaW, 9);
+        const metaH = 4 + nameLines.length * 4 + sizeLines.length * 3.8 + remarkLines.length * 3.8;
+        return Math.max(imgSize, metaH) + 4;
+    }
+
+    function measureCard(order) {
+        const metaW = cardW - 4 - imgSize - 3 - imgSize - 3 - 4;
+        let h = 6 + 5 + 5 + 4 + 3; // date + customer + source + spacer + divider
+        (order.items || []).forEach(item => { h += itemBlockHeight(item, metaW); });
+        const addrLines = textLines(order.address || '-', cardW - 8, 7.5);
+        h += 4 + 4 + addrLines.length * 3.4; // divider + time line + address lines
+        return h + 4; // bottom padding
+    }
+
+    function drawCard(x, y, w, order) {
+        const startY = y;
+        let cy = y + 6;
+
+        pdf.setTextColor(168, 162, 158);
+        pdf.setFontSize(8);
+        pdf.text(String(order.date || ''), x + 4, cy);
+
+        if (showPayment) {
+            pdf.setFontSize(10);
+            pdf.setTextColor(28, 25, 23);
+            pdf.setFont(undefined, 'bold');
+            pdf.text(`${Number(order.total_price || 0).toLocaleString()} MMK`, x + w - 4, y + 6, { align: 'right' });
+            pdf.setFont(undefined, 'normal');
+            pdf.setFontSize(7.5);
+            if (order.is_paid) { pdf.setTextColor(4, 120, 87); } else { pdf.setTextColor(180, 83, 9); }
+            const payLabel = order.is_paid ? ('Paid' + (order.payment_date ? ' · ' + order.payment_date : '')) : 'Unpaid';
+            pdf.text(payLabel, x + w - 4, y + 10, { align: 'right' });
+        }
+        cy += 5;
+
+        pdf.setTextColor(28, 25, 23);
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(String(order.customer || ''), x + 4, cy);
+        pdf.setFont(undefined, 'normal');
+        cy += 5;
+
+        pdf.setTextColor(120, 113, 108);
+        pdf.setFontSize(8.5);
+        pdf.text(`Source: ${order.source || '-'}`, x + 4, cy);
+        cy += 4;
+
+        pdf.setDrawColor(240, 239, 237);
+        pdf.line(x + 4, cy, x + w - 4, cy);
+        cy += 3;
+
+        const metaW = w - 4 - imgSize - 3 - imgSize - 3 - 4;
+        (order.items || []).forEach((item) => {
+            const imgY = cy;
+            const cakeImg = imageMap.get(item.image_url);
+            const flowerImg = imageMap.get(item.flower_image_url);
+
+            if (cakeImg) {
+                try { pdf.addImage(cakeImg, 'JPEG', x + 4, imgY, imgSize, imgSize, undefined, 'FAST'); } catch (e) {}
+            } else {
+                pdf.setDrawColor(231, 229, 228);
+                pdf.rect(x + 4, imgY, imgSize, imgSize);
+                pdf.setFontSize(7);
+                pdf.setTextColor(200, 195, 190);
+                pdf.text('No photo', x + 4 + imgSize / 2, imgY + imgSize / 2, { align: 'center' });
+            }
+
+            if (flowerImg) {
+                try { pdf.addImage(flowerImg, 'JPEG', x + 4 + imgSize + 3, imgY, imgSize, imgSize, undefined, 'FAST'); } catch (e) {}
+            } else {
+                pdf.setDrawColor(252, 231, 235);
+                pdf.rect(x + 4 + imgSize + 3, imgY, imgSize, imgSize);
+            }
+
+            const metaX = x + 4 + imgSize + 3 + imgSize + 3;
+            let my = imgY + 4;
+            pdf.setFontSize(9);
+            pdf.setTextColor(28, 25, 23);
+            pdf.setFont(undefined, 'bold');
+            const nameLines = textLines(item.item_name || 'Item', metaW, 9);
+            pdf.text(nameLines, metaX, my);
+            my += nameLines.length * 4 + 1;
+            pdf.setFont(undefined, 'normal');
+            pdf.setFontSize(8);
+            if (item.size && item.size !== '-') {
+                pdf.setTextColor(87, 83, 78);
+                const l = textLines('Size: ' + item.size, metaW, 8);
+                pdf.text(l, metaX, my); my += l.length * 3.8;
+            }
+            if (item.remarks && item.remarks !== '-') {
+                pdf.setTextColor(190, 18, 60);
+                const l = textLines('Note: ' + item.remarks, metaW, 8);
+                pdf.text(l, metaX, my); my += l.length * 3.8;
+            }
+
+            cy = imgY + itemBlockHeight(item, metaW);
+        });
+
+        pdf.setDrawColor(240, 239, 237);
+        pdf.line(x + 4, cy, x + w - 4, cy);
+        cy += 4;
+
+        pdf.setFontSize(8);
+        pdf.setTextColor(68, 64, 60);
+        pdf.text(`Time: ${order.time || '-'}`, x + 4, cy);
+        cy += 4;
+        const addrLines = textLines(order.address || '-', w - 8, 7.5);
+        pdf.setTextColor(120, 113, 108);
+        pdf.text(addrLines, x + 4, cy);
+        cy += addrLines.length * 3.4 + 4;
+
+        pdf.setDrawColor(225, 222, 219);
+        pdf.roundedRect(x, startY, w, cy - startY, 2, 2, 'S');
+    }
+
+    let curY = margin;
+    let anyCard = false;
+
+    (ordersByDay || []).forEach((group) => {
+        const orders = group.orders || [];
+        const headerH = 8;
+
+        // Measure the first row so the day header is never stranded alone
+        // at the bottom of a page.
+        const firstRow = orders.slice(0, columns);
+        const firstRowH = firstRow.length ? Math.max(...firstRow.map(measureCard)) : 0;
+        const neededH = headerH + 3 + (orders.length ? firstRowH : 0);
+
+        if (curY > margin && curY + neededH > margin + usableH) {
+            pdf.addPage();
+            curY = margin;
+        }
+
+        pdf.setFillColor(171, 171, 169);
+        pdf.roundedRect(margin, curY, usableW, headerH, 1.5, 1.5, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(9.5);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(String(group.date_display || group.date || ''), margin + 4, curY + 5.5);
+        pdf.setFont(undefined, 'normal');
+        pdf.setFontSize(8);
+        const meta = showPayment
+            ? `${group.order_count} orders · ${Number(group.day_total || 0).toLocaleString()} MMK`
+            : `${group.order_count} orders`;
+        pdf.text(meta, margin + usableW - 4, curY + 5.5, { align: 'right' });
+        curY += headerH + 3;
+
+        for (let i = 0; i < orders.length; i += columns) {
+            anyCard = true;
+            const rowOrders = orders.slice(i, i + columns);
+            const rowH = Math.max(...rowOrders.map(measureCard));
+
+            if (curY + rowH > margin + usableH) {
+                pdf.addPage();
+                curY = margin;
+            }
+
+            rowOrders.forEach((order, idx) => {
+                const x = margin + idx * (cardW + gap);
+                drawCard(x, curY, cardW, order);
+            });
+
+            curY += rowH + gap;
+        }
+
+        curY += 4;
+    });
+
+    if (!anyCard) {
+        pdf.setFontSize(12);
+        pdf.setTextColor(80, 80, 80);
+        pdf.text(emptyMessage || 'No records found for the selected period.', margin, margin + 6);
+    }
+
+    pdf.save(filename);
 }
 
 /* ===== Payment checkbox toggle (updated for wheel-picker trigger) ===== */
