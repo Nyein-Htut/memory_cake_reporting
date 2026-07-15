@@ -189,32 +189,12 @@
     </div>
     {% endfor %}
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
-    
-    // Check if a 'day' parameter is present in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    if (!urlParams.has('day')) {
-        // FOOLPROOF LOCAL TODAY: Get the exact date matching the user's current device timezone
-        const localDate = new Date();
-        const year = localDate.getFullYear();
-        // padStart ensures 2-digit month/day (e.g., 07 instead of 7)
-        const month = String(localDate.getMonth() + 1).padStart(2, '0');
-        const day = String(localDate.getDate()).padStart(2, '0');
-        
-        const todayStr = `${year}-${month}-${day}`;
-        
-        // Build redirect action to enforce today's orders by default
-        const separator = "{{ filter_action }}".includes('?') ? '&' : '?';
-        window.location.href = "{{ filter_action }}" + separator + "day=" + todayStr;
-        return; 
-    }
 
-    // Set date button display if we have an active selection
+    // Display the date string on the button cleanly
     if (hidden && hidden.value && btn) {
         const span = btn.querySelector('span');
         span.textContent = wpFormatDisplayFromISO(hidden.value);
