@@ -67,9 +67,6 @@ class Order(db.Model):
     address = db.Column(db.Text, default='-')
     is_paid = db.Column(db.Boolean, nullable=False, default=False)
     payment_date = db.Column(db.String(50), default='')
-    # Free-text delivery/car fee note. Purely informational — never added
-    # into total_price or any revenue calculation.
-    delivery_fee = db.Column(db.String(100), default='')
 
     items = db.relationship(
         'OrderItem',
@@ -168,8 +165,12 @@ def refresh_session():
         session.modified = True
 
 def _parse_daily_filters():
-    """Only 'day' filtering is supported now (via the wheel-picker UI).
-    No day chosen -> 'all' mode, which falls back to the last 30 days."""
+    """Two filter modes are supported via the wheel-picker UI:
+    - 'day'   -> exact date match (input name `day`, e.g. 2026-07-14)
+    No filter chosen -> 'all' mode, which falls back to the last 30 days.
+    (Exporting a whole month/year of orders as a PDF is handled separately
+    by /api/export_orders, which fetches data directly rather than
+    re-rendering this page — see that route below.)"""
     filter_day = (request.args.get('day') or '').strip()
     if filter_day:
         return 'day', filter_day
@@ -204,22 +205,18 @@ def _time_sort_key(order):
             continue
     return 24 * 60  # unparseable/blank times sort last
 
-def _fetch_orders_grouped_by_day(filter_mode='all', filter_day=None):
-    query = Order.query.options(joinedload(Order.items))
-
-    if filter_mode == 'day' and filter_day:
-        query = query.filter(Order.date == filter_day)
-    else:
-        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
-        query = query.filter(Order.date >= cutoff)
-
+def _group_query_by_day(query):
+    """Shared grouping logic: run an already-filtered Order query and bucket
+    the results by date, newest first. Used by both the on-page dashboard
+    (last 30 days / single day) and the /api/export_orders endpoint
+    (day / month / year / all), so the two can never disagree on shape."""
     orders = query.order_by(Order.date.desc(), Order.id.desc()).all()
 
     recent_cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
 
     groups = {}
     for order in orders:
-        order.is_recent = order.date >= recent_cutoff  # controls Cloudinary URL visibility
+        order.is_recent = order.date >= recent_cutoff  # controls Cloudinary URL visibility on-page
         groups.setdefault(order.date, []).append(order)
 
     orders_by_day = []
@@ -235,19 +232,71 @@ def _fetch_orders_grouped_by_day(filter_mode='all', filter_day=None):
 
     return orders_by_day
 
+def _fetch_orders_grouped_by_day(filter_mode='all', filter_value=None):
+    query = Order.query.options(joinedload(Order.items))
+
+    if filter_mode == 'day' and filter_value:
+        query = query.filter(Order.date == filter_value)
+    else:
+        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+        query = query.filter(Order.date >= cutoff)
+
+    return _group_query_by_day(query)
+
 def _daily_view_context(filter_action):
-    filter_mode, filter_day = _parse_daily_filters()
-    orders_by_day = _fetch_orders_grouped_by_day(filter_mode, filter_day)
+    filter_mode, filter_value = _parse_daily_filters()
+    orders_by_day = _fetch_orders_grouped_by_day(filter_mode, filter_value)
     total_orders = sum(d['order_count'] for d in orders_by_day)
     total_revenue = sum(d['day_total'] for d in orders_by_day)
 
     return {
         'orders_by_day': orders_by_day,
         'filter_mode': filter_mode,
-        'filter_day': filter_day,
+        'filter_day': filter_value if filter_mode == 'day' else '',
         'filter_action': filter_action,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
+    }
+
+def _fetch_orders_for_export(mode, value):
+    """Like _fetch_orders_grouped_by_day, but supports the wider set of
+    periods the PDF export needs: a single day, a whole month, a whole
+    year, or (with nothing given) the same last-30-days default as the
+    on-page dashboard."""
+    query = Order.query.options(joinedload(Order.items))
+
+    if mode == 'day' and value:
+        query = query.filter(Order.date == value)
+    elif mode in ('month', 'year') and value:
+        query = query.filter(Order.date.like(f"{value}%"))
+    else:
+        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+        query = query.filter(Order.date >= cutoff)
+
+    return _group_query_by_day(query)
+
+def _serialize_order_for_export(o):
+    return {
+        'id': o.id,
+        'date': o.date,
+        'customer': o.customer,
+        'source': o.source,
+        'time': o.time,
+        'address': o.address,
+        'total_price': o.total_price,
+        'is_paid': bool(o.is_paid),
+        'payment_date': o.payment_date or '',
+        'items': [
+            {
+                'item_name': it.item_name,
+                'size': it.size,
+                'price': it.price,
+                'remarks': it.remarks,
+                'image_url': it.image_url or '',
+                'flower_image_url': it.flower_image_url or '',
+            }
+            for it in o.items
+        ],
     }
 
 def _extract_cloudinary_public_id(url):
@@ -295,6 +344,56 @@ def staff_view():
     ctx = _daily_view_context(url_for('staff_view'))
     return render_template('staff_daily.html', active_page='staff', readonly=True, show_payment=False, **ctx)
 
+@app.route('/api/export_orders')
+@manager_required
+def api_export_orders():
+    """JSON data feed for the client-side PDF export (Daily page's month
+    export, and the Monthly Report's PDF button). Returns orders grouped
+    by day, same shape the on-page dashboard uses, but scoped to whatever
+    period is asked for — a single day, a whole month, a whole year, or
+    (with no params) the last 30 days.
+
+    Kept manager-only and JSON-only (no page render, no image-hosting
+    special-casing) so it stays fast even for a full year of orders."""
+    db.session.remove()
+
+    day = (request.args.get('day') or '').strip()
+    month = (request.args.get('month') or '').strip()
+    year = (request.args.get('year') or '').strip()
+    view = (request.args.get('view') or '').strip()
+
+    if day:
+        mode, value = 'day', day
+    elif month:
+        mode, value = 'month', month
+    elif year or view == 'year':
+        mode, value = 'year', (year or datetime.today().strftime('%Y'))
+    else:
+        mode, value = 'all', ''
+
+    groups = _fetch_orders_for_export(mode, value)
+    total_orders = sum(g['order_count'] for g in groups)
+    total_revenue = sum(g['day_total'] for g in groups)
+
+    payload = {
+        'mode': mode,
+        'value': value,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+        'orders_by_day': [
+            {
+                'date': g['date'],
+                'date_display': g['date_display'],
+                'order_count': g['order_count'],
+                'day_total': g['day_total'],
+                'orders': [_serialize_order_for_export(o) for o in g['orders']],
+            }
+            for g in groups
+        ],
+    }
+    db.session.remove()
+    return jsonify(payload)
+
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
@@ -313,9 +412,6 @@ def add_order():
     customer = request.form.get('customer')
     time = request.form.get('time') or '-'
     address = request.form.get('address') or '-'
-    # Free-text car/delivery fee note. Not a number, not added to totals —
-    # both manager and staff forms may send this.
-    delivery_fee = request.form.get('delivery_fee') or ''
 
     item_names = request.form.getlist('item_name[]')
     sizes = request.form.getlist('size[]')
@@ -327,7 +423,7 @@ def add_order():
 
     new_order = Order(
         date=order_date, source=source, customer=customer, total_price=0, time=time, address=address,
-        is_paid=is_paid, payment_date=payment_date, delivery_fee=delivery_fee
+        is_paid=is_paid, payment_date=payment_date
     )
     db.session.add(new_order)
     db.session.flush()
@@ -428,8 +524,6 @@ def edit_order(order_id):
     order.customer = request.form.get('customer')
     order.time = request.form.get('time') or '-'
     order.address = request.form.get('address') or '-'
-    # Free-text car/delivery fee note — editable by both manager and staff.
-    order.delivery_fee = request.form.get('delivery_fee') or ''
 
     # Payment status can only be changed by managers. Staff never see this
     # field in their edit form, so we simply leave the existing values
@@ -553,16 +647,9 @@ def _normalize_source(source):
         return 'Other'
     return source
 
-@app.route('/monthly')
-@manager_required
-def monthly():
-    db.session.remove()
-    db.session.expire_all()
-
-    view_mode = request.args.get('view', 'month')
-    selected_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    selected_year = request.args.get('year', datetime.today().strftime('%Y'))
-
+def _compute_monthly_report(view_mode, selected_month, selected_year):
+    """Shared aggregation logic for both the /monthly dashboard page and the
+    /monthly/export CSV download, so the two can never drift out of sync."""
     if view_mode == 'year':
         date_filter = f"{selected_year}%"
         period_label = selected_year
@@ -617,6 +704,7 @@ def monthly():
             'revenue': stats['revenue']
         })
     top_items.sort(key=lambda x: x['count'], reverse=True)
+    top_items_all = top_items
     top_items = top_items[:10]
 
     profit_margin = 58
@@ -690,17 +778,55 @@ def monthly():
         customer_stats[name]['revenue'] += order.total_price
         customer_stats[name]['sources'][source] = customer_stats[name]['sources'].get(source, 0) + 1
 
-    top_customers = []
+    top_customers_all = []
     for name, stats in customer_stats.items():
         primary_source = max(stats['sources'], key=stats['sources'].get) if stats['sources'] else 'Other'
-        top_customers.append({'name': name, 'orders': stats['orders'], 'revenue': stats['revenue'], 'source': primary_source})
-    top_customers.sort(key=lambda x: x['revenue'], reverse=True)
-    top_customers = top_customers[:10]
+        top_customers_all.append({'name': name, 'orders': stats['orders'], 'revenue': stats['revenue'], 'source': primary_source})
+    top_customers_all.sort(key=lambda x: x['revenue'], reverse=True)
+    top_customers = top_customers_all[:10]
 
     forecast_revenue = 0
     if trend_data and view_mode == 'month':
         avg_recent = sum(trend_data[-7:]) / min(7, len(trend_data))
         forecast_revenue = int(avg_recent * num_periods)
+
+    return {
+        'period_label': period_label,
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
+        'avg_ticket': int(avg_ticket),
+        'unique_customers': unique_customers,
+        'channels': channels,
+        'top_items': top_items,
+        'top_items_all': top_items_all,
+        'estimated_profit': estimated_profit,
+        'profit_margin': profit_margin,
+        'items_per_order': items_per_order,
+        'canceled_orders': canceled_orders,
+        'refund_rate': refund_rate,
+        'new_customers': new_count,
+        'returning_customers': returning_count,
+        'trend_labels': trend_labels,
+        'trend_data': trend_data,
+        'customer_split_data': customer_split_data,
+        'weekday_labels': weekday_labels,
+        'weekday_data': weekday_data,
+        'top_customers': top_customers,
+        'top_customers_all': top_customers_all,
+        'forecast_revenue': forecast_revenue,
+    }
+
+@app.route('/monthly')
+@manager_required
+def monthly():
+    db.session.remove()
+    db.session.expire_all()
+
+    view_mode = request.args.get('view', 'month')
+    selected_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
+    selected_year = request.args.get('year', datetime.today().strftime('%Y'))
+
+    report = _compute_monthly_report(view_mode, selected_month, selected_year)
 
     available_years = sorted({
         r[0][:4]
@@ -716,29 +842,64 @@ def monthly():
         view_mode=view_mode,
         selected_month=selected_month,
         selected_year=selected_year,
-        period_label=period_label,
         available_years=available_years,
-        total_revenue=total_revenue,
-        total_orders=total_orders,
-        avg_ticket=int(avg_ticket),
-        unique_customers=unique_customers,
-        channels=channels,
-        top_items=top_items,
-        estimated_profit=estimated_profit,
-        profit_margin=profit_margin,
-        items_per_order=items_per_order,
-        canceled_orders=canceled_orders,
-        refund_rate=refund_rate,
-        new_customers=new_count,
-        returning_customers=returning_count,
-        trend_labels=trend_labels,
-        trend_data=trend_data,
-        customer_split_data=customer_split_data,
-        weekday_labels=weekday_labels,
-        weekday_data=weekday_data,
-        top_customers=top_customers,
-        forecast_revenue=forecast_revenue
+        **report
     )
+
+
+@app.route('/monthly/export')
+@manager_required
+def monthly_export():
+    """CSV export of the monthly/annual report (summary + channels + top
+    items + top customers) for whichever period is currently selected."""
+    view_mode = request.args.get('view', 'month')
+    selected_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
+    selected_year = request.args.get('year', datetime.today().strftime('%Y'))
+
+    report = _compute_monthly_report(view_mode, selected_month, selected_year)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+
+    writer.writerow(['Memory Cake — 业务报表 Business Report'])
+    writer.writerow(['Period', report['period_label']])
+    writer.writerow([])
+
+    writer.writerow(['SUMMARY'])
+    writer.writerow(['Gross Revenue (MMK)', report['total_revenue']])
+    writer.writerow(['Completed Orders', report['total_orders']])
+    writer.writerow(['Average Ticket (MMK)', report['avg_ticket']])
+    writer.writerow(['Active Customers', report['unique_customers']])
+    writer.writerow(['Estimated Gross Profit (MMK)', report['estimated_profit']])
+    writer.writerow(['Profit Margin (%)', report['profit_margin']])
+    writer.writerow(['Void Rate (%)', report['refund_rate']])
+    writer.writerow(['Canceled/Zero-Value Orders', report['canceled_orders']])
+    writer.writerow(['Items per Order', report['items_per_order']])
+    writer.writerow(['New Customers', report['new_customers']])
+    writer.writerow(['Returning Customers', report['returning_customers']])
+    writer.writerow([])
+
+    writer.writerow(['CHANNEL BREAKDOWN'])
+    writer.writerow(['Channel', 'Revenue (MMK)', 'Percentage'])
+    for c in report['channels']:
+        writer.writerow([c['name'], c['revenue'], f"{c['percentage']}%"])
+    writer.writerow([])
+
+    writer.writerow(['TOP SELLING ITEMS'])
+    writer.writerow(['Rank', 'Item Name', 'Common Sizes', 'Units Sold', 'Revenue (MMK)'])
+    for i, item in enumerate(report['top_items_all'], start=1):
+        writer.writerow([i, item['name'], item['sizes'], item['count'], item['revenue']])
+    writer.writerow([])
+
+    writer.writerow(['TOP CUSTOMERS'])
+    writer.writerow(['Rank', 'Customer', 'Primary Source', 'Orders', 'Revenue (MMK)'])
+    for i, c in enumerate(report['top_customers_all'], start=1):
+        writer.writerow([i, c['name'], c['source'], c['orders'], c['revenue']])
+
+    mem = io.BytesIO(('\ufeff' + buf.getvalue()).encode('utf-8'))
+    label = report['period_label']
+    filename = f"Memory_Cake_Report_{label}.csv"
+    return send_file(mem, mimetype='text/csv', as_attachment=True, download_name=filename)
 
 
 @app.route('/check-cloudinary')
@@ -907,7 +1068,6 @@ def run_migration():
             ('flower_image_url', 'TEXT', "''"),
             ('is_paid', 'BOOLEAN', 'FALSE'),
             ('payment_date', 'TEXT', "''"),
-            ('delivery_fee', 'TEXT', "''"),
         ]:
             try:
                 table = 'order_items' if col in ('image_url', 'flower_image_url') else 'orders'
@@ -965,17 +1125,17 @@ def archive_export():
     writer = csv.writer(buf)
     writer.writerow([
         'order_id', 'date', 'source', 'customer', 'time', 'address',
-        'is_paid', 'payment_date', 'order_total', 'delivery_fee',
+        'is_paid', 'payment_date', 'order_total',
         'item_name', 'size', 'item_price', 'remarks', 'image_url', 'flower_image_url'
     ])
     for o in orders:
         if not o.items:
             writer.writerow([o.id, o.date, o.source, o.customer, o.time, o.address,
-                              o.is_paid, o.payment_date, o.total_price, o.delivery_fee, '', '', '', '', '', ''])
+                              o.is_paid, o.payment_date, o.total_price, '', '', '', '', '', ''])
         for item in o.items:
             writer.writerow([
                 o.id, o.date, o.source, o.customer, o.time, o.address,
-                o.is_paid, o.payment_date, o.total_price, o.delivery_fee,
+                o.is_paid, o.payment_date, o.total_price,
                 item.item_name, item.size, item.price, item.remarks,
                 item.image_url, item.flower_image_url
             ])
