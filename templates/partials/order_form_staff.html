@@ -1,5 +1,12 @@
 {# Staff order entry form (Burmese) — payment & price fields never shown to staff #}
-<section class="bg-white p-5 sm:p-6 no-print section-card input-section">
+<div class="no-print mb-2" id="orderFormToggleWrap">
+    <button type="button" id="orderFormToggleBtn" onclick="toggleOrderForm()" class="w-full flex items-center justify-center gap-2 bg-stone-950 hover:bg-stone-800 text-white text-xs uppercase tracking-widest font-sans font-semibold py-4 px-6 rounded-2xl transition-all shadow-sm cursor-pointer">
+        <span id="orderFormToggleIcon" class="text-base leading-none">➕</span>
+        <span id="orderFormToggleLabel">အော်ဒါအသစ် ထည့်ရန် (Add an Order)</span>
+    </button>
+</div>
+
+<section class="bg-white p-5 sm:p-6 no-print section-card input-section hidden" id="orderFormSection">
     <div class="relative z-10">
         <h2 class="section-title text-emerald-700 mb-6 pb-4 border-b border-emerald-100">
             <span class="section-icon bg-emerald-100">📝</span>
@@ -90,6 +97,23 @@
 </section>
 
 <script>
+    function toggleOrderForm() {
+        const section = document.getElementById('orderFormSection');
+        const icon = document.getElementById('orderFormToggleIcon');
+        const label = document.getElementById('orderFormToggleLabel');
+        const isHidden = section.classList.contains('hidden');
+        if (isHidden) {
+            section.classList.remove('hidden');
+            icon.textContent = '✕';
+            label.textContent = 'ပိတ်မည် (Close Form)';
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            section.classList.add('hidden');
+            icon.textContent = '➕';
+            label.textContent = 'အော်ဒါအသစ် ထည့်ရန် (Add an Order)';
+        }
+    }
+
     // Default the delivery date to today on load.
     (function initDefaultDeliveryDate() {
         const dateHidden = document.getElementById('dateHidden');
