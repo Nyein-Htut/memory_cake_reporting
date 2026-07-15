@@ -15,7 +15,9 @@
         <form id="editOrderForm" method="POST" enctype="multipart/form-data" class="text-sm font-sans p-6 overflow-y-auto space-y-4">
 
             <div class="ef-field">
-                <label class="ef-label">📅 ပေးပို့မည့် ရက်စွဲ &amp; အချိန် <span class="ef-label-en">Delivery Date &amp; Time</span></label>
+                <label class="ef-label">📅 ပေးပို့မည့် ရက်စွဲ &amp; အချိန် 
+                   <!--<span class="ef-label-en">Delivery Date &amp; Time</span>-->
+                </label>
                 <input type="hidden" name="date" id="editDateHidden" value="">
                 <input type="hidden" name="time" id="editTimeHidden" value="">
                 <button type="button" id="editTimeTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openDeliveryDateWheelPicker('editTimeTriggerBtn','editDateHidden','editTimeHidden')">
@@ -25,12 +27,14 @@
             </div>
 
             <div class="ef-field">
-                <label class="ef-label">🚗 ကားခ <span class="ef-label-en">Delivery Fee</span></label>
+                <label class="ef-label">🚗 ကားခ 
+                   <!--<span class="ef-label-en">Delivery Fee</span>-->
+                </label>
                 <input type="text" name="delivery_fee" id="editDeliveryFee" placeholder="ကားခ မှတ်ချက် (ဈေးနှုန်းတွင် မပါဝင်ပါ)" class="ef-input">
             </div>
 
             <div class="ef-field">
-                <label class="ef-label">🏷️ အော်ဒါလာသည့်နေရာ <span class="ef-label-en">Source</span></label>
+                <label class="ef-label">🏷️ အော်ဒါလာသည့်နေရာ <!--<span class="ef-label-en">Source</span>--></label>
                 <input type="hidden" name="source" id="editSourceHidden" value="">
                 <button type="button" id="editSourceTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)')">
                     <span>အော်ဒါလာသည့်နေရာ ရွေးပါ</span>
@@ -39,12 +43,12 @@
             </div>
 
             <div class="ef-field">
-                <label class="ef-label">👤 ဖောက်သည်အမည် <span class="ef-label-en">Customer</span></label>
+                <label class="ef-label">👤 ဖောက်သည်အမည် <!--<span class="ef-label-en">Customer</span>--></label>
                 <input type="text" name="customer" id="editCustomer" required class="ef-input">
             </div>
 
             <div class="ef-field">
-                <label class="ef-label">📍 လိပ်စာ &amp; ဆက်သွယ်ရန် <span class="ef-label-en">Address &amp; Contact</span></label>
+                <label class="ef-label">📍 လိပ်စာ &amp; ဆက်သွယ်ရန် <!--<span class="ef-label-en">Address &amp; Contact</span>--></label>
                 <input type="text" name="address" id="editAddress" class="ef-input">
             </div>
 
@@ -52,7 +56,7 @@
 
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
-                    <h4 class="font-semibold text-stone-700 text-xs tracking-wider uppercase">🎂 ပစ္စည်းအသေးစိတ် (Order Items)</h4>
+                    <h4 class="font-semibold text-stone-700 text-xs tracking-wider uppercase">🎂 ပစ္စည်းအသေးစိတ် </h4>
                     <button type="button" onclick="addEditItemRow()" class="bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold px-3 py-1.5 rounded text-xs transition-colors">
                         ➕ ပစ္စည်းထည့်ရန်
                     </button>
