@@ -744,6 +744,41 @@ function openFilterDayPicker() {
 function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     const dateHidden = document.getElementById(dateHiddenId);
 
+    // 1. Timezone-safe helpers using the local device's calendar boundaries
+    function getLocalIsoForOffset(offset) {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function getLocalRelativeDayLabel(offset) {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        const month = d.getMonth() + 1;
+        const date = d.getDate();
+        
+        // Define localized day of the week labels
+        const daysMyanmar = ["တနင်္ဂနွေ", "တနင်္လာ", "အင်္ဂါ", "ဗုဒ္ဓဟူး", "ကြာသပတေး", "သောကြာ", "စနေ"];
+        const daysChinese = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+        const dayOfWeek = d.getDay();
+
+        // Translate specific relative terms
+        if (offset === 0) {
+            return {% if readonly %}`ယနေ့ (${month}/${date})`{% else %}`今天 (${month}/${date})`{% endif %};
+        } else if (offset === 1) {
+            return {% if readonly %}`မနက်ဖြန် (${month}/${date})`{% else %}`明天 (${month}/${date})`{% endif %};
+        } else if (offset === 2) {
+            return {% if readonly %}`သန်ဘက်ခါ (${month}/${date})`{% else %}`后天 (${month}/${date})`{% endif %};
+        }
+
+        // Default formatting for any other day
+        const dayName = {% if readonly %}daysMyanmar[dayOfWeek]{% else %}daysChinese[dayOfWeek]{% endif %};
+        return `${month}/${date} (${dayName})`;
+    }
+
     // Customize the shared date overlay for delivery (forward-looking) use.
     document.getElementById('wpDateTitle').textContent = {% if readonly %}'ပေးပို့မည့် ရက်စွဲ ရွေးပါ (Set Delivery Date)'{% else %}'送达日期选择 (Set Delivery Date)'{% endif %};
     const quickWrap = document.getElementById('wpDateQuick');
@@ -760,7 +795,8 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     const RANGE_BACK = 90, RANGE_FWD = 90;
     const dayItems = [];
     for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
-        dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
+        // Use local timezone offsets here instead of global ones
+        dayItems.push({ label: getLocalRelativeDayLabel(o), value: getLocalIsoForOffset(o) });
     }
 
     let initialIndex = RANGE_BACK; // today
@@ -793,7 +829,6 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
 }
-
 function _openDeliveryTimeStep(triggerBtnId, timeHiddenId, dateIso) {
     const btn = document.getElementById(triggerBtnId);
     const span = btn.querySelector('span');
