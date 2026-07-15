@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -51,6 +51,11 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'max_overflow': 10
 }
 
+def get_myanmar_now():
+    """Returns a datetime object set explicitly to Myanmar Time (UTC +6:30)"""
+    myanmar_tz = timezone(timedelta(hours=6, minutes=30))
+    return datetime.now(myanmar_tz)
+    
 db = SQLAlchemy(app)
 
 # ==========================================
@@ -59,7 +64,7 @@ db = SQLAlchemy(app)
 class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(50), nullable=False, default=lambda: datetime.today().strftime('%Y-%m-%d'))
+    date = db.Column(db.String(50), nullable=False, default=lambda: get_myanmar_now().strftime('%Y-%m-%d'))
     source = db.Column(db.String(100), default='-')
     customer = db.Column(db.String(100), nullable=False)
     total_price = db.Column(db.Integer, nullable=False, default=0)
@@ -213,7 +218,7 @@ def _group_query_by_day(query):
     (day / month / year / all), so the two can never disagree on shape."""
     orders = query.order_by(Order.date.desc(), Order.id.desc()).all()
 
-    recent_cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+    recent_cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
 
     groups = {}
     for order in orders:
@@ -239,7 +244,7 @@ def _fetch_orders_grouped_by_day(filter_mode='all', filter_value=None):
     if filter_mode == 'day' and filter_value:
         query = query.filter(Order.date == filter_value)
     else:
-        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+        cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
         query = query.filter(Order.date >= cutoff)
 
     return _group_query_by_day(query)
@@ -271,7 +276,7 @@ def _fetch_orders_for_export(mode, value):
     elif mode in ('month', 'year') and value:
         query = query.filter(Order.date.like(f"{value}%"))
     else:
-        cutoff = (datetime.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+        cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
         query = query.filter(Order.date >= cutoff)
 
     return _group_query_by_day(query)
@@ -369,7 +374,7 @@ def api_export_orders():
     elif month:
         mode, value = 'month', month
     elif year or view == 'year':
-        mode, value = 'year', (year or datetime.today().strftime('%Y'))
+        mode, value = 'year', (year or get_myanmar_now().strftime('%Y'))
     else:
         mode, value = 'all', ''
 
@@ -827,8 +832,8 @@ def monthly():
     db.session.expire_all()
 
     view_mode = request.args.get('view', 'month')
-    selected_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    selected_year = request.args.get('year', datetime.today().strftime('%Y'))
+    selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
+    selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
 
     report = _compute_monthly_report(view_mode, selected_month, selected_year)
 
@@ -857,8 +862,8 @@ def monthly_export():
     """CSV export of the monthly/annual report (summary + channels + top
     items + top customers) for whichever period is currently selected."""
     view_mode = request.args.get('view', 'month')
-    selected_month = request.args.get('month', datetime.today().strftime('%Y-%m'))
-    selected_year = request.args.get('year', datetime.today().strftime('%Y'))
+    selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
+    selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
 
     report = _compute_monthly_report(view_mode, selected_month, selected_year)
 
@@ -1091,7 +1096,7 @@ def toggle_payment(order_id):
     is_paid = bool(data.get('is_paid'))
 
     order.is_paid = is_paid
-    order.payment_date = datetime.today().strftime('%Y-%m-%d') if is_paid else ''
+    order.payment_date = get_myanmar_now().strftime('%Y-%m-%d') if is_paid else ''
 
     try:
         db.session.commit()
@@ -1106,7 +1111,7 @@ def toggle_payment(order_id):
 @app.route('/admin/archive', methods=['GET'])
 @manager_required
 def archive_view():
-    cutoff = request.args.get('before', (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d'))
+    cutoff = request.args.get('before', (get_myanmar_now() - timedelta(days=365)).strftime('%Y-%m-%d'))
     count = Order.query.filter(Order.date < cutoff).count()
     return render_template('archive.html', active_page='archive', cutoff=cutoff, count=count)
 
