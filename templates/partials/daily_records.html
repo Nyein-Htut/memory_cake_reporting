@@ -199,9 +199,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     
     if (!urlParams.has('day')) {
-        // Calculate today's local date (YYYY-MM-DD format)
-        // Checks if helper function `wpIsoForOffset` is available, otherwise defaults to native JS
-        const todayStr = (typeof wpIsoForOffset === 'function') ? wpIsoForOffset(0) : new Date().toISOString().split('T')[0];
+        // FOOLPROOF LOCAL TODAY: Get the exact date matching the user's current device timezone
+        const localDate = new Date();
+        const year = localDate.getFullYear();
+        // padStart ensures 2-digit month/day (e.g., 07 instead of 7)
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        
+        const todayStr = `${year}-${month}-${day}`;
         
         // Build redirect action to enforce today's orders by default
         const separator = "{{ filter_action }}".includes('?') ? '&' : '?';
