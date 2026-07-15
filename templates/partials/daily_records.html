@@ -189,12 +189,27 @@
     </div>
     {% endfor %}
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
+    
+    // Check if a 'day' parameter is present in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (!urlParams.has('day')) {
+        // Calculate today's local date (YYYY-MM-DD format)
+        // Checks if helper function `wpIsoForOffset` is available, otherwise defaults to native JS
+        const todayStr = (typeof wpIsoForOffset === 'function') ? wpIsoForOffset(0) : new Date().toISOString().split('T')[0];
+        
+        // Build redirect action to enforce today's orders by default
+        const separator = "{{ filter_action }}".includes('?') ? '&' : '?';
+        window.location.href = "{{ filter_action }}" + separator + "day=" + todayStr;
+        return; 
+    }
 
-    // Display the date string on the button cleanly
+    // Set date button display if we have an active selection
     if (hidden && hidden.value && btn) {
         const span = btn.querySelector('span');
         span.textContent = wpFormatDisplayFromISO(hidden.value);
