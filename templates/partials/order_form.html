@@ -161,10 +161,20 @@
         closeOrderModal();
     }
 
+    // Safely gets today's local date (YYYY-MM-DD) in Myanmar/client time
+    function getLocalISODate() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     (function initDefaultDeliveryDate() {
         const dateHidden = document.getElementById('dateHidden');
         if (dateHidden && !dateHidden.value) {
-            dateHidden.value = wpIsoForOffset(0);
+            // Force the default delivery date to use local browser date, not UTC
+            dateHidden.value = getLocalISODate();
         }
     })();
 
