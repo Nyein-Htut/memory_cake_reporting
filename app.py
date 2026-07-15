@@ -52,6 +52,10 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 db = SQLAlchemy(app)
+def get_myanmar_today_str():
+    """Returns today's date string in Asia/Yangon timezone (UTC+6:30)"""
+    myanmar_tz = timezone(timedelta(hours=6, minutes=30))
+    return datetime.now(myanmar_tz).strftime('%Y-%m-%d')
 
 # ==========================================
 # DATABASE MODELS
@@ -59,7 +63,8 @@ db = SQLAlchemy(app)
 class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(50), nullable=False, default=lambda: datetime.today().strftime('%Y-%m-%d'))
+    # Fix: Default order date is now locked to Myanmar local time!
+    date = db.Column(db.String(50), nullable=False, default=get_myanmar_today_str)
     source = db.Column(db.String(100), default='-')
     customer = db.Column(db.String(100), nullable=False)
     total_price = db.Column(db.Integer, nullable=False, default=0)
@@ -75,7 +80,6 @@ class Order(db.Model):
         cascade="all, delete-orphan",
         lazy='selectin'
     )
-
 class OrderItem(db.Model):
     __tablename__ = 'order_items'
     id = db.Column(db.Integer, primary_key=True)
@@ -167,23 +171,35 @@ def refresh_session():
 
 def _parse_daily_filters():
     """
-    Instantly returns 'day' mode with today's date as the default 
-    if no specific date or 'all' override filter is requested.
+    Default fallback is 'day' mode targeting today's Myanmar date, 
+    unless another day parameter or the 'all' override is explicitly requested.
     """
     filter_day = (request.args.get('day') or '').strip()
     
+    # If a specific day is requested by the datepicker, show that day
     if filter_day:
         return 'day', filter_day
         
-    # Check if they explicitly wanted to view all (e.g. clicked "Show All")
+    # If they explicitly click to see all 30 days
     if request.args.get('view') == 'all':
         return 'all', ''
         
-    # DEFAULT: Instantly calculate Myanmar local date (UTC + 6:30) using built-ins
-    myanmar_tz = timezone(timedelta(hours=6, minutes=30))
-    today_str = datetime.now(myanmar_tz).strftime('%Y-%m-%d')
-        
-    return 'day', today_str
+    # DEFAULT: Automatically load today's Myanmar orders instantly
+    return 'day', get_myanmar_today_str()
+
+
+def _fetch_orders_grouped_by_day(filter_mode='day', filter_value=None):
+    query = Order.query.options(joinedload(Order.items))
+
+    if filter_mode == 'day' and filter_value:
+        query = query.filter(Order.date == filter_value)
+    else:
+        # Falls back to Myanmar time to compute the 30-day cutoff
+        today_local = datetime.now(timezone(timedelta(hours=6, minutes=30)))
+        cutoff = (today_local - timedelta(days=30)).strftime('%Y-%m-%d')
+        query = query.filter(Order.date >= cutoff)
+
+    return _group_query_by_day(query)
 
 def _safe_price(prices, i):
     """Index-safe price lookup. Staff forms omit price fields entirely
@@ -261,7 +277,8 @@ def _daily_view_context(filter_action):
     return {
         'orders_by_day': orders_by_day,
         'filter_mode': filter_mode,
-        'filter_day': filter_value, 
+        # Ensure the active day value is sent back so the date button matches
+        'filter_day': filter_value if filter_mode == 'day' else '', 
         'filter_action': filter_action,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
