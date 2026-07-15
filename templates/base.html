@@ -757,7 +757,7 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
         <div class="wp-quick-btn" data-offset="2">后天 +2 Days</div>
     `{% endif %};
 
-    const RANGE_BACK = 7, RANGE_FWD = 90;
+    const RANGE_BACK = 90, RANGE_FWD = 90;
     const dayItems = [];
     for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
         dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
