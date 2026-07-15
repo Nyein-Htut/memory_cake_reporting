@@ -1,31 +1,28 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout #}
 
-<div class="p-4 sm:p-5 bg-white border-b border-stone-200 no-print font-sans relative z-10">
+<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10">
     <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
         <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
-                {% if readonly %}ရက်အလိုက် စစ်ထုတ်ရန်{% else %}按日期筛选{% endif %}
-            </label>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">{% if readonly %}ရက်အလိုက် စစ်ထုတ်ရန်{% else %}按日期筛选{% endif %}</label>
             <input type="hidden" name="day" id="filterDayHidden" value="{{ filter_day or '' }}">
-            <!-- Input button styled with sharp high-contrast stone-300 borders -->
-            <button type="button" id="filterDayTriggerBtn" class="wp-trigger {% if not filter_day %}wp-empty{% endif %} min-w-[220px] bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-xs text-stone-700 hover:border-stone-950 transition-colors flex justify-between items-center" onclick="openFilterDayPicker()">
+            <button type="button" id="filterDayTriggerBtn" class="wp-trigger {% if not filter_day %}wp-empty{% endif %} min-w-[220px]" onclick="openFilterDayPicker()">
                 <span>{% if readonly %}ရက်စွဲ ရွေးပါ{% else %}选择日期{% endif %}</span>
-                <svg class="w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
             </button>
         </div>
 
-        {% if filter_day %}
+        {% if filter_mode == 'day' and filter_day %}
         <a href="{{ filter_action }}"
-            class="text-xs text-emerald-600 hover:text-emerald-800 font-semibold underline underline-offset-4 py-2.5">
-            {% if readonly %}စစ်ထုတ်မှုရှင်းမည် (အားလုံးပြရန်){% else %}清除筛选 (显示全部){% endif %}
+            class="text-xs text-stone-500 hover:text-stone-800 underline underline-offset-2 py-2.5">
+            {% if readonly %}စစ်ထုတ်မှုရှင်းမည်{% else %}清除筛选{% endif %}
         </a>
         {% endif %}
     </form>
 
-    <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200 text-xs font-numeric text-stone-600">
-        <span><strong class="text-emerald-700 text-sm">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
+    <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
+        <span><strong class="text-stone-900">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
         {% if show_payment %}
-        <span><strong class="text-emerald-700 text-sm">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
+        <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
         {% endif %}
         <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
     </div>
@@ -34,16 +31,14 @@
 <div id="ordersRoot" class="p-3 sm:p-5">
     {% for day_group in orders_by_day %}
     <div class="day-group mb-6 last:mb-0">
-        <!-- Day separator highlighted with emerald accent borders -->
-        <div class="day-separator flex items-center gap-3 my-4">
-            <span class="day-separator-date text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 px-3 py-1 rounded-full">{{ day_group.date_display }}</span>
-            <div class="flex-grow border-t border-emerald-100"></div>
-            <span class="day-separator-meta text-xs text-stone-500 font-semibold">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %}{% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}</span>
+        <div class="day-separator">
+            <span class="day-separator-date">{{ day_group.date_display }}</span>
+            <span class="day-separator-meta">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %}{% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}</span>
         </div>
 
         <div class="orders-grid">
             {% for order in day_group.orders %}
-            <div class="order-card border border-stone-250 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
+            <div class="order-card"
                 data-date="{{ order.date }}"
                 data-customer="{{ order.customer }}"
                 data-source="{{ order.source }}"
@@ -52,71 +47,72 @@
                 data-total="{{ order.total_price }}"
                 data-delivery-fee="{{ order.delivery_fee }}">
 
-                <div class="oc-header flex justify-between gap-4 pb-3 border-b border-stone-100 mb-3">
+                <div class="oc-header">
                     <div class="oc-header-main">
-                        <div class="oc-date text-stone-400 text-[11px] font-semibold">{{ order.date }}</div>
-                        <div class="oc-customer text-stone-900 font-bold text-sm">{{ order.customer }}</div>
-                        <div class="oc-source text-xs text-emerald-700 font-medium">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
+                        <div class="oc-date">{{ order.date }}</div>
+                        <div class="oc-customer">{{ order.customer }}</div>
+                        <div class="oc-source">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
                     </div>
-                    <div class="oc-total-wrap text-right">
+                    <div class="oc-total-wrap">
                         {% if show_payment %}
-                        <div class="oc-total-label text-[10px] text-stone-400 uppercase font-bold">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
-                        <div class="oc-total text-emerald-800 font-bold text-sm">{{ "{:,}".format(order.total_price) }} MMK</div>
+                        <div class="oc-total-label">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
+                        <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
                         {% endif %}
-                        <div class="oc-total-items text-xs text-stone-500 truncate max-w-[150px] ml-auto">
+                        <div class="oc-total-items">
                             {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
                         </div>
                         {% if order.is_paid %}
-                        <div class="oc-payment-badge oc-paid inline-block mt-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md font-semibold">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
+                        <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
                         {% else %}
-                        <div class="oc-payment-badge oc-unpaid inline-block mt-1 text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md font-semibold">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
+                        <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="oc-items space-y-3">
+                <div class="oc-items">
                     {% for item in order.items %}
                     <div class="oc-item"
                         data-item-name="{{ item.item_name }}"
                         data-size="{{ item.size }}"
                         data-price="{{ item.price }}"
                         data-remarks="{{ item.remarks }}">
-                        <div class="oc-item-body flex gap-3">
-                            <div class="oc-item-images flex gap-1.5 flex-shrink-0">
-                                <div class="oc-img-slot oc-img-cake relative w-12 h-12 bg-stone-50 rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
+                        <div class="oc-item-body">
+                            <div class="oc-item-images">
+                                <div class="oc-img-slot oc-img-cake">
                                     {% if item.image_url and item.image_url.startswith('http') %}
                                         {% if order.is_recent %}
-                                        <img src="{{ item.image_url }}" alt="Cake Spec" class="object-cover w-full h-full" crossorigin="anonymous">
+                                        <img src="{{ item.image_url }}" alt="Cake Spec" crossorigin="anonymous">
                                         {% else %}
                                         <div class="oc-img-hidden" data-url="{{ item.image_url }}">
-                                            <button type="button" class="oc-view-btn text-[10px] text-stone-600 bg-white/95 px-1 py-0.5 rounded shadow" onclick="revealImage(this)">👁️ View</button>
+                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
                                         </div>
                                         {% endif %}
                                     {% else %}
-                                    <span class="oc-img-empty text-base text-stone-400">🎂</span>
+                                    <span class="oc-img-empty">🎂</span>
                                     {% endif %}
+                                    <span class="oc-img-tag">{% if readonly %}ကိတ်မုန့်{% else %}蛋糕{% endif %}</span>
                                 </div>
-                                <div class="oc-img-slot oc-img-flower relative w-12 h-12 bg-stone-50 rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
+                                <div class="oc-img-slot oc-img-flower">
                                     {% if item.flower_image_url and item.flower_image_url.startswith('http') %}
                                         {% if order.is_recent %}
-                                        <img src="{{ item.flower_image_url }}" alt="Flower Spec" class="object-cover w-full h-full" crossorigin="anonymous">
+                                        <img src="{{ item.flower_image_url }}" alt="Flower Spec" crossorigin="anonymous">
                                         {% else %}
                                         <div class="oc-img-hidden" data-url="{{ item.flower_image_url }}">
-                                            <button type="button" class="oc-view-btn text-[10px] text-stone-600 bg-white/95 px-1 py-0.5 rounded shadow" onclick="revealImage(this)">👁️ View</button>
+                                            <button type="button" class="oc-view-btn" onclick="revealImage(this)">👁️ View</button>
                                         </div>
                                         {% endif %}
                                     {% else %}
-                                    <span class="oc-img-empty text-base text-stone-400">💐</span>
+                                    <span class="oc-img-empty">💐</span>
                                     {% endif %}
+                                    <span class="oc-img-tag">{% if readonly %}ပန်းစည်း{% else %}花束{% endif %}</span>
                                 </div>
                             </div>
-                            <div class="oc-item-meta flex-grow">
-                                <div class="font-bold text-stone-800 text-xs">{{ item.item_name }}</div>
+                            <div class="oc-item-meta">
                                 {% if item.size and item.size != '-' %}
-                                <div class="oc-item-size text-[11px] text-stone-500">{% if readonly %}အရွယ်အစား: {{ item.size }}{% else %}尺寸: {{ item.size }}{% endif %}</div>
+                                <div class="oc-item-size">{% if readonly %}အရွယ်အစား: {{ item.size }}{% else %}尺寸: {{ item.size }}{% endif %}</div>
                                 {% endif %}
                                 {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
-                                <div class="oc-item-remarks text-[11px] text-rose-600 italic">{% if readonly %}မှတ်ချက်: {{ item.remarks }}{% else %}备注: {{ item.remarks }}{% endif %}</div>
+                                <div class="oc-item-remarks">{% if readonly %}မှတ်ချက်: {{ item.remarks }}{% else %}备注: {{ item.remarks }}{% endif %}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -124,15 +120,15 @@
                     {% endfor %}
                 </div>
 
-                <div class="oc-footer flex flex-col gap-2 mt-4 pt-3 border-t border-stone-100">
-                    <div class="oc-footer-text text-xs text-stone-500 space-y-1">
-                        <div class="oc-time font-semibold text-stone-700">{% if readonly %}အချိန်: {{ order.time }}{% else %}时间: {{ order.time }}{% endif %}</div>
-                        <div class="oc-address truncate">📍 {{ order.address }}</div>
+                <div class="oc-footer">
+                    <div class="oc-footer-text">
+                        <span class="oc-time">{% if readonly %}အချိန်: {{ order.time }}{% else %}时间: {{ order.time }}{% endif %}</span>
+                        <span class="oc-address">{{ order.address }}</span>
                         {% if order.delivery_fee and order.delivery_fee != '' %}
-                        <div class="oc-delivery-fee text-emerald-800 font-medium">🚗 {% if readonly %}ကားခ: {{ order.delivery_fee }}{% else %}车费: {{ order.delivery_fee }}{% endif %}</div>
+                        <span class="oc-delivery-fee">🚗 {% if readonly %}ကားခ: {{ order.delivery_fee }}{% else %}车费: {{ order.delivery_fee }}{% endif %}</span>
                         {% endif %}
                     </div>
-                    <div class="oc-actions no-print flex gap-2 justify-end mt-2">
+                    <div class="oc-actions no-print">
                         <button type="button"
                             onclick='openEditModal(
                                 "{{ order.id }}",
@@ -157,18 +153,18 @@
                                     {% endfor %}
                                 ]
                             )'
-                            class="flex items-center gap-1.5 text-[11px] bg-stone-100 hover:bg-stone-200 text-stone-850 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            class="oc-action-btn oc-action-edit"
                             title="{% if readonly %}အော်ဒါပြင်ဆင်ရန်{% else %}编辑订单{% endif %}">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                             </svg>
                             <span>{% if readonly %}ပြင်ဆင်{% else %}编辑{% endif %}</span>
                         </button>
                         <button type="button"
                             onclick="openDeleteModal('{{ order.id }}', '{{ order.customer|escape }}', '{{ order.date }}')"
-                            class="flex items-center gap-1.5 text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            class="oc-action-btn oc-action-delete"
                             title="{% if readonly %}အော်ဒါဖျက်ရန်{% else %}删除订单{% endif %}">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             <span>{% if readonly %}ဖျက်ရန်{% else %}删除{% endif %}</span>
@@ -181,10 +177,12 @@
     </div>
     {% else %}
     <div class="text-center py-16 text-stone-400 italic text-sm">
-        {% if filter_day %}
+        {% if filter_mode != 'all' %}
         {% if readonly %}ဤစစ်ထုတ်မှုအတွက် အော်ဒါမှတ်တမ်း မရှိသေးပါ။{% else %}该筛选条件下暂无订单记录。{% endif %}
+        {% elif readonly %}
+        လောလောဆယ် အော်ဒါမှတ်တမ်း မရှိသေးပါ။
         {% else %}
-        {% if readonly %}လောလောဆယ် အော်ဒါမှတ်တမ်း မရှိသေးပါ။{% else %}云端数据库目前没有数据，请在上方录入单据。{% endif %}
+        云端数据库目前没有数据，请在上方录入单据。
         {% endif %}
     </div>
     {% endfor %}
@@ -194,27 +192,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
-    
-    // Check if a 'day' parameter is present in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    if (!urlParams.has('day')) {
-        // FOOLPROOF LOCAL TODAY: Get the exact date matching the user's current device timezone
-        const localDate = new Date();
-        const year = localDate.getFullYear();
-        // padStart ensures 2-digit month/day (e.g., 07 instead of 7)
-        const month = String(localDate.getMonth() + 1).padStart(2, '0');
-        const day = String(localDate.getDate()).padStart(2, '0');
-        
-        const todayStr = `${year}-${month}-${day}`;
-        
-        // Build redirect action to enforce today's orders by default
-        const separator = "{{ filter_action }}".includes('?') ? '&' : '?';
-        window.location.href = "{{ filter_action }}" + separator + "day=" + todayStr;
-        return; 
-    }
-
-    // Set date button display if we have an active selection
     if (hidden && hidden.value && btn) {
         const span = btn.querySelector('span');
         span.textContent = wpFormatDisplayFromISO(hidden.value);
@@ -228,7 +205,6 @@ function revealImage(btn) {
     const img = document.createElement('img');
     img.src = url;
     img.crossOrigin = 'anonymous';
-    img.className = 'object-cover w-full h-full';
     img.alt = 'Reference Image';
     wrap.replaceWith(img);
 }
