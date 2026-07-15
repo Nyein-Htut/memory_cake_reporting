@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -11,7 +11,6 @@ import cloudinary.uploader
 import cloudinary.api
 import csv
 import io
-import pytz 
 
 app = Flask(__name__)
 
@@ -180,13 +179,9 @@ def _parse_daily_filters():
     if request.args.get('view') == 'all':
         return 'all', ''
         
-    # DEFAULT: Instantly use today's local date in Myanmar timezone (GMT+6:30)
-    try:
-        local_tz = pytz.timezone('Asia/Yangon')
-        today_str = datetime.now(local_tz).strftime('%Y-%m-%d')
-    except Exception:
-        # Fallback if pytz is not installed
-        today_str = (datetime.today() + timedelta(hours=6, minutes=30)).strftime('%Y-%m-%d')
+    # DEFAULT: Instantly calculate Myanmar local date (UTC + 6:30) using built-ins
+    myanmar_tz = timezone(timedelta(hours=6, minutes=30))
+    today_str = datetime.now(myanmar_tz).strftime('%Y-%m-%d')
         
     return 'day', today_str
 
