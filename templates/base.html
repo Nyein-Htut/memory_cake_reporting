@@ -493,6 +493,84 @@ async function _wpRegisterFont(pdf, key) {
     }
 }
 
+    /* ===== Myanmar text: canvas-rasterized (real shaping), not vector glyphs =====
+   jsPDF's addFont()+pdf.text() only does raw codepoint->glyph placement — no
+   OpenType shaping. Myanmar needs actual shaping (virama stacking, pre-base
+   vowel reordering), which the browser's canvas 2D text renderer already
+   does correctly (same engine that renders the on-screen dashboard). So
+   Myanmar runs are drawn to an offscreen canvas and embedded as a small PNG
+   instead of as vector text. CJK/Latin are unaffected — they don't need
+   shaping, so they stay as fast vector pdf.text() calls. */
+let _wpMyanmarCanvasFontPromise = null;
+function _wpLoadMyanmarCanvasFonts() {
+    if (_wpMyanmarCanvasFontPromise) return _wpMyanmarCanvasFontPromise;
+    _wpMyanmarCanvasFontPromise = (async () => {
+        if (typeof FontFace === 'undefined') return false;
+        try {
+            const [regB64, boldB64] = await Promise.all([
+                _wpGetFontBase64('myanmar'),
+                _wpGetFontBase64('myanmarBold')
+            ]);
+            const regFace = new FontFace('WPMyanmarCanvas', `url(data:font/truetype;base64,${regB64})`, { weight: '400' });
+            const boldFace = new FontFace('WPMyanmarCanvas', `url(data:font/truetype;base64,${boldB64})`, { weight: '700' });
+            await Promise.all([regFace.load(), boldFace.load()]);
+            document.fonts.add(regFace);
+            document.fonts.add(boldFace);
+            await document.fonts.ready;
+            return true;
+        } catch (e) {
+            console.warn('[PDF] Myanmar canvas-shaping font failed to load, falling back to vector glyphs:', e.message || e);
+            return false;
+        }
+    })();
+    return _wpMyanmarCanvasFontPromise;
+}
+
+const WP_RASTER_SCALE = 4; // supersampling factor for crisp raster text at print resolution
+const WP_PT_TO_MM = 25.4 / 72;
+
+let _wpRasterCanvas = null;
+function _wpRasterCtx() {
+    if (!_wpRasterCanvas) _wpRasterCanvas = document.createElement('canvas');
+    return _wpRasterCanvas.getContext('2d');
+}
+
+// Renders one Myanmar text run through the browser's real text-shaping
+// engine and returns a small PNG + the mm dimensions/baseline needed to
+// place it into the PDF at the right spot.
+function _wpRasterizeMyanmarRun(text, fontSizePt, bold, rgb) {
+    const scalePx = Math.max(1, fontSizePt * WP_RASTER_SCALE);
+    const fontStr = `${bold ? '700' : '400'} ${scalePx}px WPMyanmarCanvas, sans-serif`;
+
+    let ctx = _wpRasterCtx();
+    ctx.font = fontStr;
+    const metrics = ctx.measureText(text);
+    let ascent = metrics.actualBoundingBoxAscent;
+    let descent = metrics.actualBoundingBoxDescent;
+    if (!isFinite(ascent) || !isFinite(descent) || (ascent <= 0 && descent <= 0)) {
+        ascent = scalePx * 0.9;
+        descent = scalePx * 0.28;
+    }
+    const padX = Math.max(2, Math.ceil(scalePx * 0.05));
+    const width = Math.max(1, Math.ceil(metrics.width) + padX * 2);
+    const height = Math.max(1, Math.ceil(ascent + descent) + 2);
+
+    _wpRasterCanvas.width = width;
+    _wpRasterCanvas.height = height;
+    ctx = _wpRasterCtx(); // resizing the canvas resets its context state
+    ctx.font = fontStr;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    ctx.fillText(text, padX, ascent + 1);
+
+    return {
+        dataUrl: _wpRasterCanvas.toDataURL('image/png'),
+        widthMM: (width / WP_RASTER_SCALE) * WP_PT_TO_MM,
+        heightMM: (height / WP_RASTER_SCALE) * WP_PT_TO_MM,
+        ascentMM: ((ascent + 1) / WP_RASTER_SCALE) * WP_PT_TO_MM
+    };
+}
+    
 function _wpScriptFor(ch) {
     const code = ch.codePointAt(0);
     if ((code >= 0x1000 && code <= 0x109F) || (code >= 0xA9E0 && code <= 0xA9FF) || (code >= 0xAA60 && code <= 0xAA7F)) return 'myanmar';
@@ -550,16 +628,34 @@ function _wpSplitRuns(text) {
    (offline, blocked request, etc.) that script silently falls back to
    Helvetica instead of breaking the export. */
 async function wpPrepareUnicodeText(pdf, textParts) {
+    // Rasterized Myanmar runs are painted as images, so they can't pick up
+    // color from pdf.setFont/pdf.text the normal way — capture whatever
+    // color was last set so the raster matches surrounding vector text.
+    let _lastTextColor = [0, 0, 0];
+    const _origSetTextColor = pdf.setTextColor.bind(pdf);
+    pdf.setTextColor = function(...args) {
+        if (args.length === 1 && typeof args[0] === 'number') {
+            _lastTextColor = [args[0], args[0], args[0]];
+        } else if (args.length >= 3 && typeof args[0] === 'number') {
+            _lastTextColor = [args[0], args[1], args[2]];
+        }
+        return _origSetTextColor(...args);
+    };
+
     const needMyanmar = _wpTextNeedsScript(textParts, 'myanmar');
     const needCjk = _wpTextNeedsScript(textParts, 'cjk');
-    const available = { myanmar: false, cjk: false };
+    const available = { myanmar: false, myanmarCanvas: false, cjk: false };
 
     if (needMyanmar) {
+        // Vector font is still registered — used for word-wrap/truncate
+        // measurement (splitTextToSize/getTextWidth) and as a fallback if
+        // canvas-font loading fails.
         const [okReg, okBold] = await Promise.all([
             _wpRegisterFont(pdf, 'myanmar'),
             _wpRegisterFont(pdf, 'myanmarBold')
         ]);
         available.myanmar = okReg || okBold;
+        available.myanmarCanvas = await _wpLoadMyanmarCanvasFonts();
     }
     if (needCjk) {
         available.cjk = await _wpRegisterFont(pdf, 'cjk');
@@ -572,31 +668,53 @@ async function wpPrepareUnicodeText(pdf, textParts) {
     }
 
     // Unicode-safe drop-in for pdf.text(): splits mixed-script strings into
-    // runs and draws each with the right embedded font, computing combined
-    // width itself so left/center/right alignment still lines up.
+    // runs. Myanmar runs are rasterized through the browser's real
+    // text-shaping engine and embedded as images; other scripts stay as
+    // fast vector pdf.text() calls. Computes combined width itself so
+    // left/center/right alignment still lines up across mixed runs.
     function text(str, x, y, opts = {}) {
         const { align = 'left', fontSize, style = 'normal' } = opts;
-        if (fontSize) pdf.setFontSize(fontSize);
+        const effFontSize = fontSize || 9;
+        pdf.setFontSize(effFontSize);
         const runs = _wpSplitRuns(_wpStripInvisible(str));
         if (runs.length === 1 && runs[0].script === 'latin') {
             pdf.setFont('helvetica', style);
             pdf.text(runs[0].text, x, y, { align });
             return;
         }
-        const widths = runs.map(r => {
+
+        const runInfo = runs.map(r => {
+            if (r.script === 'myanmar' && available.myanmarCanvas) {
+                try {
+                    const raster = _wpRasterizeMyanmarRun(r.text, effFontSize, style === 'bold', _lastTextColor);
+                    return { raster, widthMM: raster.widthMM };
+                } catch (e) {
+                    console.warn('[PDF] Myanmar rasterization failed, falling back to vector glyphs:', e.message || e);
+                }
+            }
             const [fname, fstyle] = fontForScript(r.script, style);
             pdf.setFont(fname, fstyle);
-            return pdf.getTextWidth(r.text);
+            pdf.setFontSize(effFontSize);
+            return { run: r, widthMM: pdf.getTextWidth(r.text) };
         });
-        const totalWidth = widths.reduce((a, b) => a + b, 0);
+
+        const totalWidth = runInfo.reduce((a, b) => a + b.widthMM, 0);
         let curX = x;
         if (align === 'right') curX = x - totalWidth;
         else if (align === 'center') curX = x - totalWidth / 2;
-        runs.forEach((r, i) => {
-            const [fname, fstyle] = fontForScript(r.script, style);
-            pdf.setFont(fname, fstyle);
-            pdf.text(r.text, curX, y);
-            curX += widths[i];
+
+        runInfo.forEach(info => {
+            if (info.raster) {
+                try {
+                    pdf.addImage(info.raster.dataUrl, 'PNG', curX, y - info.raster.ascentMM, info.raster.widthMM, info.raster.heightMM, undefined, 'FAST');
+                } catch (e) {}
+            } else {
+                const [fname, fstyle] = fontForScript(info.run.script, style);
+                pdf.setFont(fname, fstyle);
+                pdf.setFontSize(effFontSize);
+                pdf.text(info.run.text, curX, y);
+            }
+            curX += info.widthMM;
         });
     }
 
@@ -608,9 +726,8 @@ async function wpPrepareUnicodeText(pdf, textParts) {
         return 'latin';
     }
 
-    // Word-wraps text using the metrics of whichever script actually needs
-    // them (Myanmar/CJK glyphs are wider than Latin, so wrapping with the
-    // wrong font's metrics can overflow the box).
+    // Word-wraps using the vector font's metrics (fine for wrapping — only
+    // final draw needs the shaped raster).
     function lines(str, maxWidth, fontSize) {
         const clean = _wpStripInvisible(str);
         const script = dominantScript(clean);
@@ -620,11 +737,6 @@ async function wpPrepareUnicodeText(pdf, textParts) {
         return pdf.splitTextToSize(clean, maxWidth);
     }
 
-    // Truncates a string with an ellipsis so it never overflows past a
-    // fixed column width — used for table cells (item/customer names,
-    // sizes, source), which are single-line and must not collide with the
-    // next column when the text is long (a real risk with Burmese names
-    // and multi-size strings like `6" / 8" / 10"`).
     function truncateToWidth(str, maxWidth, fontSize, style) {
         const s = _wpStripInvisible(str);
         const script = dominantScript(s);
@@ -646,8 +758,6 @@ async function wpPrepareUnicodeText(pdf, textParts) {
         text(truncated, x, y, opts);
     }
 
-    // Draws pre-wrapped lines (from .lines()), still routing
-    // each line's runs through the correct per-script font.
     function drawLines(linesArr, x, y, opts = {}) {
         const { fontSize, lineHeight, style = 'normal' } = opts;
         const lh = lineHeight || (fontSize ? fontSize * 0.45 : 4);
