@@ -317,6 +317,27 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+// All the data the Monthly PDF export needs, straight from the same
+// context the page itself was rendered with — so the PDF can never drift
+// out of sync with what's on screen, and no second API round-trip is
+// needed just to build the export.
+const reportData = {
+    period_label: {{ period_label | tojson | safe }},
+    view_mode: {{ view_mode | tojson | safe }},
+    total_revenue: {{ total_revenue | tojson | safe }},
+    total_orders: {{ total_orders | tojson | safe }},
+    avg_ticket: {{ avg_ticket | tojson | safe }},
+    unique_customers: {{ unique_customers | tojson | safe }},
+    estimated_profit: {{ estimated_profit | default(0) | tojson | safe }},
+    profit_margin: {{ profit_margin | default(58) | tojson | safe }},
+    refund_rate: {{ refund_rate | default(0.0) | tojson | safe }},
+    canceled_orders: {{ canceled_orders | default(0) | tojson | safe }},
+    items_per_order: {{ items_per_order | default(0.0) | tojson | safe }},
+    channels: {{ channels | tojson | safe }},
+    top_items_all: {{ top_items_all | tojson | safe }},
+    top_customers_all: {{ top_customers_all | tojson | safe }}
+};
+
 function setViewMode(mode) {
     document.getElementById('viewModeInput').value = mode;
     document.getElementById('monthPicker').classList.toggle('hidden', mode === 'year');
@@ -352,31 +373,32 @@ const _origSetViewMode = setViewMode;
 setViewMode = function(mode) { _origSetViewMode(mode); syncExportLinks(); };
 
 /* ===== Monthly PDF export =====
-   Fetches every order in the selected month/year from /api/export_orders
-   and hands it to the same fast native-jsPDF card renderer the Daily page
-   uses (see base.html) — the neat 2-column order-card grid, with photos,
-   instead of a slow full-page screenshot. */
+   Renders the analytics report itself (summary metrics, channel
+   breakdown, revenue/weekday/retention charts, top items, top customers)
+   via renderMonthlyReportPDF() in base.html — NOT the Daily Records
+   order-card layout, which is a different export used on the Daily page. */
 async function downloadMonthlyReportPDF() {
     const btn = document.getElementById('monthlyPdfBtn');
     const original = btn.textContent;
     btn.disabled = true;
-    btn.textContent = '加载中…';
+    btn.textContent = '生成中…';
     try {
-        const view = document.getElementById('viewModeInput').value;
-        const month = document.getElementById('monthHidden').value;
-        const year = document.getElementById('yearHidden').value;
-        const params = view === 'year' ? { view: 'year', year } : { view: 'month', month };
-        const label = view === 'year' ? year : month;
-
-        const data = await fetchOrdersForExport(params);
-        await renderOrderCardsPDF({
-            ordersByDay: data.orders_by_day,
-            filename: `Memory_Cake_Orders_${label}.pdf`,
-            showPayment: true,
-            emptyMessage: `No orders found for ${label}.`,
-            onProgress: (loaded, total) => {
-                btn.textContent = total ? `生成中… (${loaded}/${total})` : '生成中…';
-            }
+        await renderMonthlyReportPDF({
+            periodLabel: reportData.period_label,
+            viewMode: reportData.view_mode,
+            totalRevenue: reportData.total_revenue,
+            totalOrders: reportData.total_orders,
+            avgTicket: reportData.avg_ticket,
+            uniqueCustomers: reportData.unique_customers,
+            estimatedProfit: reportData.estimated_profit,
+            profitMargin: reportData.profit_margin,
+            refundRate: reportData.refund_rate,
+            canceledOrders: reportData.canceled_orders,
+            itemsPerOrder: reportData.items_per_order,
+            channels: reportData.channels,
+            topItems: reportData.top_items_all,
+            topCustomers: reportData.top_customers_all,
+            filename: `Memory_Cake_Report_${reportData.period_label}.pdf`
         });
     } catch (err) {
         alert('PDF 导出失败，请重试。\n' + (err.message || ''));

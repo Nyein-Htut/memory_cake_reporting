@@ -432,6 +432,190 @@
 </div>
 
 <script>
+/* ===== Unicode font support for PDF export (Myanmar + Chinese) =====
+   jsPDF's built-in fonts (Helvetica etc.) have no Myanmar or CJK glyphs,
+   so any Burmese/Chinese text in an order (customer names, addresses,
+   remarks...) prints as garbled symbols. Fixed by embedding real Unicode
+   TTF fonts into the PDF at export time and switching fonts per run of
+   text based on which script each character belongs to.
+
+   Fonts are fetched once (as static files, same-origin — no external CDN
+   dependency) and cached in memory as base64 so repeat exports in the
+   same page session don't re-download them. They're only fetched at all
+   if the content being exported actually contains that script, so a
+   normal Burmese-only day never touches the (much larger) Chinese font. */
+const WP_FONT_SOURCES = {
+    myanmar:     { name: 'NotoSansMyanmar', file: 'NotoSansMyanmar-Regular.ttf', url: '/static/fonts/NotoSansMyanmar-Regular.ttf', style: 'normal' },
+    myanmarBold: { name: 'NotoSansMyanmar', file: 'NotoSansMyanmar-Bold.ttf',    url: '/static/fonts/NotoSansMyanmar-Bold.ttf',    style: 'bold'   },
+    // Registered under the jsPDF font name "NotoSansSC" for simplicity, but
+    // the actual embedded font is WenQuanYi Zen Hei — a genuine TrueType
+    // (glyf-outline) CJK font. This matters because jsPDF can only embed
+    // TrueType outlines, not the CFF/OpenType outlines that Google's own
+    // "Noto Sans SC" ships as, so a direct Noto CJK font won't load here.
+    cjk:         { name: 'NotoSansSC', file: 'WenQuanYiZenHei-Regular.ttf', url: '/static/fonts/WenQuanYiZenHei-Regular.ttf', style: 'normal' }
+};
+const _wpFontBase64Cache = {};
+
+function _wpArrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+}
+
+async function _wpGetFontBase64(key) {
+    if (_wpFontBase64Cache[key]) return _wpFontBase64Cache[key];
+    const src = WP_FONT_SOURCES[key];
+    const res = await fetch(src.url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const buf = await res.arrayBuffer();
+    const b64 = _wpArrayBufferToBase64(buf);
+    _wpFontBase64Cache[key] = b64;
+    return b64;
+}
+
+// Fonts must be registered on every new jsPDF() instance (the VFS is
+// per-document), but thanks to the base64 cache above that's just a fast
+// local addFileToVFS/addFont call after the first real network fetch.
+async function _wpRegisterFont(pdf, key) {
+    const src = WP_FONT_SOURCES[key];
+    try {
+        const b64 = await _wpGetFontBase64(key);
+        pdf.addFileToVFS(src.file, b64);
+        pdf.addFont(src.file, src.name, src.style);
+        return true;
+    } catch (e) {
+        console.warn('[PDF] Unicode font unavailable (' + key + '):', e.message || e);
+        return false;
+    }
+}
+
+function _wpScriptFor(ch) {
+    const code = ch.codePointAt(0);
+    if ((code >= 0x1000 && code <= 0x109F) || (code >= 0xA9E0 && code <= 0xA9FF) || (code >= 0xAA60 && code <= 0xAA7F)) return 'myanmar';
+    if ((code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x3400 && code <= 0x4DBF) || (code >= 0xF900 && code <= 0xFAFF) || (code >= 0x3000 && code <= 0x303F) || (code >= 0xFF00 && code <= 0xFFEF)) return 'cjk';
+    return 'latin';
+}
+
+function _wpTextNeedsScript(parts, script) {
+    for (const t of parts) {
+        if (!t) continue;
+        for (const ch of String(t)) {
+            if (_wpScriptFor(ch) === script) return true;
+        }
+    }
+    return false;
+}
+
+// Splits a string into runs of consecutive same-script characters (spaces
+// and punctuation stay attached to whichever script surrounds them, so a
+// Burmese sentence with normal spacing doesn't get chopped into dozens of
+// tiny runs).
+function _wpSplitRuns(text) {
+    const runs = [];
+    let cur = '', curScript = null;
+    for (const ch of String(text || '')) {
+        let s = _wpScriptFor(ch);
+        if (s === 'latin' && curScript && curScript !== 'latin' && /[\s.,:;!?()\-\/'"，。！？：；（）]/.test(ch)) {
+            s = curScript;
+        }
+        if (curScript === null) { curScript = s; cur = ch; }
+        else if (s === curScript) { cur += ch; }
+        else { runs.push({ text: cur, script: curScript }); cur = ch; curScript = s; }
+    }
+    if (cur) runs.push({ text: cur, script: curScript });
+    return runs.length ? runs : [{ text: '', script: 'latin' }];
+}
+
+/* Scans the text that's about to be printed, loads only the Unicode
+   font(s) actually needed, and returns a small set of Unicode-safe
+   drawing helpers bound to this pdf instance. If a font fails to load
+   (offline, blocked request, etc.) that script silently falls back to
+   Helvetica instead of breaking the export. */
+async function wpPrepareUnicodeText(pdf, textParts) {
+    const needMyanmar = _wpTextNeedsScript(textParts, 'myanmar');
+    const needCjk = _wpTextNeedsScript(textParts, 'cjk');
+    const available = { myanmar: false, cjk: false };
+
+    if (needMyanmar) {
+        const [okReg, okBold] = await Promise.all([
+            _wpRegisterFont(pdf, 'myanmar'),
+            _wpRegisterFont(pdf, 'myanmarBold')
+        ]);
+        available.myanmar = okReg || okBold;
+    }
+    if (needCjk) {
+        available.cjk = await _wpRegisterFont(pdf, 'cjk');
+    }
+
+    function fontForScript(script, style) {
+        if (script === 'myanmar' && available.myanmar) return ['NotoSansMyanmar', style === 'bold' ? 'bold' : 'normal'];
+        if (script === 'cjk' && available.cjk) return ['NotoSansSC', 'normal'];
+        return ['helvetica', style || 'normal'];
+    }
+
+    // Unicode-safe drop-in for pdf.text(): splits mixed-script strings into
+    // runs and draws each with the right embedded font, computing combined
+    // width itself so left/center/right alignment still lines up.
+    function text(str, x, y, opts = {}) {
+        const { align = 'left', fontSize, style = 'normal' } = opts;
+        if (fontSize) pdf.setFontSize(fontSize);
+        const runs = _wpSplitRuns(str);
+        if (runs.length === 1 && runs[0].script === 'latin') {
+            pdf.setFont('helvetica', style);
+            pdf.text(runs[0].text, x, y, { align });
+            return;
+        }
+        const widths = runs.map(r => {
+            const [fname, fstyle] = fontForScript(r.script, style);
+            pdf.setFont(fname, fstyle);
+            return pdf.getTextWidth(r.text);
+        });
+        const totalWidth = widths.reduce((a, b) => a + b, 0);
+        let curX = x;
+        if (align === 'right') curX = x - totalWidth;
+        else if (align === 'center') curX = x - totalWidth / 2;
+        runs.forEach((r, i) => {
+            const [fname, fstyle] = fontForScript(r.script, style);
+            pdf.setFont(fname, fstyle);
+            pdf.text(r.text, curX, y);
+            curX += widths[i];
+        });
+    }
+
+    function dominantScript(str) {
+        for (const ch of String(str || '')) {
+            const s = _wpScriptFor(ch);
+            if (s !== 'latin') return s;
+        }
+        return 'latin';
+    }
+
+    // Word-wraps text using the metrics of whichever script actually needs
+    // them (Myanmar/CJK glyphs are wider than Latin, so wrapping with the
+    // wrong font's metrics can overflow the box).
+    function lines(str, maxWidth, fontSize) {
+        const script = dominantScript(str);
+        const [fname, fstyle] = fontForScript(script, 'normal');
+        pdf.setFont(fname, fstyle);
+        pdf.setFontSize(fontSize);
+        return pdf.splitTextToSize(String(str || ''), maxWidth);
+    }
+
+    // Draws an array of pre-wrapped lines (from .lines()), still routing
+    // each line's runs through the correct per-script font.
+    function drawLines(linesArr, x, y, opts = {}) {
+        const { fontSize, lineHeight, style = 'normal' } = opts;
+        const lh = lineHeight || (fontSize ? fontSize * 0.45 : 4);
+        (linesArr || []).forEach((ln, i) => text(ln, x, y + i * lh, { fontSize, style }));
+    }
+
+    return { text, lines, drawLines, fontForScript, available };
+}
+
 /* ===== Wheel Picker Engine ===== */
 const WP_ITEM_H = 44;
 
@@ -744,41 +928,6 @@ function openFilterDayPicker() {
 function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     const dateHidden = document.getElementById(dateHiddenId);
 
-    // 1. Timezone-safe helpers using the local device's calendar boundaries
-    function getLocalIsoForOffset(offset) {
-        const d = new Date();
-        d.setDate(d.getDate() + offset);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    function getLocalRelativeDayLabel(offset) {
-        const d = new Date();
-        d.setDate(d.getDate() + offset);
-        const month = d.getMonth() + 1;
-        const date = d.getDate();
-        
-        // Define localized day of the week labels
-        const daysMyanmar = ["တနင်္ဂနွေ", "တနင်္လာ", "အင်္ဂါ", "ဗုဒ္ဓဟူး", "ကြာသပတေး", "သောကြာ", "စနေ"];
-        const daysChinese = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-        const dayOfWeek = d.getDay();
-
-        // Translate specific relative terms
-        if (offset === 0) {
-            return {% if readonly %}`ယနေ့ (${month}/${date})`{% else %}`今天 (${month}/${date})`{% endif %};
-        } else if (offset === 1) {
-            return {% if readonly %}`မနက်ဖြန် (${month}/${date})`{% else %}`明天 (${month}/${date})`{% endif %};
-        } else if (offset === 2) {
-            return {% if readonly %}`သန်ဘက်ခါ (${month}/${date})`{% else %}`后天 (${month}/${date})`{% endif %};
-        }
-
-        // Default formatting for any other day
-        const dayName = {% if readonly %}daysMyanmar[dayOfWeek]{% else %}daysChinese[dayOfWeek]{% endif %};
-        return `${month}/${date} (${dayName})`;
-    }
-
     // Customize the shared date overlay for delivery (forward-looking) use.
     document.getElementById('wpDateTitle').textContent = {% if readonly %}'ပေးပို့မည့် ရက်စွဲ ရွေးပါ (Set Delivery Date)'{% else %}'送达日期选择 (Set Delivery Date)'{% endif %};
     const quickWrap = document.getElementById('wpDateQuick');
@@ -792,11 +941,10 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
         <div class="wp-quick-btn" data-offset="2">后天 +2 Days</div>
     `{% endif %};
 
-    const RANGE_BACK = 90, RANGE_FWD = 90;
+    const RANGE_BACK = 7, RANGE_FWD = 90;
     const dayItems = [];
     for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
-        // Use local timezone offsets here instead of global ones
-        dayItems.push({ label: getLocalRelativeDayLabel(o), value: getLocalIsoForOffset(o) });
+        dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
     }
 
     let initialIndex = RANGE_BACK; // today
@@ -829,6 +977,7 @@ function openDeliveryDateWheelPicker(triggerBtnId, dateHiddenId, timeHiddenId) {
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
 }
+
 function _openDeliveryTimeStep(triggerBtnId, timeHiddenId, dateIso) {
     const btn = document.getElementById(triggerBtnId);
     const span = btn.querySelector('span');
@@ -1087,6 +1236,15 @@ async function renderOrderCardsPDF(opts) {
     const cardW = (usableW - gap * (columns - 1)) / columns;
     const imgSize = 26; // mm square thumbnail
 
+    // Only fetch the Unicode font(s) this particular export actually needs
+    // (e.g. a Chinese-only manager day never downloads the Myanmar font).
+    const allTextParts = [];
+    (ordersByDay || []).forEach(g => (g.orders || []).forEach(o => {
+        allTextParts.push(o.customer, o.address, o.source, o.delivery_fee, o.payment_date);
+        (o.items || []).forEach(it => allTextParts.push(it.item_name, it.size, it.remarks));
+    }));
+    const T = await wpPrepareUnicodeText(pdf, allTextParts);
+
     const allUrls = [];
     (ordersByDay || []).forEach(g => (g.orders || []).forEach(o => (o.items || []).forEach(it => {
         if (it.image_url) allUrls.push(it.image_url);
@@ -1095,8 +1253,7 @@ async function renderOrderCardsPDF(opts) {
     const imageMap = await _wpPreloadImages(allUrls, onProgress);
 
     function textLines(text, maxWidth, size) {
-        pdf.setFontSize(size);
-        return pdf.splitTextToSize(String(text || ''), maxWidth);
+        return T.lines(text, maxWidth, size);
     }
 
     function itemBlockHeight(item, metaW) {
@@ -1138,15 +1295,11 @@ async function renderOrderCardsPDF(opts) {
         cy += 5;
 
         pdf.setTextColor(28, 25, 23);
-        pdf.setFontSize(12);
-        pdf.setFont(undefined, 'bold');
-        pdf.text(String(order.customer || ''), x + 4, cy);
-        pdf.setFont(undefined, 'normal');
+        T.text(String(order.customer || ''), x + 4, cy, { fontSize: 12, style: 'bold' });
         cy += 5;
 
         pdf.setTextColor(120, 113, 108);
-        pdf.setFontSize(8.5);
-        pdf.text(`Source: ${order.source || '-'}`, x + 4, cy);
+        T.text(`Source: ${order.source || '-'}`, x + 4, cy, { fontSize: 8.5 });
         cy += 4;
 
         pdf.setDrawColor(240, 239, 237);
@@ -1178,23 +1331,21 @@ async function renderOrderCardsPDF(opts) {
 
             const metaX = x + 4 + imgSize + 3 + imgSize + 3;
             let my = imgY + 4;
-            pdf.setFontSize(9);
             pdf.setTextColor(28, 25, 23);
-            pdf.setFont(undefined, 'bold');
             const nameLines = textLines(item.item_name || 'Item', metaW, 9);
-            pdf.text(nameLines, metaX, my);
+            T.drawLines(nameLines, metaX, my, { fontSize: 9, lineHeight: 4, style: 'bold' });
             my += nameLines.length * 4 + 1;
-            pdf.setFont(undefined, 'normal');
-            pdf.setFontSize(8);
             if (item.size && item.size !== '-') {
                 pdf.setTextColor(87, 83, 78);
                 const l = textLines('Size: ' + item.size, metaW, 8);
-                pdf.text(l, metaX, my); my += l.length * 3.8;
+                T.drawLines(l, metaX, my, { fontSize: 8, lineHeight: 3.8 });
+                my += l.length * 3.8;
             }
             if (item.remarks && item.remarks !== '-') {
                 pdf.setTextColor(190, 18, 60);
                 const l = textLines('Note: ' + item.remarks, metaW, 8);
-                pdf.text(l, metaX, my); my += l.length * 3.8;
+                T.drawLines(l, metaX, my, { fontSize: 8, lineHeight: 3.8 });
+                my += l.length * 3.8;
             }
 
             cy = imgY + itemBlockHeight(item, metaW);
@@ -1204,13 +1355,12 @@ async function renderOrderCardsPDF(opts) {
         pdf.line(x + 4, cy, x + w - 4, cy);
         cy += 4;
 
-        pdf.setFontSize(8);
         pdf.setTextColor(68, 64, 60);
-        pdf.text(`Time: ${order.time || '-'}`, x + 4, cy);
+        T.text(`Time: ${order.time || '-'}`, x + 4, cy, { fontSize: 8 });
         cy += 4;
         const addrLines = textLines(order.address || '-', w - 8, 7.5);
         pdf.setTextColor(120, 113, 108);
-        pdf.text(addrLines, x + 4, cy);
+        T.drawLines(addrLines, x + 4, cy, { fontSize: 7.5, lineHeight: 3.4 });
         cy += addrLines.length * 3.4 + 4;
 
         pdf.setDrawColor(225, 222, 219);
@@ -1277,6 +1427,236 @@ async function renderOrderCardsPDF(opts) {
     }
 
     pdf.save(filename);
+}
+
+/**
+ * Renders the Monthly/Annual Report page (summary metrics, channel
+ * breakdown, revenue/weekday/retention charts, top items, top customers)
+ * as a PDF — as opposed to renderOrderCardsPDF() above, which renders the
+ * Daily Records order-card grid. Charts are grabbed directly from the
+ * already-rendered Chart.js <canvas> elements via canvas.toDataURL(), so
+ * there's no re-rendering and no html2canvas dependency; canvas text
+ * (chart labels) already renders correctly for any script because it uses
+ * the browser's own font stack, not jsPDF's.
+ *
+ * @param {Object} opts
+ * @param {String} opts.periodLabel
+ * @param {String} opts.viewMode          'month' | 'year'
+ * @param {Number} opts.totalRevenue
+ * @param {Number} opts.totalOrders
+ * @param {Number} opts.avgTicket
+ * @param {Number} opts.uniqueCustomers
+ * @param {Number} opts.estimatedProfit
+ * @param {Number} opts.profitMargin
+ * @param {Number} opts.refundRate
+ * @param {Number} opts.canceledOrders
+ * @param {Number} opts.itemsPerOrder
+ * @param {Array}  opts.channels          [{name, revenue, percentage}]
+ * @param {Array}  opts.topItems          [{name, sizes, count, revenue}]
+ * @param {Array}  opts.topCustomers      [{name, source, orders, revenue}]
+ * @param {String} opts.filename
+ */
+async function renderMonthlyReportPDF(opts) {
+    if (typeof window.jspdf === 'undefined') {
+        alert('PDF 组件加载失败，请检查网络连接后重试。\n(PDF library failed to load — check your network connection and try again.)');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297, margin = 12, usableW = pageW - margin * 2;
+
+    const textParts = [
+        opts.periodLabel,
+        ...(opts.channels || []).map(c => c.name),
+        ...(opts.topItems || []).flatMap(i => [i.name, i.sizes]),
+        ...(opts.topCustomers || []).flatMap(c => [c.name, c.source])
+    ];
+    const T = await wpPrepareUnicodeText(pdf, textParts);
+
+    function ensureSpace(need, y) {
+        if (y + need > pageH - margin) { pdf.addPage(); return margin; }
+        return y;
+    }
+
+    let y = margin;
+
+    // Header
+    pdf.setTextColor(28, 25, 23);
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Memory Cake', margin, y + 6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(120, 113, 108);
+    const reportTitle = opts.viewMode === 'year' ? 'Annual Business Report' : 'Monthly Business Report';
+    pdf.text(`${reportTitle} \u2014 ${opts.periodLabel}`, margin, y + 12);
+    y += 18;
+    pdf.setDrawColor(225, 222, 219);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    // Summary metric cards
+    const metrics = [
+        ['Gross Revenue', `${Number(opts.totalRevenue || 0).toLocaleString()} MMK`],
+        ['Completed Orders', `${opts.totalOrders || 0}`],
+        ['Average Ticket', `${Number(opts.avgTicket || 0).toLocaleString()} MMK`],
+        ['Active Customers', `${opts.uniqueCustomers || 0}`],
+        ['Est. Gross Profit', `${Number(opts.estimatedProfit || 0).toLocaleString()} MMK`],
+        ['Profit Margin', `${opts.profitMargin || 0}%`],
+        ['Void Rate', `${opts.refundRate || 0}% (${opts.canceledOrders || 0})`],
+        ['Items / Order', `${opts.itemsPerOrder || 0}`]
+    ];
+    const mCols = 4, mGap = 4;
+    const mW = (usableW - mGap * (mCols - 1)) / mCols, mH = 20;
+    metrics.forEach((m, i) => {
+        const col = i % mCols, row = Math.floor(i / mCols);
+        const mx = margin + col * (mW + mGap), my = y + row * (mH + mGap);
+        pdf.setDrawColor(231, 229, 228);
+        pdf.roundedRect(mx, my, mW, mH, 2, 2, 'S');
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text(m[0].toUpperCase(), mx + 3, my + 6);
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(28, 25, 23);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(m[1], mx + 3, my + 14);
+    });
+    pdf.setFont('helvetica', 'normal');
+    y += Math.ceil(metrics.length / mCols) * (mH + mGap) + 6;
+
+    // Charts — captured straight from the live Chart.js canvases
+    const chartDefs = [
+        { id: 'revenueTrendChart', label: opts.viewMode === 'year' ? 'Monthly Revenue Trend' : 'Daily Revenue Trend' },
+        { id: 'weekdayChart', label: 'Weekly Sales Pattern' },
+        { id: 'customerChart', label: 'Customer Retention' }
+    ];
+    for (const def of chartDefs) {
+        const canvas = document.getElementById(def.id);
+        if (!canvas) continue;
+        let imgData;
+        try { imgData = canvas.toDataURL('image/png', 1.0); } catch (e) { continue; }
+        const chartW = def.id === 'customerChart' ? usableW * 0.5 : usableW;
+        const chartH = chartW * (canvas.height / canvas.width);
+        y = ensureSpace(chartH + 12, y);
+        pdf.setFontSize(10);
+        pdf.setTextColor(28, 25, 23);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(def.label, margin, y + 4);
+        pdf.setFont('helvetica', 'normal');
+        y += 7;
+        try { pdf.addImage(imgData, 'PNG', margin, y, chartW, chartH, undefined, 'FAST'); } catch (e) {}
+        y += chartH + 8;
+    }
+
+    // Channel breakdown
+    y = ensureSpace(20, y);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(28, 25, 23);
+    pdf.text('Channel Breakdown', margin, y + 5);
+    pdf.setFont('helvetica', 'normal');
+    y += 10;
+    (opts.channels || []).forEach((c) => {
+        y = ensureSpace(12, y);
+        pdf.setTextColor(68, 64, 60);
+        T.text(c.name, margin, y + 4, { fontSize: 9 });
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(`${Number(c.revenue || 0).toLocaleString()} MMK (${c.percentage || 0}%)`, pageW - margin, y + 4, { align: 'right' });
+        pdf.setFillColor(240, 239, 237);
+        pdf.rect(margin, y + 6, usableW, 2, 'F');
+        pdf.setFillColor(41, 37, 36);
+        pdf.rect(margin, y + 6, usableW * Math.min(100, Math.max(0, c.percentage || 0)) / 100, 2, 'F');
+        y += 12;
+    });
+    if (!(opts.channels || []).length) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text('No channel data for this period.', margin, y + 4);
+        y += 10;
+    }
+    y += 4;
+
+    // Top items table
+    y = ensureSpace(20, y);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(28, 25, 23);
+    pdf.text('Top Selling Items', margin, y + 5);
+    pdf.setFont('helvetica', 'normal');
+    y += 9;
+    const itemCols = [margin, margin + 10, margin + 85, margin + 130, pageW - margin];
+    pdf.setFontSize(8);
+    pdf.setTextColor(168, 162, 158);
+    pdf.text('#', itemCols[0], y);
+    pdf.text('Item', itemCols[1], y);
+    pdf.text('Sizes', itemCols[2], y);
+    pdf.text('Sold', itemCols[3], y);
+    pdf.text('Revenue', itemCols[4], y, { align: 'right' });
+    y += 3;
+    pdf.setDrawColor(231, 229, 228);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 5;
+    (opts.topItems || []).forEach((item, i) => {
+        y = ensureSpace(6, y);
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(String(i + 1), itemCols[0], y);
+        T.text(item.name, itemCols[1], y, { fontSize: 8.5 });
+        pdf.setTextColor(120, 113, 108);
+        T.text(item.sizes || '-', itemCols[2], y, { fontSize: 8.5 });
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(String(item.count || 0), itemCols[3], y);
+        pdf.text(`${Number(item.revenue || 0).toLocaleString()} MMK`, itemCols[4], y, { align: 'right' });
+        y += 6;
+    });
+    if (!(opts.topItems || []).length) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text('No item sales for this period.', margin, y);
+        y += 8;
+    }
+    y += 6;
+
+    // Top customers table
+    y = ensureSpace(20, y);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(28, 25, 23);
+    pdf.text('Top Customers', margin, y + 5);
+    pdf.setFont('helvetica', 'normal');
+    y += 9;
+    const custCols = [margin, margin + 10, margin + 85, margin + 130, pageW - margin];
+    pdf.setFontSize(8);
+    pdf.setTextColor(168, 162, 158);
+    pdf.text('#', custCols[0], y);
+    pdf.text('Customer', custCols[1], y);
+    pdf.text('Source', custCols[2], y);
+    pdf.text('Orders', custCols[3], y);
+    pdf.text('Revenue', custCols[4], y, { align: 'right' });
+    y += 3;
+    pdf.line(margin, y, pageW - margin, y);
+    y += 5;
+    (opts.topCustomers || []).forEach((c, i) => {
+        y = ensureSpace(6, y);
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(String(i + 1), custCols[0], y);
+        T.text(c.name, custCols[1], y, { fontSize: 8.5 });
+        pdf.setTextColor(120, 113, 108);
+        T.text(c.source || '-', custCols[2], y, { fontSize: 8.5 });
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(String(c.orders || 0), custCols[3], y);
+        pdf.text(`${Number(c.revenue || 0).toLocaleString()} MMK`, custCols[4], y, { align: 'right' });
+        y += 6;
+    });
+    if (!(opts.topCustomers || []).length) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text('No customer data for this period.', margin, y);
+    }
+
+    pdf.save(opts.filename);
 }
 
 /* ===== Payment checkbox toggle (updated for wheel-picker trigger) ===== */
