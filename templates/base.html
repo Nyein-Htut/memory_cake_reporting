@@ -500,6 +500,20 @@ function _wpScriptFor(ch) {
     return 'latin';
 }
 
+// Real-world Burmese text (especially typed on mobile keyboards) is full of
+// invisible zero-width/format characters used as syllable-break hints —
+// ZWSP, ZWNJ, ZWJ, bidi marks, BOM, etc. Our custom fonts and Helvetica's
+// standard-14 width tables have no entries for most of these, so jsPDF's
+// getTextWidth() can return a bogus (sometimes large) fallback width for
+// them. Since each one also gets isolated into its own tiny "run" by the
+// script-splitter below, that bogus width throws every run after it off to
+// the right — the exact "correct text ... huge gap ... more text" bug seen
+// in mixed Burmese/digit strings. They're invisible anyway, so just drop
+// them before anything measures or draws.
+function _wpStripInvisible(str) {
+    return String(str == null ? '' : str).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
+}
+
 function _wpTextNeedsScript(parts, script) {
     for (const t of parts) {
         if (!t) continue;
@@ -563,7 +577,7 @@ async function wpPrepareUnicodeText(pdf, textParts) {
     function text(str, x, y, opts = {}) {
         const { align = 'left', fontSize, style = 'normal' } = opts;
         if (fontSize) pdf.setFontSize(fontSize);
-        const runs = _wpSplitRuns(str);
+        const runs = _wpSplitRuns(_wpStripInvisible(str));
         if (runs.length === 1 && runs[0].script === 'latin') {
             pdf.setFont('helvetica', style);
             pdf.text(runs[0].text, x, y, { align });
@@ -598,11 +612,12 @@ async function wpPrepareUnicodeText(pdf, textParts) {
     // them (Myanmar/CJK glyphs are wider than Latin, so wrapping with the
     // wrong font's metrics can overflow the box).
     function lines(str, maxWidth, fontSize) {
-        const script = dominantScript(str);
+        const clean = _wpStripInvisible(str);
+        const script = dominantScript(clean);
         const [fname, fstyle] = fontForScript(script, 'normal');
         pdf.setFont(fname, fstyle);
         pdf.setFontSize(fontSize);
-        return pdf.splitTextToSize(String(str || ''), maxWidth);
+        return pdf.splitTextToSize(clean, maxWidth);
     }
 
     // Truncates a string with an ellipsis so it never overflows past a
@@ -611,7 +626,7 @@ async function wpPrepareUnicodeText(pdf, textParts) {
     // next column when the text is long (a real risk with Burmese names
     // and multi-size strings like `6" / 8" / 10"`).
     function truncateToWidth(str, maxWidth, fontSize, style) {
-        const s = String(str || '');
+        const s = _wpStripInvisible(str);
         const script = dominantScript(s);
         const [fname, fstyle] = fontForScript(script, style);
         pdf.setFont(fname, fstyle);
