@@ -172,22 +172,26 @@ def refresh_session():
 
 def _parse_daily_filters():
     """
-    Returns filter mode and value.
-    If no parameter is passed, instantly defaults to today's date in Myanmar timezone.
+    Daily Records filter, mirroring the Monthly Report filter bar: a
+    day / month / year view-mode toggle plus one selected value.
+
+    Returns (view_mode, filter_value) where view_mode is one of
+    'day' | 'month' | 'year', and filter_value is the corresponding
+    'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY' string.
+
+    Defaults to today's day (Myanmar time) when nothing is passed, same
+    as before.
     """
-    filter_day = (request.args.get('day') or '').strip()
-    
-    # 1. If there's an active calendar day filter, use it
-    if filter_day:
-        return 'day', filter_day
-        
-    # 2. If they clicked the "Show All" / Clear button
-    if request.args.get('view') == 'all':
-        return 'all', ''
-        
-    # 3. DEFAULT: Use local Myanmar Today instead of 'all'
-    today_str = get_myanmar_now().strftime('%Y-%m-%d')
-    return 'day', today_str
+    view_mode = request.args.get('view', 'day')
+    if view_mode not in ('day', 'month', 'year'):
+        view_mode = 'day'
+
+    selected_day = (request.args.get('day') or '').strip() or get_myanmar_now().strftime('%Y-%m-%d')
+    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+    selected_year = (request.args.get('year') or '').strip() or get_myanmar_now().strftime('%Y')
+
+    filter_value = {'day': selected_day, 'month': selected_month, 'year': selected_year}[view_mode]
+    return view_mode, filter_value, selected_day, selected_month, selected_year
 
 def _safe_price(prices, i):
     """Index-safe price lookup. Staff forms omit price fields entirely
@@ -221,8 +225,8 @@ def _time_sort_key(order):
 def _group_query_by_day(query):
     """Shared grouping logic: run an already-filtered Order query and bucket
     the results by date, newest first. Used by both the on-page dashboard
-    (last 30 days / single day) and the /api/export_orders endpoint
-    (day / month / year / all), so the two can never disagree on shape."""
+    (day / month / year) and the /api/export_orders endpoint (day / month /
+    year), so the two can never disagree on shape."""
     orders = query.order_by(Order.date.desc(), Order.id.desc()).all()
 
     recent_cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
@@ -245,37 +249,11 @@ def _group_query_by_day(query):
 
     return orders_by_day
 
-def _fetch_orders_grouped_by_day(filter_mode='all', filter_value=None):
-    query = Order.query.options(joinedload(Order.items))
-
-    if filter_mode == 'day' and filter_value:
-        query = query.filter(Order.date == filter_value)
-    else:
-        cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
-        query = query.filter(Order.date >= cutoff)
-
-    return _group_query_by_day(query)
-
-def _daily_view_context(filter_action):
-    filter_mode, filter_value = _parse_daily_filters()
-    orders_by_day = _fetch_orders_grouped_by_day(filter_mode, filter_value)
-    total_orders = sum(d['order_count'] for d in orders_by_day)
-    total_revenue = sum(d['day_total'] for d in orders_by_day)
-
-    return {
-        'orders_by_day': orders_by_day,
-        'filter_mode': filter_mode,
-        'filter_day': filter_value if filter_mode == 'day' else '',
-        'filter_action': filter_action,
-        'total_orders': total_orders,
-        'total_revenue': total_revenue,
-    }
-
-def _fetch_orders_for_export(mode, value):
-    """Like _fetch_orders_grouped_by_day, but supports the wider set of
-    periods the PDF export needs: a single day, a whole month, a whole
-    year, or (with nothing given) the same last-30-days default as the
-    on-page dashboard."""
+def _fetch_orders_for_period(mode, value):
+    """Fetches orders scoped to a single day, a whole month, or a whole
+    year, grouped by day. Shared by the on-page Daily Records dashboard
+    and the /api/export_orders PDF-export feed, so the two can never drift
+    out of sync."""
     query = Order.query.options(joinedload(Order.items))
 
     if mode == 'day' and value:
@@ -287,6 +265,37 @@ def _fetch_orders_for_export(mode, value):
         query = query.filter(Order.date >= cutoff)
 
     return _group_query_by_day(query)
+
+# Kept as a thin alias: some code/comments still refer to the "grouped by
+# day" helper by its original name.
+_fetch_orders_grouped_by_day = _fetch_orders_for_period
+_fetch_orders_for_export = _fetch_orders_for_period
+
+def _available_years():
+    years = sorted({
+        r[0][:4]
+        for r in Order.query.with_entities(Order.date).distinct().all()
+        if r[0] and len(r[0]) >= 4
+    }, reverse=True)
+    return years or [get_myanmar_now().strftime('%Y')]
+
+def _daily_view_context(filter_action):
+    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters()
+    orders_by_day = _fetch_orders_for_period(view_mode, filter_value)
+    total_orders = sum(d['order_count'] for d in orders_by_day)
+    total_revenue = sum(d['day_total'] for d in orders_by_day)
+
+    return {
+        'orders_by_day': orders_by_day,
+        'view_mode': view_mode,
+        'selected_day': selected_day,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'available_years': _available_years(),
+        'filter_action': filter_action,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+    }
 
 def _serialize_order_for_export(o):
     return {
@@ -347,7 +356,23 @@ def _delete_cloudinary_asset(url):
 def index():
     db.session.remove()
     ctx = _daily_view_context(url_for('index'))
-    return render_template('daily.html', active_page='daily', readonly=False, show_payment=True, **ctx)
+
+    # The PDF export button re-uses whichever filter (day/month/year) is
+    # currently active on the page, instead of opening its own picker.
+    if ctx['view_mode'] == 'day':
+        export_params = {'day': ctx['selected_day']}
+        period_value = ctx['selected_day']
+    elif ctx['view_mode'] == 'month':
+        export_params = {'month': ctx['selected_month']}
+        period_value = ctx['selected_month']
+    else:
+        export_params = {'year': ctx['selected_year']}
+        period_value = ctx['selected_year']
+
+    return render_template(
+        'daily.html', active_page='daily', readonly=False, show_payment=True,
+        export_params=export_params, period_value=period_value, **ctx
+    )
 
 @app.route('/staff')
 @login_required
@@ -361,11 +386,9 @@ def staff_view():
 @app.route('/api/export_orders')
 @manager_required
 def api_export_orders():
-    """JSON data feed for the client-side PDF export (Daily page's month
-    export, and the Monthly Report's PDF button). Returns orders grouped
-    by day, same shape the on-page dashboard uses, but scoped to whatever
-    period is asked for — a single day, a whole month, a whole year, or
-    (with no params) the last 30 days.
+    """JSON data feed for the client-side PDF export on the Daily page.
+    Returns orders grouped by day, same shape the on-page dashboard uses,
+    scoped to a single day, a whole month, or a whole year.
 
     Kept manager-only and JSON-only (no page render, no image-hosting
     special-casing) so it stays fast even for a full year of orders."""
@@ -385,7 +408,7 @@ def api_export_orders():
     else:
         mode, value = 'all', ''
 
-    groups = _fetch_orders_for_export(mode, value)
+    groups = _fetch_orders_for_period(mode, value)
     total_orders = sum(g['order_count'] for g in groups)
     total_revenue = sum(g['day_total'] for g in groups)
 
@@ -844,13 +867,7 @@ def monthly():
 
     report = _compute_monthly_report(view_mode, selected_month, selected_year)
 
-    available_years = sorted({
-        r[0][:4]
-        for r in Order.query.with_entities(Order.date).distinct().all()
-        if r[0] and len(r[0]) >= 4
-    }, reverse=True)
-    if not available_years:
-        available_years = [datetime.today().strftime('%Y')]
+    available_years = _available_years()
 
     return render_template(
         'monthly.html',
