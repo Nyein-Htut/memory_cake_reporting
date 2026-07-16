@@ -108,7 +108,7 @@
                 <button onclick="exportTableToCSV()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-6 rounded transition-all shadow-xs border border-stone-300/60 cursor-pointer">
                     导出 CSV 表格
                 </button>
-                <button id="pdfExportBtn" type="button" onclick="openPdfMonthPicker()" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-8 rounded transition-all shadow-sm cursor-pointer">
+                <button id="pdfExportBtn" type="button" onclick="runDailyPdfExport()" class="w-full sm:w-auto bg-stone-950 hover:bg-stone-800 text-white text-xs uppercase tracking-widest font-sans font-semibold py-3.5 px-8 rounded transition-all shadow-sm cursor-pointer">
                     下载 PDF 报表
                 </button>
             </div>
@@ -141,32 +141,32 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-     /* ===== "Export PDF for a month" flow =====
-        Opens the shared month wheel-picker, then fetches that month's
-        orders as JSON from /api/export_orders and hands them straight to
-        the fast native-jsPDF card renderer (see base.html) — no page
-        reload, no DOM screenshotting, so it stays quick even for a full
-        month of orders with photos. */
-     function openPdfMonthPicker() {
-        openMonthWheelPicker({
-            title: '选择要导出的月份 (Select Month to Export as PDF)',
-            initialValue: wpMonthValue(0),
-            onConfirm: (value) => { runDailyPdfExport(value); }
-        });
-     }
+     /* ===== "Export PDF for the current filter" flow =====
+        The Daily Records filter bar (day / month / year, same UI as the
+        Monthly Report page) already determines exactly which orders are
+        on screen. The PDF export just re-uses that same selection instead
+        of popping up a separate month-picker dialog — whatever period is
+        currently filtered is what gets exported.
 
-     async function runDailyPdfExport(monthValue) {
+        Fetches that period's orders as JSON from /api/export_orders and
+        hands them straight to the fast native-jsPDF card renderer (see
+        base.html) — no page reload, no DOM screenshotting, so it stays
+        quick even for a full month of orders with photos. */
+     const dailyExportParams = {{ export_params | tojson | safe }};
+     const dailyExportLabel = {{ period_value | tojson | safe }};
+
+     async function runDailyPdfExport() {
         const btn = document.getElementById('pdfExportBtn');
         const original = btn.textContent;
         btn.disabled = true;
         btn.textContent = '加载中…';
         try {
-            const data = await fetchOrdersForExport({ month: monthValue });
+            const data = await fetchOrdersForExport(dailyExportParams);
             await renderOrderCardsPDF({
                 ordersByDay: data.orders_by_day,
-                filename: `Memory_Cake_Orders_${monthValue}.pdf`,
+                filename: `Memory_Cake_Orders_${dailyExportLabel}.pdf`,
                 showPayment: {{ show_payment | tojson | safe }},
-                emptyMessage: `No orders found for ${monthValue}.`,
+                emptyMessage: `No orders found for ${dailyExportLabel}.`,
                 onProgress: (loaded, total) => {
                     btn.textContent = total ? `生成中… (${loaded}/${total})` : '生成中…';
                 }
