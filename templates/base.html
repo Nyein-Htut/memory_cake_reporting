@@ -605,7 +605,33 @@ async function wpPrepareUnicodeText(pdf, textParts) {
         return pdf.splitTextToSize(String(str || ''), maxWidth);
     }
 
-    // Draws an array of pre-wrapped lines (from .lines()), still routing
+    // Truncates a string with an ellipsis so it never overflows past a
+    // fixed column width — used for table cells (item/customer names,
+    // sizes, source), which are single-line and must not collide with the
+    // next column when the text is long (a real risk with Burmese names
+    // and multi-size strings like `6" / 8" / 10"`).
+    function truncateToWidth(str, maxWidth, fontSize, style) {
+        const s = String(str || '');
+        const script = dominantScript(s);
+        const [fname, fstyle] = fontForScript(script, style);
+        pdf.setFont(fname, fstyle);
+        pdf.setFontSize(fontSize);
+        if (pdf.getTextWidth(s) <= maxWidth) return s;
+        const ellipsisW = pdf.getTextWidth('\u2026');
+        let lo = 0, hi = s.length;
+        while (lo < hi) {
+            const mid = Math.ceil((lo + hi) / 2);
+            if (pdf.getTextWidth(s.slice(0, mid)) + ellipsisW <= maxWidth) lo = mid; else hi = mid - 1;
+        }
+        return lo > 0 ? s.slice(0, lo) + '\u2026' : '\u2026';
+    }
+
+    function textClipped(str, x, y, maxWidth, opts = {}) {
+        const truncated = truncateToWidth(str, maxWidth, opts.fontSize || 9, opts.style);
+        text(truncated, x, y, opts);
+    }
+
+    // Draws pre-wrapped lines (from .lines()), still routing
     // each line's runs through the correct per-script font.
     function drawLines(linesArr, x, y, opts = {}) {
         const { fontSize, lineHeight, style = 'normal' } = opts;
@@ -613,7 +639,7 @@ async function wpPrepareUnicodeText(pdf, textParts) {
         (linesArr || []).forEach((ln, i) => text(ln, x, y + i * lh, { fontSize, style }));
     }
 
-    return { text, lines, drawLines, fontForScript, available };
+    return { text, textClipped, lines, drawLines, fontForScript, available };
 }
 
 /* ===== Wheel Picker Engine ===== */
@@ -1585,7 +1611,8 @@ async function renderMonthlyReportPDF(opts) {
     pdf.text('Top Selling Items', margin, y + 5);
     pdf.setFont('helvetica', 'normal');
     y += 9;
-    const itemCols = [margin, margin + 10, margin + 85, margin + 130, pageW - margin];
+    const itemCols = [margin, margin + 10, margin + 90, margin + 148, pageW - margin];
+    const itemColGap = 3;
     pdf.setFontSize(8);
     pdf.setTextColor(168, 162, 158);
     pdf.text('#', itemCols[0], y);
@@ -1602,9 +1629,9 @@ async function renderMonthlyReportPDF(opts) {
         pdf.setFontSize(8.5);
         pdf.setTextColor(28, 25, 23);
         pdf.text(String(i + 1), itemCols[0], y);
-        T.text(item.name, itemCols[1], y, { fontSize: 8.5 });
+        T.textClipped(item.name, itemCols[1], y, itemCols[2] - itemCols[1] - itemColGap, { fontSize: 8.5 });
         pdf.setTextColor(120, 113, 108);
-        T.text(item.sizes || '-', itemCols[2], y, { fontSize: 8.5 });
+        T.textClipped(item.sizes || '-', itemCols[2], y, itemCols[3] - itemCols[2] - itemColGap, { fontSize: 8.5 });
         pdf.setTextColor(28, 25, 23);
         pdf.text(String(item.count || 0), itemCols[3], y);
         pdf.text(`${Number(item.revenue || 0).toLocaleString()} MMK`, itemCols[4], y, { align: 'right' });
@@ -1626,7 +1653,8 @@ async function renderMonthlyReportPDF(opts) {
     pdf.text('Top Customers', margin, y + 5);
     pdf.setFont('helvetica', 'normal');
     y += 9;
-    const custCols = [margin, margin + 10, margin + 85, margin + 130, pageW - margin];
+    const custCols = [margin, margin + 10, margin + 90, margin + 148, pageW - margin];
+    const custColGap = 3;
     pdf.setFontSize(8);
     pdf.setTextColor(168, 162, 158);
     pdf.text('#', custCols[0], y);
@@ -1642,9 +1670,9 @@ async function renderMonthlyReportPDF(opts) {
         pdf.setFontSize(8.5);
         pdf.setTextColor(28, 25, 23);
         pdf.text(String(i + 1), custCols[0], y);
-        T.text(c.name, custCols[1], y, { fontSize: 8.5 });
+        T.textClipped(c.name, custCols[1], y, custCols[2] - custCols[1] - custColGap, { fontSize: 8.5 });
         pdf.setTextColor(120, 113, 108);
-        T.text(c.source || '-', custCols[2], y, { fontSize: 8.5 });
+        T.textClipped(c.source || '-', custCols[2], y, custCols[3] - custCols[2] - custColGap, { fontSize: 8.5 });
         pdf.setTextColor(28, 25, 23);
         pdf.text(String(c.orders || 0), custCols[3], y);
         pdf.text(`${Number(c.revenue || 0).toLocaleString()} MMK`, custCols[4], y, { align: 'right' });
