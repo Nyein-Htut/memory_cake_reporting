@@ -1455,6 +1455,24 @@ async function renderOrderCardsPDF(opts) {
     pdf.save(filename);
 }
 
+// Chart.js renders its canvas backing store at `options.devicePixelRatio`
+// (defaulting to the screen's own DPR, often 1-2 on desktop). Exporting
+// straight from that canvas and stretching it to fill a PDF page is what
+// made the chart images blurry. This temporarily bumps just the backing
+// resolution — not the on-screen CSS size, so nothing visibly jumps — grabs
+// a crisp PNG, then restores the original resolution.
+function _wpCaptureChartHiRes(chart, targetDPR = 3) {
+    const originalDPR = chart.options.devicePixelRatio || window.devicePixelRatio || 1;
+    try {
+        chart.options.devicePixelRatio = targetDPR;
+        chart.resize();
+        return chart.canvas.toDataURL('image/png', 1.0);
+    } finally {
+        chart.options.devicePixelRatio = originalDPR;
+        chart.resize();
+    }
+}
+
 /**
  * Renders the Monthly/Annual Report page (summary metrics, channel
  * breakdown, revenue/weekday/retention charts, top items, top customers)
@@ -1553,17 +1571,21 @@ async function renderMonthlyReportPDF(opts) {
 
     // Charts — captured straight from the live Chart.js canvases
     const chartDefs = [
-        { id: 'revenueTrendChart', label: opts.viewMode === 'year' ? 'Monthly Revenue Trend' : 'Daily Revenue Trend' },
-        { id: 'weekdayChart', label: 'Weekly Sales Pattern' },
-        { id: 'customerChart', label: 'Customer Retention' }
+        { id: 'revenueTrendChart', label: opts.viewMode === 'year' ? 'Monthly Revenue Trend' : 'Daily Revenue Trend', widthFrac: 1 },
+        { id: 'weekdayChart', label: 'Weekly Sales Pattern', widthFrac: 0.68 },
+        { id: 'customerChart', label: 'Customer Retention', widthFrac: 0.5 }
     ];
     for (const def of chartDefs) {
         const canvas = document.getElementById(def.id);
         if (!canvas) continue;
+        const chartInstance = window.mcCharts && window.mcCharts[def.id];
         let imgData;
-        try { imgData = canvas.toDataURL('image/png', 1.0); } catch (e) { continue; }
-        const chartW = def.id === 'customerChart' ? usableW * 0.5 : usableW;
+        try {
+            imgData = chartInstance ? _wpCaptureChartHiRes(chartInstance) : canvas.toDataURL('image/png', 1.0);
+        } catch (e) { continue; }
+        const chartW = usableW * def.widthFrac;
         const chartH = chartW * (canvas.height / canvas.width);
+        const chartX = margin + (usableW - chartW) / 2;
         y = ensureSpace(chartH + 12, y);
         pdf.setFontSize(10);
         pdf.setTextColor(28, 25, 23);
@@ -1571,7 +1593,7 @@ async function renderMonthlyReportPDF(opts) {
         pdf.text(def.label, margin, y + 4);
         pdf.setFont('helvetica', 'normal');
         y += 7;
-        try { pdf.addImage(imgData, 'PNG', margin, y, chartW, chartH, undefined, 'FAST'); } catch (e) {}
+        try { pdf.addImage(imgData, 'PNG', chartX, y, chartW, chartH, undefined, 'FAST'); } catch (e) {}
         y += chartH + 8;
     }
 
@@ -1603,8 +1625,12 @@ async function renderMonthlyReportPDF(opts) {
     }
     y += 4;
 
-    // Top items table
-    y = ensureSpace(20, y);
+    // Top Selling Items always starts on its own page — the table can run
+    // long, and letting it start wherever the channel breakdown happens to
+    // end left the header stranded alone at the bottom of a page with the
+    // rows spilling onto the next one.
+    pdf.addPage();
+    y = margin;
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(28, 25, 23);

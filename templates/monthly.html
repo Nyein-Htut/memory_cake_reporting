@@ -457,13 +457,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     };
 
+    // Exposed so the PDF export (renderMonthlyReportPDF in base.html) can
+    // temporarily bump each chart's rendering resolution for a crisp export
+    // image, then restore it — see _wpCaptureChartHiRes.
+    window.mcCharts = window.mcCharts || {};
+
     // Revenue Trend Chart
     const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
     const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 300);
     trendGradient.addColorStop(0, 'rgba(41, 37, 36, 0.18)');
     trendGradient.addColorStop(1, 'rgba(41, 37, 36, 0)');
 
-    new Chart(trendCtx, {
+    window.mcCharts.revenueTrendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
             labels: trendLabels,
@@ -504,7 +509,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Customer Retention Doughnut
-    new Chart(document.getElementById('customerChart'), {
+    window.mcCharts.customerChart = new Chart(document.getElementById('customerChart'), {
         type: 'doughnut',
         data: {
             labels: ['New Customers', 'Returning Customers'],
@@ -536,7 +541,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return palette.accent;
     });
 
-    new Chart(document.getElementById('weekdayChart'), {
+    window.mcCharts.weekdayChart = new Chart(document.getElementById('weekdayChart'), {
         type: 'bar',
         data: {
             labels: weekdayLabels,
