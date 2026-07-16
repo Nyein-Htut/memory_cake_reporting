@@ -334,8 +334,8 @@ const reportData = {
     canceled_orders: {{ canceled_orders | default(0) | tojson | safe }},
     items_per_order: {{ items_per_order | default(0.0) | tojson | safe }},
     channels: {{ channels | tojson | safe }},
-    top_items_all: {{ top_items_all | tojson | safe }},
-    top_customers_all: {{ top_customers_all | tojson | safe }}
+    top_items: {{ top_items | tojson | safe }},
+    top_customers: {{ top_customers | tojson | safe }}
 };
 
 function setViewMode(mode) {
@@ -396,8 +396,8 @@ async function downloadMonthlyReportPDF() {
             canceledOrders: reportData.canceled_orders,
             itemsPerOrder: reportData.items_per_order,
             channels: reportData.channels,
-            topItems: reportData.top_items_all,
-            topCustomers: reportData.top_customers_all,
+            topItems: reportData.top_items,
+            topCustomers: reportData.top_customers,
             filename: `Memory_Cake_Report_${reportData.period_label}.pdf`
         });
     } catch (err) {
