@@ -1125,9 +1125,10 @@ def toggle_payment(order_id):
     order = Order.query.get_or_404(order_id)
     data = request.get_json(silent=True) or {}
     is_paid = bool(data.get('is_paid'))
+    custom_date = (data.get('payment_date') or '').strip()
 
     order.is_paid = is_paid
-    order.payment_date = get_myanmar_now().strftime('%Y-%m-%d') if is_paid else ''
+    order.payment_date = (custom_date or get_myanmar_now().strftime('%Y-%m-%d')) if is_paid else ''
 
     try:
         db.session.commit()
