@@ -87,31 +87,27 @@
                     </div>
                     <div class="oc-total-wrap">
                       {% if show_payment %}
-                      <div class="oc-total-label">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
-                      <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
-                      {% endif %}
-                      <div class="oc-total-items">
-                          {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
-                      </div>
-                  
-                      {% if show_payment %}
-                      <button type="button"
-                          class="oc-payment-toggle no-print {% if order.is_paid %}is-paid{% endif %}"
-                          data-order-id="{{ order.id }}"
-                          onclick="togglePaymentStatus(this)">
-                          <span class="oc-payment-toggle-icon">{{ '✅' if order.is_paid else '⏳' }}</span>
-                          <span class="oc-payment-toggle-label">{% if order.is_paid %}已付款{% if order.payment_date %} · {{ order.payment_date }}{% endif %}{% else %}未付款{% endif %}</span>
-                      </button>
-                      <div class="oc-payment-badge print-only {{ 'oc-paid' if order.is_paid else 'oc-unpaid' }}">
-                          {{ '✅ 已付款' if order.is_paid else '⏳ 未付款' }}{% if order.is_paid and order.payment_date %} · {{ order.payment_date }}{% endif %}
-                      </div>
-                      {% else %}
-                      {% if order.is_paid %}
-                      <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
-                      {% else %}
-                      <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
-                      {% endif %}
-                      {% endif %}
+                        <label class="oc-payment-toggle no-print {% if order.is_paid %}is-paid{% endif %}">
+                            <input type="checkbox"
+                                class="oc-payment-checkbox"
+                                {% if order.is_paid %}checked{% endif %}
+                                data-order-id="{{ order.id }}"
+                                data-payment-date="{{ order.payment_date or '' }}"
+                                onchange="handlePaymentCheckboxChange(this)">
+                            <span class="oc-payment-toggle-label">
+                                {% if order.is_paid %}已付款{% if order.payment_date %} · {{ order.payment_date }}{% endif %}{% else %}标记已付款{% endif %}
+                            </span>
+                        </label>
+                        <div class="oc-payment-badge print-only {{ 'oc-paid' if order.is_paid else 'oc-unpaid' }}">
+                            {{ '✅ 已付款' if order.is_paid else '⏳ 未付款' }}{% if order.is_paid and order.payment_date %} · {{ order.payment_date }}{% endif %}
+                        </div>
+                        {% else %}
+                        {% if order.is_paid %}
+                        <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
+                        {% else %}
+                        <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
+                        {% endif %}
+                        {% endif %}
                   </div>
                 </div>
 
@@ -274,38 +270,50 @@ function revealImage(btn) {
     wrap.replaceWith(img);
 }
 
-async function togglePaymentStatus(btn) {
-    const orderId = btn.getAttribute('data-order-id');
-    const wasPaid = btn.classList.contains('is-paid');
-    const nowPaid = !wasPaid;
-    const icon = btn.querySelector('.oc-payment-toggle-icon');
-    const label = btn.querySelector('.oc-payment-toggle-label');
+function handlePaymentCheckboxChange(checkbox) {
+    const orderId = checkbox.getAttribute('data-order-id');
+    const wrapper = checkbox.closest('.oc-payment-toggle');
+    const label = wrapper.querySelector('.oc-payment-toggle-label');
 
-    // Optimistic update so the tap feels instant
-    btn.disabled = true;
-    btn.classList.toggle('is-paid', nowPaid);
-    icon.textContent = nowPaid ? '✅' : '⏳';
-    label.textContent = nowPaid ? '已付款' : '未付款';
+    if (checkbox.checked) {
+        // Marking as paid — let the manager pick the date first.
+        openDateWheelPicker({
+            title: '付款日期选择 (Set Payment Date)',
+            initialValue: checkbox.getAttribute('data-payment-date') || wpIsoForOffset(0),
+            onConfirm: (dateValue) => {
+                submitPaymentUpdate(orderId, true, dateValue, checkbox, wrapper, label);
+            },
+            onCancel: () => {
+                checkbox.checked = false; // manager backed out — don't mark it paid
+            }
+        });
+    } else {
+        submitPaymentUpdate(orderId, false, '', checkbox, wrapper, label);
+    }
+}
 
+async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapper, label) {
+    checkbox.disabled = true;
     try {
         const res = await fetch(`/toggle_payment/${orderId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_paid: nowPaid })
+            body: JSON.stringify({ is_paid: isPaid, payment_date: paymentDate })
         });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Update failed');
-        if (data.is_paid && data.payment_date) {
-            label.textContent = `已付款 · ${data.payment_date}`;
-        }
+
+        checkbox.checked = data.is_paid;
+        checkbox.setAttribute('data-payment-date', data.payment_date || '');
+        wrapper.classList.toggle('is-paid', data.is_paid);
+        label.textContent = data.is_paid
+            ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
+            : '标记已付款';
     } catch (err) {
-        // Roll back on failure
-        btn.classList.toggle('is-paid', wasPaid);
-        icon.textContent = wasPaid ? '✅' : '⏳';
-        label.textContent = wasPaid ? '已付款' : '未付款';
+        checkbox.checked = !isPaid; // roll back
         alert('更新付款状态失败，请重试。\n' + (err.message || ''));
     } finally {
-        btn.disabled = false;
+        checkbox.disabled = false;
     }
 }
 </script>
