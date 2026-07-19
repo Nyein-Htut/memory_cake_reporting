@@ -1,5 +1,9 @@
 {# Shared edit + delete modals: used by both manager (daily.html) and staff (staff_daily.html).
-   Pass show_payment=True/False to control whether the "Mark as Paid" section appears. #}
+   Pass show_payment=True/False to control whether the price field/labels differ.
+   NOTE: "Mark as Paid" is intentionally NOT in this form (for either role) — it's
+   managed directly from the "Mark as Paid" toggle on each order card in
+   daily_records.html (via /toggle_payment), so managers can flip it with a
+   single tap instead of opening this modal. #}
 
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
     <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
@@ -46,22 +50,6 @@
                 <label class="ef-label">📍 送货地址 &amp; 电话 <span class="ef-label-en">Address &amp; Contact</span></label>
                 <input type="text" name="address" id="editAddress" class="ef-input">
             </div>
-
-            {% if show_payment %}
-            <div class="ef-field">
-                <label class="ef-checkbox-row">
-                    <input type="checkbox" name="is_paid" id="editIsPaidCheckbox" onchange="togglePaymentDate('editPaymentDateWrap','editPaymentDateHidden','editPaymentDateTriggerBtn','editIsPaidCheckbox')" class="w-4 h-4 accent-emerald-600">
-                    <span>💰 已付款 (Mark as Paid)</span>
-                </label>
-            </div>
-            <div id="editPaymentDateWrap" class="ef-field hidden">
-                <label class="ef-label">🗓️ 付款日期 <span class="ef-label-en">Payment Date</span></label>
-                <input type="hidden" name="payment_date" id="editPaymentDateHidden" value="">
-                <button type="button" id="editPaymentDateTriggerBtn" class="wp-trigger wp-empty text-xs p-3" onclick="openDateWheelPicker('editPaymentDateTriggerBtn','editPaymentDateHidden')">
-                    <span>选择付款日期</span>
-                </button>
-            </div>
-            {% endif %}
 
             <hr class="border-stone-200">
 
@@ -122,6 +110,9 @@
     const editOverlay = document.getElementById('editOrderModal');
     const editCard = document.getElementById('editModalCard');
 
+    // isPaid/paymentDate are still accepted here (daily_records.html still
+    // passes them) but are no longer used — payment status now lives on the
+    // order card's own "Mark as Paid" toggle instead of this form.
     function openEditModal(orderId, date, source, customer, time, address, deliveryFee, isPaid, paymentDate, items) {
         const container = document.getElementById('editItemsContainer');
         container.innerHTML = '';
@@ -161,23 +152,6 @@
             editSpan.textContent = '选择送达日期时间';
             editBtn.classList.add('wp-empty');
         }
-
-        {% if show_payment %}
-        document.getElementById('editIsPaidCheckbox').checked = !!isPaid;
-        document.getElementById('editPaymentDateWrap').classList.toggle('hidden', !isPaid);
-        const editPayHidden = document.getElementById('editPaymentDateHidden');
-        const editPayBtn = document.getElementById('editPaymentDateTriggerBtn');
-        const editPaySpan = editPayBtn.querySelector('span');
-        if (isPaid && paymentDate) {
-            editPayHidden.value = paymentDate;
-            editPaySpan.textContent = wpFormatDisplayFromISO(paymentDate);
-            editPayBtn.classList.remove('wp-empty');
-        } else {
-            editPayHidden.value = '';
-            editPaySpan.textContent = '选择付款日期';
-            editPayBtn.classList.add('wp-empty');
-        }
-        {% endif %}
 
         editOverlay.classList.remove('hidden');
         editOverlay.classList.add('flex');
