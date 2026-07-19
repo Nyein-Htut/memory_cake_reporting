@@ -170,7 +170,7 @@ def refresh_session():
     if session.get('logged_in'):
         session.modified = True
 
-def _parse_daily_filters():
+def _parse_daily_filters(default_view='day'):
     """
     Daily Records filter, mirroring the Monthly Report filter bar: a
     day / month / year view-mode toggle plus one selected value.
@@ -179,12 +179,17 @@ def _parse_daily_filters():
     'day' | 'month' | 'year', and filter_value is the corresponding
     'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY' string.
 
-    Defaults to today's day (Myanmar time) when nothing is passed, same
-    as before.
+    `default_view` controls what the page opens to when no ?view= is
+    passed in the URL at all (e.g. the manager Daily page defaults to
+    'month' so it doesn't just show "today" every time it's opened, while
+    the staff Daily page keeps defaulting to 'day').
     """
-    view_mode = request.args.get('view', 'day')
+    if default_view not in ('day', 'month', 'year'):
+        default_view = 'day'
+
+    view_mode = request.args.get('view', default_view)
     if view_mode not in ('day', 'month', 'year'):
-        view_mode = 'day'
+        view_mode = default_view
 
     selected_day = (request.args.get('day') or '').strip() or get_myanmar_now().strftime('%Y-%m-%d')
     selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
@@ -279,8 +284,8 @@ def _available_years():
     }, reverse=True)
     return years or [get_myanmar_now().strftime('%Y')]
 
-def _daily_view_context(filter_action):
-    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters()
+def _daily_view_context(filter_action, default_view='day'):
+    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters(default_view)
     orders_by_day = _fetch_orders_for_period(view_mode, filter_value)
     total_orders = sum(d['order_count'] for d in orders_by_day)
     total_revenue = sum(d['day_total'] for d in orders_by_day)
@@ -355,7 +360,10 @@ def _delete_cloudinary_asset(url):
 @manager_required
 def index():
     db.session.remove()
-    ctx = _daily_view_context(url_for('index'))
+    # Manager Daily view opens to "this month" by default (instead of
+    # "today") so it isn't just showing a near-empty single day every time
+    # the page loads. Explicitly passing ?view=day/year still works as usual.
+    ctx = _daily_view_context(url_for('index'), default_view='month')
 
     # The PDF export button re-uses whichever filter (day/month/year) is
     # currently active on the page, instead of opening its own picker.
@@ -564,12 +572,11 @@ def edit_order(order_id):
     order.address = request.form.get('address') or '-'
     order.delivery_fee = request.form.get('delivery_fee') or ''
 
-    # Payment status can only be changed by managers. Staff never see this
-    # field in their edit form, so we simply leave the existing values
-    # untouched for them instead of trusting form data that isn't sent.
-    if _is_manager():
-        order.is_paid = request.form.get('is_paid') == 'on'
-        order.payment_date = request.form.get('payment_date') or ''
+    # Payment status (is_paid / payment_date) is intentionally NOT touched
+    # here for either role. It used to be a checkbox buried inside this
+    # edit form, but it's now managed directly from the order card via the
+    # "Mark as Paid" toggle (see /toggle_payment below), so the edit form
+    # no longer needs to carry or submit that field at all.
 
     names = request.form.getlist('edit_item_name[]')
     sizes = request.form.getlist('edit_size[]')
