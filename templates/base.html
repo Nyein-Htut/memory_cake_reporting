@@ -176,7 +176,7 @@
         .oc-action-delete { color: #be123c; background: #fff1f2; border-color: #ffe4e6; }
         .oc-action-delete:hover { background: #ffe4e6; }
         .oc-payment-toggle {
-            display: flex;
+            display: inline-flex;   /* was: flex */
             align-items: center;
             gap: 6px;
             font-size: 11px;
@@ -199,9 +199,9 @@
         .oc-payment-checkbox { width: 13px; height: 13px; accent-color: #047857; cursor: pointer; }
         .oc-payment-date-label { font-weight: 600; opacity: .8; }
         
-        .print-only { display: none; }
+        .print-only { display: none !important; }
         @media print {
-            .print-only { display: inline-block; }
+            .print-only { display: inline-block !important; }
             .oc-payment-toggle { display: none !important; }
         }
 
@@ -959,16 +959,27 @@ function wpShortDayLabel(iso) {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function openDateWheelPicker(triggerBtnId, hiddenInputId) {
-    const btn = document.getElementById(triggerBtnId);
-    const span = btn.querySelector('span');
-    const hidden = document.getElementById(hiddenInputId);
+function openDateWheelPicker(triggerBtnIdOrCfg, hiddenInputId) {
+    let cfg;
+    if (typeof triggerBtnIdOrCfg === 'object') {
+        cfg = triggerBtnIdOrCfg;
+    } else {
+        const btn = document.getElementById(triggerBtnIdOrCfg);
+        const span = btn.querySelector('span');
+        const hidden = document.getElementById(hiddenInputId);
+        cfg = {
+            initialValue: hidden.value,
+            onConfirm: (value, label) => {
+                hidden.value = value;
+                span.textContent = label;
+                btn.classList.remove('wp-empty');
+            }
+        };
+    }
 
-    // Reset the shared date overlay back to its default (payment-date) context,
-    // in case another flow (delivery date, filter-by-day) left it customized.
-    document.getElementById('wpDateTitle').textContent = '付款日期选择 (Set Payment Date)';
+    document.getElementById('wpDateTitle').textContent = cfg.title || '付款日期选择 (Set Payment Date)';
     const quickWrap = document.getElementById('wpDateQuick');
-    quickWrap.innerHTML = `
+    quickWrap.innerHTML = cfg.quickHtml || `
         <div class="wp-quick-btn" data-offset="0">今天 Today</div>
         <div class="wp-quick-btn" data-offset="-1">昨天 Yesterday</div>
         <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
@@ -980,9 +991,9 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
         dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
     }
 
-    let initialIndex = RANGE_BACK; // today
-    if (hidden.value) {
-        const idx = dayItems.findIndex(it => it.value === hidden.value);
+    let initialIndex = RANGE_BACK;
+    if (cfg.initialValue) {
+        const idx = dayItems.findIndex(it => it.value === cfg.initialValue);
         if (idx >= 0) initialIndex = idx;
     }
 
@@ -991,7 +1002,6 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
     wpLockBody();
 
     const state = { idx: initialIndex };
-
     function updateDisplay() {
         document.getElementById('wpDateDisplay').textContent = dayItems[state.idx].label;
     }
@@ -1004,12 +1014,13 @@ function openDateWheelPicker(triggerBtnId, hiddenInputId) {
 
     document.getElementById('wpDateSetBtn').onclick = () => {
         const chosen = dayItems[dayCol.index];
-        hidden.value = chosen.value;
-        span.textContent = chosen.label;
-        btn.classList.remove('wp-empty');
         closeWheelOverlay('wpDateOverlay');
+        cfg.onConfirm(chosen.value, chosen.label);
     };
-    document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+    document.getElementById('wpDateCancelBtn').onclick = () => {
+        closeWheelOverlay('wpDateOverlay');
+        if (cfg.onCancel) cfg.onCancel();
+    };
 }
 
 /* ===== Filter-by-day picker (Daily Records filter bar) =====
