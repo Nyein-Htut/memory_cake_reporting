@@ -86,19 +86,33 @@
                         <div class="oc-source">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
                     </div>
                     <div class="oc-total-wrap">
-                        {% if show_payment %}
-                        <div class="oc-total-label">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
-                        <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
-                        {% endif %}
-                        <div class="oc-total-items">
-                            {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
-                        </div>
-                        {% if order.is_paid %}
-                        <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
-                        {% else %}
-                        <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
-                        {% endif %}
-                    </div>
+                      {% if show_payment %}
+                      <div class="oc-total-label">{% if readonly %}အော်ဒါ စုစုပေါင်း{% else %}订单总计{% endif %}</div>
+                      <div class="oc-total">{{ "{:,}".format(order.total_price) }} MMK</div>
+                      {% endif %}
+                      <div class="oc-total-items">
+                          {% for item in order.items %}{{ item.item_name }}{% if not loop.last %} · {% endif %}{% endfor %}
+                      </div>
+                  
+                      {% if show_payment %}
+                      <button type="button"
+                          class="oc-payment-toggle no-print {% if order.is_paid %}is-paid{% endif %}"
+                          data-order-id="{{ order.id }}"
+                          onclick="togglePaymentStatus(this)">
+                          <span class="oc-payment-toggle-icon">{{ '✅' if order.is_paid else '⏳' }}</span>
+                          <span class="oc-payment-toggle-label">{% if order.is_paid %}已付款{% if order.payment_date %} · {{ order.payment_date }}{% endif %}{% else %}未付款{% endif %}</span>
+                      </button>
+                      <div class="oc-payment-badge print-only {{ 'oc-paid' if order.is_paid else 'oc-unpaid' }}">
+                          {{ '✅ 已付款' if order.is_paid else '⏳ 未付款' }}{% if order.is_paid and order.payment_date %} · {{ order.payment_date }}{% endif %}
+                      </div>
+                      {% else %}
+                      {% if order.is_paid %}
+                      <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
+                      {% else %}
+                      <div class="oc-payment-badge oc-unpaid">⏳ {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}</div>
+                      {% endif %}
+                      {% endif %}
+                  </div>
                 </div>
 
                 <div class="oc-items">
@@ -258,5 +272,40 @@ function revealImage(btn) {
     img.crossOrigin = 'anonymous';
     img.alt = 'Reference Image';
     wrap.replaceWith(img);
+}
+
+async function togglePaymentStatus(btn) {
+    const orderId = btn.getAttribute('data-order-id');
+    const wasPaid = btn.classList.contains('is-paid');
+    const nowPaid = !wasPaid;
+    const icon = btn.querySelector('.oc-payment-toggle-icon');
+    const label = btn.querySelector('.oc-payment-toggle-label');
+
+    // Optimistic update so the tap feels instant
+    btn.disabled = true;
+    btn.classList.toggle('is-paid', nowPaid);
+    icon.textContent = nowPaid ? '✅' : '⏳';
+    label.textContent = nowPaid ? '已付款' : '未付款';
+
+    try {
+        const res = await fetch(`/toggle_payment/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_paid: nowPaid })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Update failed');
+        if (data.is_paid && data.payment_date) {
+            label.textContent = `已付款 · ${data.payment_date}`;
+        }
+    } catch (err) {
+        // Roll back on failure
+        btn.classList.toggle('is-paid', wasPaid);
+        icon.textContent = wasPaid ? '✅' : '⏳';
+        label.textContent = wasPaid ? '已付款' : '未付款';
+        alert('更新付款状态失败，请重试。\n' + (err.message || ''));
+    } finally {
+        btn.disabled = false;
+    }
 }
 </script>
