@@ -1,6 +1,14 @@
 {# Staff edit + delete modals (Burmese). Payment and price are manager-only, so they're omitted from the UI.
    Note: price is kept as a hidden field (not shown/editable) so that editing an order as staff never
-   wipes out a price the manager already entered — it just gets resubmitted unchanged. #}
+   wipes out a price the manager already entered — it just gets resubmitted unchanged.
+
+   Photo removal: each existing cake/flower thumbnail has a small ✕ button.
+   Clicking it clears the paired old_cake_image[]/old_flower_image[] hidden
+   input and swaps the thumbnail for a "will be removed" note. No backend
+   changes are needed for this — edit_order() in app.py already treats an
+   empty old_*_image[] value as "no image" for that item, and the existing
+   orphaned-Cloudinary-asset cleanup already deletes anything that drops out
+   of urls_after, which an emptied hidden input naturally causes. #}
 
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
     <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
@@ -167,13 +175,39 @@
         }, 150);
     }
 
+    // Renders the thumbnail block for one existing image (cake or flower),
+    // paired with the hidden old_*_image[] input that carries its URL.
+    // Clicking the ✕ clears the hidden input's value and swaps the
+    // thumbnail for a "will be removed" note — that's the only signal
+    // edit_order() on the backend needs to drop the image on save.
+    function _efImageBlock(fieldName, url, borderClass) {
+        const hidden = `<input type="hidden" name="${fieldName}" value="${url || ''}">`;
+        if (!url) {
+            return `${hidden}<div class="ef-image-slot"><div class="text-xs text-stone-400 ef-no-image">ပုံမရှိပါ</div></div>`;
+        }
+        return `${hidden}<div class="ef-image-slot"><div class="ef-image-preview">
+            <img src="${url}" class="w-16 h-16 object-cover rounded-lg border ${borderClass}">
+            <button type="button" class="ef-image-remove-btn" onclick="removeEditItemImage(this)" title="ပုံဖျက်ရန် (Remove photo)">✕</button>
+        </div></div>`;
+    }
+
+    // Clears the paired hidden old_*_image[] input (which sits right before
+    // .ef-image-slot in the markup) and replaces the thumbnail with a note
+    // confirming the image will be removed when the form is submitted.
+    function removeEditItemImage(btn) {
+        const slot = btn.closest('.ef-image-slot');
+        const hiddenInput = slot.previousElementSibling;
+        if (hiddenInput && hiddenInput.tagName === 'INPUT' && hiddenInput.type === 'hidden') {
+            hiddenInput.value = '';
+        }
+        slot.innerHTML = '<div class="ef-image-pending-removal">🗑️ ပုံကို ဖျက်ပါမည် (Will be removed on save)</div>';
+    }
+
     function addEditItemRow(item = {}) {
         const container = document.getElementById('editItemsContainer');
         const row = document.createElement('div');
         row.className = 'ef-item-card space-y-3';
         row.innerHTML = `
-            <input type="hidden" name="old_cake_image[]" value="${item.image_url || ''}">
-            <input type="hidden" name="old_flower_image[]" value="${item.flower_image_url || ''}">
             <input type="hidden" name="edit_price[]" value="${item.price || 0}">
 
             <div class="flex justify-between items-center">
@@ -199,12 +233,12 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="ef-item-label">🎂 လက်ရှိ ကိတ်မုန့်ပုံ</label>
-                    ${item.image_url ? `<img src="${item.image_url}" class="w-16 h-16 object-cover rounded-lg border border-stone-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                    ${_efImageBlock('old_cake_image[]', item.image_url, 'border-stone-200')}
                     <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
                 </div>
                 <div>
                     <label class="ef-item-label">💐 လက်ရှိ ပန်းစည်းပုံ</label>
-                    ${item.flower_image_url ? `<img src="${item.flower_image_url}" class="w-16 h-16 object-cover rounded-lg border border-rose-200 mb-2">` : `<div class="text-xs text-stone-400 mb-2">ပုံမရှိပါ</div>`}
+                    ${_efImageBlock('old_flower_image[]', item.flower_image_url, 'border-rose-200')}
                     <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
                 </div>
             </div>
