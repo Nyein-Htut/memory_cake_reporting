@@ -51,6 +51,42 @@
         </button>
     </form>
 
+    {% if not readonly %}
+    <!-- Manager-only customer search -->
+    <div class="mt-3 pt-3 border-t border-stone-200/60">
+        <div class="relative w-full">
+            <label for="dailyCustomerSearch" class="sr-only">Search customer name</label>
+
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-stone-400 pointer-events-none"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path stroke-linecap="round" d="m20 20-4-4"></path>
+            </svg>
+
+            <input
+                type="search"
+                id="dailyCustomerSearch"
+                autocomplete="off"
+                placeholder="Search customer name..."
+                class="w-full h-11 pl-10 pr-10 rounded-xl border border-stone-200 bg-white text-sm text-stone-800 placeholder:text-stone-400 shadow-sm outline-none transition-all focus:border-stone-400 focus:ring-2 focus:ring-stone-900/5"
+            >
+
+            <button
+                type="button"
+                id="clearDailyCustomerSearch"
+                aria-label="Clear customer search"
+                class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="dailySearchStatus" class="hidden mt-2 text-xs text-stone-500"></div>
+    </div>
+    {% endif %}
+
     <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
         <span><strong class="text-stone-900">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
         {% if show_payment %}
@@ -283,6 +319,102 @@ function revealImage(btn) {
     img.alt = 'Reference Image';
     wrap.replaceWith(img);
 }
+
+{% if not readonly %}
+/* Manager-only customer-name search for the Daily Records dashboard.
+   Filters the currently displayed order cards without submitting/reloading. */
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('dailyCustomerSearch');
+    const clearButton = document.getElementById('clearDailyCustomerSearch');
+    const searchStatus = document.getElementById('dailySearchStatus');
+
+    if (!searchInput) return;
+
+    function updateDailyCustomerSearch() {
+        const query = searchInput.value.trim().toLowerCase();
+        const dayGroups = document.querySelectorAll('#ordersRoot .day-group');
+        let matchedOrders = 0;
+        let totalOrders = 0;
+
+        dayGroups.forEach(function(dayGroup) {
+            const cards = dayGroup.querySelectorAll('.order-card');
+            let visibleInGroup = 0;
+
+            cards.forEach(function(card) {
+                const customerName = (card.getAttribute('data-customer') || '').trim().toLowerCase();
+                const matches = !query || customerName.includes(query);
+
+                card.classList.toggle('hidden', !matches);
+
+                if (matches) {
+                    visibleInGroup++;
+                    matchedOrders++;
+                }
+
+                totalOrders++;
+            });
+
+            // Hide an entire day section when none of its orders match.
+            dayGroup.classList.toggle('hidden', visibleInGroup === 0);
+        });
+
+        // Keep the clear button state polished on mobile and desktop.
+        clearButton.classList.toggle('hidden', !query);
+        clearButton.classList.toggle('flex', !!query);
+
+        if (query) {
+            searchStatus.classList.remove('hidden');
+            searchStatus.textContent = matchedOrders === 1
+                ? '1 order found'
+                : `${matchedOrders} orders found`;
+        } else {
+            searchStatus.classList.add('hidden');
+            searchStatus.textContent = '';
+        }
+
+        // Reuse the existing empty-state area when a search has no matches.
+        let noResults = document.getElementById('dailyCustomerSearchNoResults');
+
+        if (query && matchedOrders === 0 && totalOrders > 0) {
+            if (!noResults) {
+                noResults = document.createElement('div');
+                noResults.id = 'dailyCustomerSearchNoResults';
+                noResults.className = 'text-center py-16 text-stone-400 italic text-sm';
+                noResults.innerHTML = `
+                    <div class="flex justify-center mb-3">
+                        <svg class="w-8 h-8 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path stroke-linecap="round" d="m20 20-4-4"></path>
+                        </svg>
+                    </div>
+                    No customers found matching "<span class="font-medium text-stone-500"></span>".
+                `;
+                document.getElementById('ordersRoot').appendChild(noResults);
+            }
+
+            noResults.querySelector('span').textContent = searchInput.value.trim();
+            noResults.classList.remove('hidden');
+        } else if (noResults) {
+            noResults.classList.add('hidden');
+        }
+    }
+
+    searchInput.addEventListener('input', updateDailyCustomerSearch);
+
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        searchInput.focus();
+        updateDailyCustomerSearch();
+    });
+
+    searchInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && searchInput.value) {
+            searchInput.value = '';
+            updateDailyCustomerSearch();
+        }
+    });
+});
+{% endif %}
 
 function handlePaymentCheckboxChange(checkbox) {
     const orderId = checkbox.getAttribute('data-order-id');
