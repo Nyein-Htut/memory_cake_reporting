@@ -101,6 +101,17 @@
                         <div class="oc-payment-badge print-only {{ 'oc-paid' if order.is_paid else 'oc-unpaid' }}">
                             {{ '✅ 已付款' if order.is_paid else '⏳ 未付款' }}{% if order.is_paid and order.payment_date %} · {{ order.payment_date }}{% endif %}
                         </div>
+
+                        {# ---- Restored: voucher total + delivery fee, color-coded by payment status, small font ---- #}
+                        <div class="oc-price-line" style="font-size:12.5px; font-weight:700; margin-top:6px; text-align:right; color: {{ '#047857' if order.is_paid else '#b45309' }};">
+                            {{ "{:,}".format(order.total_price) }} MMK
+                        </div>
+                        {% if order.delivery_fee and order.delivery_fee != '' %}
+                        <div class="oc-delivery-fee-line" style="font-size:10.5px; font-weight:500; margin-top:2px; text-align:right; color:#a8a29e;">
+                            🚗 {{ order.delivery_fee }}
+                        </div>
+                        {% endif %}
+
                         {% else %}
                         {% if order.is_paid %}
                         <div class="oc-payment-badge oc-paid">✅ {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}{% if order.payment_date %} · {{ order.payment_date }}{% endif %}</div>
@@ -152,6 +163,9 @@
                             <div class="oc-item-meta">
                                 {% if item.size and item.size != '-' %}
                                 <div class="oc-item-size">{% if readonly %}အရွယ်အစား: {{ item.size }}{% else %}尺寸: {{ item.size }}{% endif %}</div>
+                                {% endif %}
+                                {% if show_payment and item.price %}
+                                <div class="oc-item-size">{% if readonly %}ဈေးနှုန်: {{ "{:,}".format(item.price) }} MMK{% else %}单价: {{ "{:,}".format(item.price) }} MMK{% endif %}</div>
                                 {% endif %}
                                 {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
                                 <div class="oc-item-remarks">{% if readonly %}မှတ်ချက်: {{ item.remarks }}{% else %}备注: {{ item.remarks }}{% endif %}</div>
@@ -309,6 +323,10 @@ async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapp
         label.textContent = data.is_paid
             ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
             : '标记已付款';
+
+        // Keep the price line's color in sync with the new payment status
+        const priceLine = wrapper.parentElement.querySelector('.oc-price-line');
+        if (priceLine) priceLine.style.color = data.is_paid ? '#047857' : '#b45309';
     } catch (err) {
         checkbox.checked = !isPaid; // roll back
         alert('更新付款状态失败，请重试。\n' + (err.message || ''));
