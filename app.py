@@ -1252,8 +1252,12 @@ def update_cell():
         }
 
 
-    setattr(obj, field, value)
+   if field == "is_paid":
+    value = True if value == "1" else False
 
+
+    setattr(obj, field, value)
+    
     db.session.commit()
 
 
