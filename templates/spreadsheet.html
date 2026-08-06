@@ -11,6 +11,10 @@
     --hover:#fafafa;
     --selected:#eaf4ff;
     --toolbar:#ffffff;
+    --memory-green:#6f8f72;
+    --memory-dark:#4a3728;
+
+
 }
 
 body{
@@ -24,21 +28,26 @@ body{
 
     height:calc(100vh - 100px);
 
-    padding:25px;
+    padding:35px 60px;
 
     background:#f5f1ec;
 
+}
+
+.sheet-page{
+    max-width:1600px;
+    margin:auto;
 }
     
 .sheet-toolbar{
 
     background:white;
 
-    border:1px solid #ddd;
+    border:1px solid #e5ded6;
 
-    border-radius:12px 12px 0 0;
+    border-radius:16px 16px 0 0;
 
-    padding:14px 18px;
+    padding:18px 22px;
 
     display:flex;
 
@@ -88,8 +97,8 @@ body{
     background:white;
 
     border:1px solid #ddd;
-
-    border-top:none;
+    
+    border-top:3px solid #6f8f72;
 
     border-radius:0 0 12px 12px;
 
@@ -118,14 +127,14 @@ body{
 
     white-space:nowrap;
 
-    padding:10px;
+    padding:8px 10px;
 }
 
 .sheet-table td{
 
     border:1px solid var(--grid);
 
-    padding:6px;
+    padding:5px;
 
     font-size:13px;
 
@@ -275,9 +284,30 @@ body{
 
 <div class="sheet-left">
 
-<h4 class="mb-0">
+<div>
+
+<h4 
+class="mb-1"
+style="
+color:#4a3728;
+font-weight:700;
+">
+
 Spreadsheet View
+
 </h4>
+
+
+<small style="
+color:#6f8f72;
+">
+
+Manage cake orders & update details
+
+</small>
+
+
+</div>
 
 <input
 type="text"
@@ -301,7 +331,12 @@ class="sheet-select">
 </select>
 
 <button
-class="btn btn-primary"
+class="btn"
+style="
+background:#6f8f72;
+color:white;
+border-radius:8px;
+"
 onclick="location.reload()">
 
 Refresh
