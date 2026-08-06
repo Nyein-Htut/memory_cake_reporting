@@ -1207,7 +1207,24 @@ def archive_delete():
         db.session.remove()
 
     return redirect(url_for('archive_view'))
-    
+
+@app.route("/spreadsheet")
+def spreadsheet():
+    rows = []
+    orders = Order.query.order_by(
+        Order.date.desc()
+    ).all()
+    for order in orders:
+        for item in order.items:
+            rows.append({
+                "order": order,
+                "item": item
+            })
+    return render_template(
+        "spreadsheets.html",
+        rows=rows
+    )
+
 @app.route('/health')
 def health():
     return "OK", 200
