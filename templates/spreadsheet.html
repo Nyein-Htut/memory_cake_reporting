@@ -94,6 +94,8 @@ body{
 
     overflow:auto;
 
+    touch-action:none;
+    
     background:white;
 
     border:1px solid #ddd;
@@ -829,31 +831,19 @@ paymentFilter.addEventListener("change",function(){
 
 });
 
-// ======================================
-// iPad pinch zoom like Excel
-// ======================================
+// iPad style pinch zoom for spreadsheet
 
-
-let tableScale = 1;
-
+let tableZoom = 1;
 let startDistance = 0;
 
-
-const sheetTable = document.querySelector(".sheet-table");
-
-
-
-function getTouchDistance(touches){
-
-    const dx =
-        touches[0].clientX -
-        touches[1].clientX;
+const table = document.querySelector(".sheet-table");
+const container = document.querySelector(".sheet-container");
 
 
-    const dy =
-        touches[0].clientY -
-        touches[1].clientY;
+function getDistance(touches){
 
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
 
     return Math.sqrt(dx * dx + dy * dy);
 
@@ -861,100 +851,65 @@ function getTouchDistance(touches){
 
 
 
-sheetTable.addEventListener(
-"touchstart",
-function(e){
-
+container.addEventListener("touchstart", function(e){
 
     if(e.touches.length === 2){
 
-        startDistance =
-            getTouchDistance(e.touches);
+        startDistance = getDistance(e.touches);
 
     }
 
-
-},
-{
-    passive:true
-}
-);
+});
 
 
 
-
-sheetTable.addEventListener(
-"touchmove",
-function(e){
-
+container.addEventListener("touchmove", function(e){
 
     if(e.touches.length === 2){
-
 
         e.preventDefault();
 
 
-
-        const currentDistance =
-            getTouchDistance(e.touches);
+        const currentDistance = getDistance(e.touches);
 
 
-
-        const difference =
-            currentDistance - startDistance;
+        const difference = currentDistance - startDistance;
 
 
+        if(Math.abs(difference) > 10){
 
-        if(Math.abs(difference) > 8){
+
+            tableZoom += difference * 0.002;
 
 
-            if(difference > 0){
+            // limits
+            if(tableZoom < 0.5){
 
-                tableScale += 0.05;
-
-            }
-            else{
-
-                tableScale -= 0.05;
+                tableZoom = 0.5;
 
             }
 
 
+            if(tableZoom > 2){
 
-            if(tableScale < 0.5){
-
-                tableScale = 0.5;
-
-            }
-
-
-
-            if(tableScale > 1.5){
-
-                tableScale = 1.5;
+                tableZoom = 2;
 
             }
 
 
-
-            sheetTable.style.transform =
-                `scale(${tableScale})`;
+            table.style.zoom = tableZoom;
 
 
-
-            startDistance =
-                currentDistance;
+            startDistance = currentDistance;
 
         }
 
     }
 
-
 },
 {
     passive:false
-}
-);
+});
 </script>
 
 {% endblock %}
