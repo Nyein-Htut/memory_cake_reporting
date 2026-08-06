@@ -1209,6 +1209,7 @@ def archive_delete():
     return redirect(url_for('archive_view'))
 
 @app.route("/spreadsheet")
+@manager_required
 def spreadsheet():
     rows = []
     orders = Order.query.order_by(
@@ -1235,34 +1236,33 @@ def update_cell():
     field = data["field"]
     value = data["value"]
 
-
     if table == "order":
-
         obj = Order.query.get(id)
 
     elif table == "item":
-
         obj = OrderItem.query.get(id)
 
+    else:
+        return {
+            "success": False,
+            "message": "Invalid table"
+        }
 
     if not obj:
         return {
-            "success":False,
-            "message":"Not found"
+            "success": False,
+            "message": "Not found"
         }
 
-
-   if field == "is_paid":
+    if field == "is_paid":
         value = True if value == "1" else False
 
-
     setattr(obj, field, value)
-    
+
     db.session.commit()
 
-
     return {
-        "success":True
+        "success": True
     }
     
 @app.route('/health')
