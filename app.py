@@ -1225,6 +1225,42 @@ def spreadsheet():
         rows=rows
     )
 
+@app.route("/api/update-cell", methods=["POST"])
+def update_cell():
+
+    data = request.json
+
+    table = data["table"]
+    id = data["id"]
+    field = data["field"]
+    value = data["value"]
+
+
+    if table == "order":
+
+        obj = Order.query.get(id)
+
+    elif table == "item":
+
+        obj = OrderItem.query.get(id)
+
+
+    if not obj:
+        return {
+            "success":False,
+            "message":"Not found"
+        }
+
+
+    setattr(obj, field, value)
+
+    db.session.commit()
+
+
+    return {
+        "success":True
+    }
+    
 @app.route('/health')
 def health():
     return "OK", 200
