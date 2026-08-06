@@ -107,12 +107,12 @@ body{
 }
 
 .sheet-table{
-    width:100%;
+    width:max-content;
     min-width:1200px;
     border-collapse:collapse;
-    table-layout:auto;
+    table-layout:fixed;
 }
-
+    
 .sheet-table th{
     position:sticky;
     top:0;
@@ -321,6 +321,15 @@ placeholder="Search customer, cake, source..."
 
 <div class="sheet-right">
 
+<div>
+
+<button onclick="zoomTable(-0.1)">−</button>
+
+<span id="zoomText">100%</span>
+
+<button onclick="zoomTable(0.1)">+</button>
+
+</div>
 <select
 id="paymentFilter"
 class="sheet-select">
@@ -660,8 +669,7 @@ data-field="address"
 Saved ✓
 
 </div>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/colresizable/1.6.0/colResizable-1.6.min.js"></script>
+
 <script>
 
 
@@ -845,13 +853,31 @@ paymentFilter.addEventListener("change",function(){
 
 });
 
-$("#sheetTable").colResizable({
-    liveDrag:true,
-    gripInnerHtml:"<div class='grip'></div>",
-    draggingClass:"dragging",
-    resizeMode:'fit'
-});
+let tableZoom = 1;
 
+
+function zoomTable(change){
+
+    tableZoom += change;
+
+
+    if(tableZoom < 0.5){
+        tableZoom = 0.5;
+    }
+
+
+    if(tableZoom > 1.5){
+        tableZoom = 1.5;
+    }
+
+
+    document.querySelector(".sheet-table").style.zoom = tableZoom;
+
+
+    document.getElementById("zoomText").innerText =
+        Math.round(tableZoom * 100) + "%";
+
+}
 </script>
 
 {% endblock %}
