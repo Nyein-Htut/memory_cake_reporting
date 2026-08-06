@@ -1,0 +1,753 @@
+{% extends "base.html" %}
+
+{% block title %}Spreadsheet View{% endblock %}
+
+{% block content %}
+
+<style>
+:root{
+    --grid:#d9d9d9;
+    --header:#f3f3f3;
+    --hover:#fafafa;
+    --selected:#eaf4ff;
+    --toolbar:#ffffff;
+}
+
+body{
+    overflow:hidden;
+}
+
+.sheet-page{
+    display:flex;
+    flex-direction:column;
+    height:calc(100vh - 70px);
+}
+
+.sheet-toolbar{
+    background:var(--toolbar);
+    border-bottom:1px solid #ddd;
+    padding:12px 16px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+
+    flex-wrap:wrap;
+}
+
+.sheet-left{
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+
+.sheet-right{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.sheet-search{
+    width:320px;
+    max-width:100%;
+    padding:8px 12px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+.sheet-select{
+    padding:8px 12px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.sheet-container{
+    flex:1;
+    overflow:auto;
+    background:white;
+}
+
+.sheet-table{
+    width:max-content;
+    min-width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+
+.sheet-table th{
+    position:sticky;
+    top:0;
+    z-index:20;
+
+    background:var(--header);
+
+    border:1px solid var(--grid);
+
+    font-size:13px;
+    font-weight:600;
+
+    white-space:nowrap;
+
+    padding:10px;
+}
+
+.sheet-table td{
+
+    border:1px solid var(--grid);
+
+    padding:6px;
+
+    font-size:13px;
+
+    vertical-align:middle;
+
+    background:white;
+
+}
+
+.sheet-table tr:hover td{
+
+    background:var(--hover);
+
+}
+
+.sheet-table td input,
+.sheet-table td textarea,
+.sheet-table td select{
+
+    width:100%;
+    border:none;
+    outline:none;
+    background:transparent;
+
+    font-size:13px;
+
+}
+
+.sheet-table textarea{
+
+    resize:vertical;
+    min-height:52px;
+
+}
+
+.thumb{
+
+    width:70px;
+    height:70px;
+
+    object-fit:cover;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+}
+
+.no-image{
+
+    width:70px;
+    height:70px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:#999;
+    font-size:12px;
+
+    background:#fafafa;
+
+    border:1px dashed #ccc;
+
+}
+
+.status-paid{
+
+    color:#0b7d27;
+    font-weight:600;
+
+}
+
+.status-unpaid{
+
+    color:#c0392b;
+    font-weight:600;
+
+}
+
+.save-indicator{
+
+    position:fixed;
+
+    right:30px;
+    bottom:30px;
+
+    background:#222;
+    color:white;
+
+    padding:10px 18px;
+
+    border-radius:8px;
+
+    display:none;
+
+    z-index:9999;
+
+}
+
+.sticky-left{
+
+    position:sticky;
+    left:0;
+
+    background:white;
+
+    z-index:15;
+
+}
+
+.sticky-left-2{
+
+    position:sticky;
+    left:120px;
+
+    background:white;
+
+    z-index:15;
+
+}
+
+.sheet-table tr:hover .sticky-left,
+.sheet-table tr:hover .sticky-left-2{
+
+    background:var(--hover);
+
+}
+
+.col-date{width:120px;}
+.col-source{width:150px;}
+.col-customer{width:180px;}
+.col-photo{width:90px;}
+.col-size{width:80px;}
+.col-price{width:110px;}
+.col-paid{width:110px;}
+.col-time{width:120px;}
+.col-remarks{width:260px;}
+.col-flower{width:90px;}
+.col-address{width:250px;}
+
+</style>
+
+<div class="sheet-page">
+
+<div class="sheet-toolbar">
+
+<div class="sheet-left">
+
+<h4 class="mb-0">
+Spreadsheet View
+</h4>
+
+<input
+type="text"
+id="sheetSearch"
+class="sheet-search"
+placeholder="Search customer, cake, source..."
+>
+
+</div>
+
+<div class="sheet-right">
+
+<select
+id="paymentFilter"
+class="sheet-select">
+
+<option value="">All Payments</option>
+<option value="paid">Paid</option>
+<option value="unpaid">Unpaid</option>
+
+</select>
+
+<button
+class="btn btn-primary"
+onclick="location.reload()">
+
+Refresh
+
+</button>
+
+</div>
+
+</div>
+
+<div class="sheet-container">
+
+<table
+class="sheet-table"
+id="sheetTable">
+
+<thead>
+
+<tr>
+
+<th class="sticky-left col-date">
+
+Date
+
+</th>
+
+<th class="sticky-left-2 col-source">
+
+Source
+
+</th>
+
+<th class="col-customer">
+
+Customer
+
+</th>
+
+<th class="col-photo">
+
+Cake
+
+</th>
+
+<th class="col-size">
+
+Size
+
+</th>
+
+<th class="col-price">
+
+Price
+
+</th>
+
+<th class="col-paid">
+
+Paid
+
+</th>
+
+<th class="col-time">
+
+Pickup Time
+
+</th>
+
+<th class="col-remarks">
+
+Remarks
+
+</th>
+
+<th class="col-flower">
+
+Flowers
+
+</th>
+
+<th class="col-address">
+
+Address
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr
+data-order="{{ row.order.id }}"
+data-item="{{ row.item.id }}"
+data-paid="{{ 'paid' if row.order.is_paid else 'unpaid' }}"
+>
+
+<td class="sticky-left">
+
+<input
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="date"
+value="{{ row.order.date }}"
+>
+
+</td>
+
+<td class="sticky-left-2">
+
+<input
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="source"
+value="{{ row.order.source }}"
+>
+
+<td>
+
+<input
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="customer_name"
+value="{{ row.order.customer_name }}"
+>
+
+</td>
+
+
+<td>
+
+{% if row.item.image_url %}
+
+<img
+src="{{ row.item.image_url }}"
+class="thumb"
+onclick="window.open('{{ row.item.image_url }}','_blank')"
+>
+
+{% else %}
+
+<div class="no-image">
+No Image
+</div>
+
+{% endif %}
+
+</td>
+
+
+<td>
+
+<input
+class="editable"
+data-table="item"
+data-id="{{ row.item.id }}"
+data-field="size"
+value="{{ row.item.size }}"
+>
+
+</td>
+
+
+<td>
+
+<input
+type="number"
+class="editable"
+data-table="item"
+data-id="{{ row.item.id }}"
+data-field="price"
+value="{{ row.item.price }}"
+>
+
+</td>
+
+
+<td>
+
+<select
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="is_paid"
+>
+
+<option
+value="1"
+{% if row.order.is_paid %}
+selected
+{% endif %}
+>
+
+Paid
+
+</option>
+
+
+<option
+value="0"
+{% if not row.order.is_paid %}
+selected
+{% endif %}
+>
+
+Unpaid
+
+</option>
+
+
+</select>
+
+</td>
+  <td>
+
+<input
+type="time"
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="pickup_time"
+value="{{ row.order.pickup_time or '' }}"
+>
+
+</td>
+
+
+<td>
+
+<textarea
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="remarks"
+>{{ row.order.remarks or '' }}</textarea>
+
+</td>
+
+
+<td>
+
+<input
+class="editable"
+data-table="item"
+data-id="{{ row.item.id }}"
+data-field="flowers"
+value="{{ row.item.flowers or '' }}"
+>
+
+</td>
+
+
+<td>
+
+<textarea
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="address"
+>{{ row.order.address or '' }}</textarea>
+
+</td>
+
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<div id="saveIndicator" class="save-indicator">
+
+Saved ✓
+
+</div>
+
+<script>
+
+
+const indicator = document.getElementById("saveIndicator");
+
+
+
+function showSaved(){
+
+    indicator.style.display="block";
+
+    setTimeout(()=>{
+
+        indicator.style.display="none";
+
+    },1200);
+
+}
+
+
+
+document.querySelectorAll(".editable").forEach(input=>{
+
+
+    input.addEventListener("change", async function(){
+
+
+        const table = this.dataset.table;
+        const id = this.dataset.id;
+        const field = this.dataset.field;
+
+
+        let value = this.value;
+
+
+
+        try{
+
+
+            const response = await fetch("/api/update-cell",{
+
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":"application/json"
+
+                },
+
+
+                body:JSON.stringify({
+
+                    table:table,
+
+                    id:id,
+
+                    field:field,
+
+                    value:value
+
+                })
+
+
+            });
+
+
+
+            const result = await response.json();
+
+
+
+            if(result.success){
+
+                showSaved();
+
+            }
+
+
+        }
+
+        catch(error){
+
+            console.error(error);
+
+            alert("Save failed");
+
+        }
+
+
+
+    });
+
+
+
+});
+
+
+
+
+
+// Search
+
+
+const searchBox = document.getElementById("sheetSearch");
+
+
+searchBox.addEventListener("input",function(){
+
+
+    const keyword = this.value.toLowerCase();
+
+
+
+    document.querySelectorAll("#sheetTable tbody tr")
+    .forEach(row=>{
+
+
+        const text=row.innerText.toLowerCase();
+
+
+        if(text.includes(keyword)){
+
+            row.style.display="";
+
+        }
+
+        else{
+
+            row.style.display="none";
+
+        }
+
+
+
+    });
+
+
+
+});
+
+
+
+
+
+// Payment filter
+
+
+const paymentFilter=document.getElementById("paymentFilter");
+
+
+paymentFilter.addEventListener("change",function(){
+
+
+    const filter=this.value;
+
+
+
+    document.querySelectorAll("#sheetTable tbody tr")
+    .forEach(row=>{
+
+
+        const paid=row.dataset.paid;
+
+
+
+        if(!filter || paid===filter){
+
+            row.style.display="";
+
+        }
+
+        else{
+
+            row.style.display="none";
+
+        }
+
+
+    });
+
+
+});
+
+
+
+</script>
+
+</td>
