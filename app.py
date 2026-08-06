@@ -1253,7 +1253,7 @@ def update_cell():
 
 
    if field == "is_paid":
-    value = True if value == "1" else False
+        value = True if value == "1" else False
 
 
     setattr(obj, field, value)
