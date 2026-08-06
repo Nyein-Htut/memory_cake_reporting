@@ -1221,7 +1221,7 @@ def spreadsheet():
                 "item": item
             })
     return render_template(
-        "spreadsheet.html",
+        "spreadsheets.html",
         rows=rows
     )
 
