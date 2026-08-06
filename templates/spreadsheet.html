@@ -107,10 +107,10 @@ body{
 }
 
 .sheet-table{
-    width:max-content;
-    min-width:100%;
+    width:100%;
+    min-width:1200px;
     border-collapse:collapse;
-    table-layout:fixed;
+    table-layout:auto;
 }
 
 .sheet-table th{
@@ -660,7 +660,8 @@ data-field="address"
 Saved ✓
 
 </div>
-
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/colresizable/1.6.0/colResizable-1.6.min.js"></script>
 <script>
 
 
@@ -844,7 +845,12 @@ paymentFilter.addEventListener("change",function(){
 
 });
 
-
+$("#sheetTable").colResizable({
+    liveDrag:true,
+    gripInnerHtml:"<div class='grip'></div>",
+    draggingClass:"dragging",
+    resizeMode:'fit'
+});
 
 </script>
 
