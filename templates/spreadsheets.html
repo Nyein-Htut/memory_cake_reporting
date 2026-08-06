@@ -396,6 +396,8 @@ data-field="source"
 value="{{ row.order.source }}"
 >
 
+</td> 
+
 <td>
 
 <input
@@ -493,7 +495,8 @@ Unpaid
 </select>
 
 </td>
-  <td>
+
+<td>
 
 <input
 type="time"
@@ -750,4 +753,4 @@ paymentFilter.addEventListener("change",function(){
 
 </script>
 
-</td>
+{% endblock %}
