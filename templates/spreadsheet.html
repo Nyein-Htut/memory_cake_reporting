@@ -270,6 +270,7 @@ body{
 .col-photo{width:90px;}
 .col-size{width:80px;}
 .col-price{width:110px;}
+.col-delivery{width:120px;}
 .col-paid{width:110px;}
 .col-time{width:120px;}
 .col-remarks{width:260px;}
@@ -390,6 +391,12 @@ Size
 <th class="col-price">
 
 Price
+
+</th>
+
+<th class="col-delivery">
+
+Delivery Fee
 
 </th>
 
@@ -526,6 +533,18 @@ value="{{ row.item.price or 0 }}"
 
 </td>
 
+<td>
+
+<input
+type="number"
+class="editable"
+data-table="order"
+data-id="{{ row.order.id }}"
+data-field="delivery_fee"
+value="{{ row.order.delivery_fee or 0 }}"
+>
+
+</td>
 
 <td>
 
