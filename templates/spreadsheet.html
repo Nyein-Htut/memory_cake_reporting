@@ -107,10 +107,23 @@ body{
 }
 
 .sheet-table{
+
     width:max-content;
+
     min-width:1200px;
+
     border-collapse:collapse;
+
     table-layout:fixed;
+
+    transform-origin:top left;
+
+}
+
+.sheet-container{
+
+    touch-action:none;
+
 }
     
 .sheet-table th{
@@ -321,15 +334,6 @@ placeholder="Search customer, cake, source..."
 
 <div class="sheet-right">
 
-<div>
-
-<button onclick="zoomTable(-0.1)">−</button>
-
-<span id="zoomText">100%</span>
-
-<button onclick="zoomTable(0.1)">+</button>
-
-</div>
 <select
 id="paymentFilter"
 class="sheet-select">
@@ -339,6 +343,7 @@ class="sheet-select">
 <option value="unpaid">Unpaid</option>
 
 </select>
+
 
 <button
 class="btn"
@@ -853,31 +858,132 @@ paymentFilter.addEventListener("change",function(){
 
 });
 
-let tableZoom = 1;
+// ======================================
+// iPad pinch zoom like Excel
+// ======================================
 
 
-function zoomTable(change){
+let tableScale = 1;
 
-    tableZoom += change;
-
-
-    if(tableZoom < 0.5){
-        tableZoom = 0.5;
-    }
+let startDistance = 0;
 
 
-    if(tableZoom > 1.5){
-        tableZoom = 1.5;
-    }
+const sheetTable = document.querySelector(".sheet-table");
 
 
-    document.querySelector(".sheet-table").style.zoom = tableZoom;
+
+function getTouchDistance(touches){
+
+    const dx =
+        touches[0].clientX -
+        touches[1].clientX;
 
 
-    document.getElementById("zoomText").innerText =
-        Math.round(tableZoom * 100) + "%";
+    const dy =
+        touches[0].clientY -
+        touches[1].clientY;
+
+
+    return Math.sqrt(dx * dx + dy * dy);
 
 }
+
+
+
+sheetTable.addEventListener(
+"touchstart",
+function(e){
+
+
+    if(e.touches.length === 2){
+
+        startDistance =
+            getTouchDistance(e.touches);
+
+    }
+
+
+},
+{
+    passive:true
+}
+);
+
+
+
+
+sheetTable.addEventListener(
+"touchmove",
+function(e){
+
+
+    if(e.touches.length === 2){
+
+
+        e.preventDefault();
+
+
+
+        const currentDistance =
+            getTouchDistance(e.touches);
+
+
+
+        const difference =
+            currentDistance - startDistance;
+
+
+
+        if(Math.abs(difference) > 8){
+
+
+            if(difference > 0){
+
+                tableScale += 0.05;
+
+            }
+            else{
+
+                tableScale -= 0.05;
+
+            }
+
+
+
+            if(tableScale < 0.5){
+
+                tableScale = 0.5;
+
+            }
+
+
+
+            if(tableScale > 1.5){
+
+                tableScale = 1.5;
+
+            }
+
+
+
+            sheetTable.style.transform =
+                `scale(${tableScale})`;
+
+
+
+            startDistance =
+                currentDistance;
+
+        }
+
+    }
+
+
+},
+{
+    passive:false
+}
+);
 </script>
 
 {% endblock %}
