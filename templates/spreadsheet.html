@@ -432,8 +432,8 @@ value="{{ row.order.source }}"
 class="editable"
 data-table="order"
 data-id="{{ row.order.id }}"
-data-field="customer_name"
-value="{{ row.order.customer_name }}"
+data-field="customer"
+value="{{ row.order.customer }}"
 >
 
 </td>
@@ -457,8 +457,13 @@ No Image
 
 {% endif %}
 
-</td>
+<br>
 
+<small>
+{{ row.item.item_name }}
+</small>
+
+</td>
 
 <td>
 
@@ -481,7 +486,7 @@ class="editable"
 data-table="item"
 data-id="{{ row.item.id }}"
 data-field="price"
-value="{{ row.item.price }}"
+value="{{ row.item.price or 0 }}"
 >
 
 </td>
@@ -531,8 +536,8 @@ type="time"
 class="editable"
 data-table="order"
 data-id="{{ row.order.id }}"
-data-field="pickup_time"
-value="{{ row.order.pickup_time or '' }}"
+data-field="time"
+value="{{ row.order.time or '' }}"
 >
 
 </td>
@@ -542,23 +547,31 @@ value="{{ row.order.pickup_time or '' }}"
 
 <textarea
 class="editable"
-data-table="order"
-data-id="{{ row.order.id }}"
+data-table="item"
+data-id="{{ row.item.id }}"
 data-field="remarks"
->{{ row.order.remarks or '' }}</textarea>
+>{{ row.item.remarks or '' }}</textarea>
 
 </td>
 
 
 <td>
 
-<input
-class="editable"
-data-table="item"
-data-id="{{ row.item.id }}"
-data-field="flowers"
-value="{{ row.item.flowers or '' }}"
+{% if row.item.flower_image_url %}
+
+<img
+src="{{ row.item.flower_image_url }}"
+class="thumb"
+onclick="window.open('{{ row.item.flower_image_url }}','_blank')"
 >
+
+{% else %}
+
+<div class="no-image">
+No Flower
+</div>
+
+{% endif %}
 
 </td>
 
