@@ -100,11 +100,12 @@
 <div id="ordersRoot" class="p-3 sm:p-5">
     {% for day_group in orders_by_day %}
     <div class="day-group mb-6 last:mb-0">
-        <div class="day-separator">
+    {% if readonly %}    
+       <div class="day-separator">
             <span class="day-separator-date">{{ day_group.date_display }}</span>
             <span class="day-separator-meta">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %}{% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}</span>
         </div>
-       
+   {% endif %}
          {% if not readonly %}
          <div class="manager-day-heading">
              {{ day_group.date }}
