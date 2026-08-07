@@ -106,11 +106,6 @@
             <span class="day-separator-meta">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %}{% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}</span>
         </div>
    {% endif %}
-         {% if not readonly %}
-         <div class="manager-day-heading">
-             {{ day_group.date }}
-         </div>
-         {% endif %}
          
          <div class="orders-grid">
             {% for order in day_group.orders %}
