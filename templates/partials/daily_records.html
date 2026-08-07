@@ -107,7 +107,7 @@
 
         <div class="orders-grid">
             {% for order in day_group.orders %}
-            <div class="order-card"
+            <div class="order-card {% if not readonly %}manager-card{% endif %}"
                 data-date="{{ order.date }}"
                 data-customer="{{ order.customer }}"
                 data-source="{{ order.source }}"
