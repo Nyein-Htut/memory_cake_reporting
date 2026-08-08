@@ -1,11 +1,27 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
    toggle plus one wp-trigger picker for whichever mode is active, and a
-   single "筛选/Apply" submit button. #}
+   single "筛选/Apply" submit button.
+
+   Manager-only source filter: a "按来源筛选 (Filter by Source)" wp-trigger
+   sits at the front of the same filter bar/form, gated behind
+   `{% if not readonly %}` so staff never see it. Picking a source (via
+   openSourceFilterPicker() in base.html) submits the filter form
+   immediately, same UX as the day-filter picker. #}
 
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10">
     <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2">
         <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
+
+        {% if not readonly %}
+        <div id="dailySourceFilterWrap" class="min-w-[190px]">
+            <input type="hidden" name="source" id="filterSourceHidden" value="{{ selected_source or '' }}">
+            <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 {% if not selected_source %}wp-empty{% endif %}" onclick="openSourceFilterPicker()">
+                <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
+                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+        </div>
+        {% endif %}
 
         <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
             <button type="button" onclick="setDailyViewMode('day')"
@@ -94,6 +110,9 @@
         <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
         {% endif %}
         <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
+        {% if not readonly and selected_source %}
+        <span>来源筛选: <strong class="text-stone-900">{{ selected_source }}</strong></span>
+        {% endif %}
     </div>
 </div>
 
