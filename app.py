@@ -254,11 +254,15 @@ def _group_query_by_day(query):
 
     return orders_by_day
 
-def _fetch_orders_for_period(mode, value):
+def _fetch_orders_for_period(mode, value, source=None):
     """Fetches orders scoped to a single day, a whole month, or a whole
     year, grouped by day. Shared by the on-page Daily Records dashboard
     and the /api/export_orders PDF-export feed, so the two can never drift
-    out of sync."""
+    out of sync.
+
+    `source`, when given, restricts results to orders whose source exactly
+    matches it (manager-only "Filter by Source" control on the Daily
+    Records page)."""
     query = Order.query.options(joinedload(Order.items))
 
     if mode == 'day' and value:
@@ -268,6 +272,9 @@ def _fetch_orders_for_period(mode, value):
     else:
         cutoff = (get_myanmar_now() - timedelta(days=30)).strftime('%Y-%m-%d')
         query = query.filter(Order.date >= cutoff)
+
+    if source:
+        query = query.filter(Order.source == source)
 
     return _group_query_by_day(query)
 
@@ -286,7 +293,12 @@ def _available_years():
 
 def _daily_view_context(filter_action, default_view='day'):
     view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters(default_view)
-    orders_by_day = _fetch_orders_for_period(view_mode, filter_value)
+    # Manager-only "Filter by Source" control on the Daily Records filter
+    # bar. Staff never send this param (they have no UI for it), so it's
+    # always empty for the staff view — kept in this shared helper anyway
+    # so the two views can never drift apart on filtering logic.
+    selected_source = (request.args.get('source') or '').strip()
+    orders_by_day = _fetch_orders_for_period(view_mode, filter_value, source=selected_source or None)
     total_orders = sum(d['order_count'] for d in orders_by_day)
     total_revenue = sum(d['day_total'] for d in orders_by_day)
 
@@ -296,6 +308,7 @@ def _daily_view_context(filter_action, default_view='day'):
         'selected_day': selected_day,
         'selected_month': selected_month,
         'selected_year': selected_year,
+        'selected_source': selected_source,
         'available_years': _available_years(),
         'filter_action': filter_action,
         'total_orders': total_orders,
@@ -365,8 +378,9 @@ def index():
     # the page loads. Explicitly passing ?view=day/year still works as usual.
     ctx = _daily_view_context(url_for('index'), default_view='month')
 
-    # The PDF export button re-uses whichever filter (day/month/year) is
-    # currently active on the page, instead of opening its own picker.
+    # The PDF export button re-uses whichever filter (day/month/year, plus
+    # source if one is active) is currently active on the page, instead of
+    # opening its own picker.
     if ctx['view_mode'] == 'day':
         export_params = {'day': ctx['selected_day']}
         period_value = ctx['selected_day']
@@ -376,6 +390,9 @@ def index():
     else:
         export_params = {'year': ctx['selected_year']}
         period_value = ctx['selected_year']
+
+    if ctx.get('selected_source'):
+        export_params['source'] = ctx['selected_source']
 
     return render_template(
         'daily.html', active_page='daily', readonly=False, show_payment=True,
@@ -396,7 +413,8 @@ def staff_view():
 def api_export_orders():
     """JSON data feed for the client-side PDF export on the Daily page.
     Returns orders grouped by day, same shape the on-page dashboard uses,
-    scoped to a single day, a whole month, or a whole year.
+    scoped to a single day, a whole month, or a whole year, and optionally
+    to a single source (mirrors the manager-only Filter by Source control).
 
     Kept manager-only and JSON-only (no page render, no image-hosting
     special-casing) so it stays fast even for a full year of orders."""
@@ -406,6 +424,7 @@ def api_export_orders():
     month = (request.args.get('month') or '').strip()
     year = (request.args.get('year') or '').strip()
     view = (request.args.get('view') or '').strip()
+    source = (request.args.get('source') or '').strip()
 
     if day:
         mode, value = 'day', day
@@ -416,13 +435,14 @@ def api_export_orders():
     else:
         mode, value = 'all', ''
 
-    groups = _fetch_orders_for_period(mode, value)
+    groups = _fetch_orders_for_period(mode, value, source=source or None)
     total_orders = sum(g['order_count'] for g in groups)
     total_revenue = sum(g['day_total'] for g in groups)
 
     payload = {
         'mode': mode,
         'value': value,
+        'source': source,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
         'orders_by_day': [
