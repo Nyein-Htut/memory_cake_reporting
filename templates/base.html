@@ -951,7 +951,7 @@ function closeWheelOverlay(id) {
    Reuses the same overlay shell as the date/time pickers, but the content
    is just a list of tappable rows instead of a scrolling wheel — the
    dataset is fixed and short, so a scroll wheel would be overkill. */
-const WP_SOURCE_OPTIONS = ['Ko Kyaw', 'Memory Cake', 'Iris', 'Ama Gyi', 'Ama Nge', 'Other'];
+const WP_SOURCE_OPTIONS = ['Ko Kyaw', 'Memory Cake', 'Iris', 'Ama Gyi', 'Ama Nge', 'Nawaday Flower Shop', 'Khaing Win Kyi', 'Other'];
 
 function openSourcePicker(triggerBtnId, hiddenInputId, titleText) {
     const btn = document.getElementById(triggerBtnId);
@@ -1192,6 +1192,44 @@ function openFilterDayPicker() {
         document.getElementById('dailyFilterForm').submit();
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
+}
+
+/* ===== Filter-by-source picker (Daily Records filter bar, manager only) =====
+   Reuses the same static-option-list overlay as the order-form Source
+   picker (openSourcePicker above), but adds an "All Sources" entry at the
+   top and submits the filter form immediately on selection, matching the
+   day-filter picker's UX above. */
+function openSourceFilterPicker() {
+    const btn = document.getElementById('filterSourceTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('filterSourceHidden');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = '按来源筛选 (Filter by Source)';
+
+    const allLabel = '全部来源 (All Sources)';
+    const options = [allLabel, ...WP_SOURCE_OPTIONS];
+
+    listEl.innerHTML = '';
+    options.forEach((opt) => {
+        const val = opt === allLabel ? '' : opt;
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (hidden.value === val ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${opt}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            hidden.value = val;
+            span.textContent = val || allLabel;
+            btn.classList.toggle('wp-empty', !val);
+            closeWheelOverlay('wpSourceOverlay');
+            document.getElementById('dailyFilterForm').submit();
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
 }
 
 /* ===== Combined Delivery Date + Time picker =====
