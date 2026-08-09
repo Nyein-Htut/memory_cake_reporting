@@ -118,7 +118,15 @@
     const editOverlay = document.getElementById('editOrderModal');
     const editCard = document.getElementById('editModalCard');
 
+    // Tracks which order the edit modal is currently open for, so the
+    // form's submit handler below knows which card to scroll back to once
+    // the page reloads after saving (see daily_records.html's restore
+    // script, which reads sessionStorage's 'mc_restore_order_id').
+    let _mcEditingOrderId = null;
+
     function openEditModal(orderId, date, source, customer, time, address, deliveryFee, isPaid, paymentDate, items) {
+        _mcEditingOrderId = orderId;
+
         const container = document.getElementById('editItemsContainer');
         container.innerHTML = '';
         items.forEach(item => addEditItemRow(item));
@@ -174,6 +182,15 @@
             editOverlay.classList.add('hidden');
         }, 150);
     }
+
+    // Right before the edit form actually submits (full page POST +
+    // redirect), remember which order it was so the reloaded page can
+    // scroll straight back to that card instead of landing at the top.
+    document.getElementById('editOrderForm').addEventListener('submit', function() {
+        if (_mcEditingOrderId) {
+            try { sessionStorage.setItem('mc_restore_order_id', String(_mcEditingOrderId)); } catch (e) {}
+        }
+    });
 
     // Renders the thumbnail block for one existing image (cake or flower),
     // paired with the hidden old_*_image[] input that carries its URL.
@@ -272,6 +289,13 @@
             modalOverlay.classList.add('hidden');
         }, 150);
     }
+
+    // Deleting a card removes it entirely, so there's no element to scroll
+    // back to afterwards — the best we can do is restore the raw scroll
+    // position the staff member was at right before confirming.
+    mBtn.addEventListener('click', function() {
+        try { sessionStorage.setItem('mc_restore_scroll_y', String(window.scrollY)); } catch (e) {}
+    });
 
     window.addEventListener('click', function(e) {
         if (e.target === modalOverlay) closeDeleteModal();
