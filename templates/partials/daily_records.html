@@ -1,7 +1,6 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
-   toggle plus one wp-trigger picker for whichever mode is active, and a
-   single "筛选/Apply" submit button. #}
+   toggle plus one wp-trigger picker for whichever mode is active. #}
 
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10 space-y-4">
 
@@ -40,7 +39,7 @@
 
                 <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                     <input type="hidden" name="month" id="filterMonthHidden" value="{{ selected_month }}">
-                    <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openMonthWheelPicker('filterMonthTriggerBtn','filterMonthHidden')">
+                    <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterMonthPicker()">
                         <span>{{ selected_month }}</span>
                         <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
                     </button>
@@ -48,15 +47,11 @@
 
                 <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
                     <input type="hidden" name="year" id="filterYearHidden" value="{{ selected_year }}">
-                    <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openYearListPicker('filterYearTriggerBtn','filterYearHidden', {{ available_years | tojson | safe }})">
+                    <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterYearPicker()">
                         <span>{{ selected_year }}</span>
                         <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                 </div>
-
-                <button type="submit" class="shrink-0 bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all cursor-pointer">
-                    {% if readonly %}စစ်ထုတ်{% else %}筛选{% endif %}
-                </button>
             </div>
         </form>
     </div>
@@ -367,8 +362,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /* Day / Month / Year toggle for the Daily Records filter bar — mirrors
-   setViewMode() on the Monthly Report page. Switching modes just swaps
-   which picker is visible; the actual filtering happens on submit. */
+   setViewMode() on the Monthly Report page. There's no separate Apply
+   button anymore, so switching tabs submits the filter form right away
+   (using whatever day/month/year value is already in the corresponding
+   hidden field — e.g. defaults to "this month" the first time you switch
+   to the 月 tab). */
 function setDailyViewMode(mode) {
     document.getElementById('dailyViewModeInput').value = mode;
     document.getElementById('dailyDayPickerWrap').classList.toggle('hidden', mode !== 'day');
@@ -384,6 +382,44 @@ function setDailyViewMode(mode) {
         const active = key === mode;
         tabs[key].className = 'flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-' + key + ' ' +
             (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
+    });
+
+    document.getElementById('dailyFilterForm').submit();
+}
+
+/* ===== Month / Year pickers for the Period filter =====
+   Config-mode calls into the shared wheel-picker engine (base.html) whose
+   onConfirm sets the hidden field + trigger label, then immediately
+   submits the filter form — same "choose it and it's applied" behavior
+   the Day picker already had. */
+function openFilterMonthPicker() {
+    const btn = document.getElementById('filterMonthTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('filterMonthHidden');
+    openMonthWheelPicker({
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            btn.classList.remove('wp-empty');
+            document.getElementById('dailyFilterForm').submit();
+        }
+    });
+}
+
+function openFilterYearPicker() {
+    const btn = document.getElementById('filterYearTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('filterYearHidden');
+    openYearListPicker({
+        years: {{ available_years | tojson | safe }},
+        initialValue: hidden.value,
+        onConfirm: (value) => {
+            hidden.value = value;
+            span.textContent = value;
+            btn.classList.remove('wp-empty');
+            document.getElementById('dailyFilterForm').submit();
+        }
     });
 }
 
@@ -405,8 +441,8 @@ function revealImage(btn) {
    which caused a full page reload on every pick — it just updates
    dailySourceFilter and re-runs the same client-side filtering pass used
    by Paid/Unpaid and the customer search below. The hidden #filterSourceHidden
-   field is still kept in sync, so the choice survives if the manager later
-   hits "筛选" to change day/month/year (a real, intentional page reload). */
+   field is still kept in sync, so the choice survives whenever the
+   day/month/year form auto-submits (a real, intentional page reload). */
 let dailySourceFilter = {{ (selected_source or '') | tojson | safe }};
 
 function openDailySourceFilterPicker() {
