@@ -16,6 +16,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            {# No "Apply/筛选" button — picking a month/year (or switching the
+               月度/年度 tab) submits this form immediately via JS below, so
+               the report updates as soon as a choice is made. #}
             <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs">
                 <input type="hidden" name="view" id="viewModeInput" value="{{ view_mode }}">
 
@@ -32,7 +35,7 @@
 
                 <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} min-w-[190px]">
                     <input type="hidden" name="month" id="monthHidden" value="{{ selected_month }}">
-                    <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthWheelPicker('monthTriggerBtn','monthHidden')">
+                    <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyMonthPicker()">
                         <span>{{ selected_month }}</span>
                         <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
                     </button>
@@ -40,15 +43,11 @@
 
                 <div id="yearPicker" class="{% if view_mode != 'year' %}hidden{% endif %} min-w-[150px]">
                     <input type="hidden" name="year" id="yearHidden" value="{{ selected_year }}">
-                    <button type="button" id="yearTriggerBtn" class="wp-trigger text-xs p-3" onclick="openYearListPicker('yearTriggerBtn','yearHidden', {{ available_years | tojson | safe }})">
+                    <button type="button" id="yearTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyYearPicker()">
                         <span>{{ selected_year }}</span>
                         <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                 </div>
-
-                <button type="submit" class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all cursor-pointer">
-                    筛选
-                </button>
             </form>
 
             <div class="flex gap-2">
@@ -338,6 +337,9 @@ const reportData = {
     top_customers: {{ top_customers | tojson | safe }}
 };
 
+/* Day / Month / Year view toggle — there's no separate Apply/筛选 button
+   anymore, so switching tabs submits the filter form right away (using
+   whatever month/year value is already in the corresponding hidden field). */
 function setViewMode(mode) {
     document.getElementById('viewModeInput').value = mode;
     document.getElementById('monthPicker').classList.toggle('hidden', mode === 'year');
@@ -352,6 +354,39 @@ function setViewMode(mode) {
         tabMonth.className = 'px-3.5 py-2 transition-all view-tab-month bg-stone-900 text-white';
         tabYear.className = 'px-3.5 py-2 transition-all view-tab-year bg-white text-stone-500 hover:bg-stone-50';
     }
+}
+
+/* ===== Month / Year pickers for the report period =====
+   Config-mode calls into the shared wheel-picker engine (base.html) whose
+   onConfirm sets the hidden field + trigger label, then immediately
+   submits the filter form — so picking a month/year applies it right away. */
+function openMonthlyMonthPicker() {
+    const btn = document.getElementById('monthTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('monthHidden');
+    openMonthWheelPicker({
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('monthlyFilterForm').submit();
+        }
+    });
+}
+
+function openMonthlyYearPicker() {
+    const btn = document.getElementById('yearTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('yearHidden');
+    openYearListPicker({
+        years: {{ available_years | tojson | safe }},
+        initialValue: hidden.value,
+        onConfirm: (value) => {
+            hidden.value = value;
+            span.textContent = value;
+            document.getElementById('monthlyFilterForm').submit();
+        }
+    });
 }
 
 // Keep the CSV export link's query string synced with whatever the wheel
@@ -369,6 +404,8 @@ document.getElementById('yearHidden').addEventListener('change', syncExportLinks
 // Hidden inputs are set programmatically by the wheel pickers (no native
 // 'change' event fires), so also re-sync right before the CSV link is used.
 document.getElementById('csvExportBtn').addEventListener('click', syncExportLinks);
+// Switching the 月度/年度 tab now submits the form itself (see setViewMode),
+// so this wrapper just keeps the CSV link in sync right beforehand.
 const _origSetViewMode = setViewMode;
 setViewMode = function(mode) { _origSetViewMode(mode); syncExportLinks(); };
 
