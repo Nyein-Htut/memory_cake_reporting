@@ -315,6 +315,26 @@ def _daily_view_context(filter_action, default_view='day'):
         'total_revenue': total_revenue,
     }
 
+def _export_params_for_ctx(ctx):
+    """Builds the {day|month|year: value} dict (plus source, if active)
+    that describes 'whatever period is currently on screen'. Shared by the
+    Daily page's PDF-export button (index()) and the AJAX filter-refresh
+    endpoint (api_daily_records_html()) so the two can never drift apart."""
+    if ctx['view_mode'] == 'day':
+        export_params = {'day': ctx['selected_day']}
+        period_value = ctx['selected_day']
+    elif ctx['view_mode'] == 'month':
+        export_params = {'month': ctx['selected_month']}
+        period_value = ctx['selected_month']
+    else:
+        export_params = {'year': ctx['selected_year']}
+        period_value = ctx['selected_year']
+
+    if ctx.get('selected_source'):
+        export_params['source'] = ctx['selected_source']
+
+    return export_params, period_value
+
 def _serialize_order_for_export(o):
     return {
         'id': o.id,
@@ -381,18 +401,7 @@ def index():
     # The PDF export button re-uses whichever filter (day/month/year, plus
     # source if one is active) is currently active on the page, instead of
     # opening its own picker.
-    if ctx['view_mode'] == 'day':
-        export_params = {'day': ctx['selected_day']}
-        period_value = ctx['selected_day']
-    elif ctx['view_mode'] == 'month':
-        export_params = {'month': ctx['selected_month']}
-        period_value = ctx['selected_month']
-    else:
-        export_params = {'year': ctx['selected_year']}
-        period_value = ctx['selected_year']
-
-    if ctx.get('selected_source'):
-        export_params['source'] = ctx['selected_source']
+    export_params, period_value = _export_params_for_ctx(ctx)
 
     return render_template(
         'daily.html', active_page='daily', readonly=False, show_payment=True,
@@ -407,6 +416,47 @@ def staff_view():
     db.session.remove()
     ctx = _daily_view_context(url_for('staff_view'))
     return render_template('staff_daily.html', active_page='staff', readonly=True, show_payment=False, **ctx)
+
+@app.route('/api/daily_records_html')
+@login_required
+def api_daily_records_html():
+    """Lightweight JSON+HTML feed for the Daily Records filter bar.
+
+    Returns just the order-card markup (partials/daily_records_orders.html)
+    plus the updated summary numbers for whatever day/month/year (and
+    source, manager-only) was requested. This is what lets switching
+    periods on the Daily Records page swap the results in place instead of
+    doing a full page reload — the filter bar, search box, and scroll
+    position never move.
+
+    Works for both roles (unlike /api/export_orders, which is manager-only
+    and returns the heavier full order+image payload used for PDF export)."""
+    db.session.remove()
+
+    is_staff = session.get('role') == 'staff'
+    if is_staff:
+        ctx = _daily_view_context(url_for('staff_view'))
+        readonly, show_payment = True, False
+    else:
+        ctx = _daily_view_context(url_for('index'), default_view='month')
+        readonly, show_payment = False, True
+
+    html = render_template(
+        'partials/daily_records_orders.html',
+        orders_by_day=ctx['orders_by_day'], readonly=readonly, show_payment=show_payment
+    )
+    export_params, period_value = _export_params_for_ctx(ctx)
+
+    payload = {
+        'html': html,
+        'total_orders': ctx['total_orders'],
+        'total_revenue': ctx['total_revenue'],
+        'day_count': len(ctx['orders_by_day']),
+        'export_params': export_params,
+        'period_value': period_value,
+    }
+    db.session.remove()
+    return jsonify(payload)
 
 @app.route('/api/export_orders')
 @manager_required
