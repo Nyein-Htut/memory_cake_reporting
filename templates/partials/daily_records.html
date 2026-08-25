@@ -1,69 +1,85 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
    toggle plus one wp-trigger picker for whichever mode is active, and a
-   single "筛选/Apply" submit button. #}
+   single "筛选/Apply" submit button.
 
-<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10">
-    <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2">
-        <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
+   Source filter (manager only) is CLIENT-SIDE: it filters the already-loaded
+   order cards via their data-source attribute, same as Paid/Unpaid and the
+   customer-name search, so picking a source never reloads the page. The
+   hidden #filterSourceHidden field still carries the value along if the
+   manager later hits "筛选" to also change day/month/year, so it's preserved
+   across a real page reload too. #}
 
-        {% if not readonly %}
-        <div id="dailySourceFilterWrap" class="min-w-[190px]">
+<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10 space-y-4">
+
+    <!-- Period filter -->
+    <div class="space-y-2">
+        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}</span>
+        <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
+            {% if not readonly %}
             <input type="hidden" name="source" id="filterSourceHidden" value="{{ selected_source or '' }}">
-            <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 {% if not selected_source %}wp-empty{% endif %}" onclick="openSourceFilterPicker()">
-                <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-        </div>
-        {% endif %}
+            {% endif %}
 
-        <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
-            <button type="button" onclick="setDailyViewMode('day')"
-                class="px-3.5 py-2.5 transition-all daily-view-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
-                {% if readonly %}ရက်{% else %}日{% endif %}
-            </button>
-            <button type="button" onclick="setDailyViewMode('month')"
-                class="px-3.5 py-2.5 transition-all daily-view-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
-                {% if readonly %}လ{% else %}月{% endif %}
-            </button>
-            <button type="button" onclick="setDailyViewMode('year')"
-                class="px-3.5 py-2.5 transition-all daily-view-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
-                {% if readonly %}နှစ်{% else %}年{% endif %}
-            </button>
-        </div>
+            <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider w-full sm:w-auto">
+                <button type="button" onclick="setDailyViewMode('day')"
+                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}ရက်{% else %}日{% endif %}
+                </button>
+                <button type="button" onclick="setDailyViewMode('month')"
+                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}လ{% else %}月{% endif %}
+                </button>
+                <button type="button" onclick="setDailyViewMode('year')"
+                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}နှစ်{% else %}年{% endif %}
+                </button>
+            </div>
 
-        <div id="dailyDayPickerWrap" class="{% if view_mode != 'day' %}hidden{% endif %} min-w-[190px]">
-            <input type="hidden" name="day" id="filterDayHidden" value="{{ selected_day or '' }}">
-            <button type="button" id="filterDayTriggerBtn" class="wp-trigger text-xs p-3" onclick="openFilterDayPicker()">
-                <span>{{ selected_day }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-            </button>
-        </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <div id="dailyDayPickerWrap" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                    <input type="hidden" name="day" id="filterDayHidden" value="{{ selected_day or '' }}">
+                    <button type="button" id="filterDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterDayPicker()">
+                        <span>{{ selected_day }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                    </button>
+                </div>
 
-        <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} min-w-[190px]">
-            <input type="hidden" name="month" id="filterMonthHidden" value="{{ selected_month }}">
-            <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthWheelPicker('filterMonthTriggerBtn','filterMonthHidden')">
-                <span>{{ selected_month }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-            </button>
-        </div>
+                <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                    <input type="hidden" name="month" id="filterMonthHidden" value="{{ selected_month }}">
+                    <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openMonthWheelPicker('filterMonthTriggerBtn','filterMonthHidden')">
+                        <span>{{ selected_month }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                    </button>
+                </div>
 
-        <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} min-w-[150px]">
-            <input type="hidden" name="year" id="filterYearHidden" value="{{ selected_year }}">
-            <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3" onclick="openYearListPicker('filterYearTriggerBtn','filterYearHidden', {{ available_years | tojson | safe }})">
-                <span>{{ selected_year }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-        </div>
+                <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
+                    <input type="hidden" name="year" id="filterYearHidden" value="{{ selected_year }}">
+                    <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openYearListPicker('filterYearTriggerBtn','filterYearHidden', {{ available_years | tojson | safe }})">
+                        <span>{{ selected_year }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
 
-        <button type="submit" class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all cursor-pointer">
-            {% if readonly %}စစ်ထုတ်{% else %}筛选{% endif %}
-        </button>
-    </form>
+                <button type="submit" class="shrink-0 bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all cursor-pointer">
+                    {% if readonly %}စစ်ထုတ်{% else %}筛选{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
 
     {% if not readonly %}
-    <!-- Manager-only customer search + Paid/Unpaid filter -->
-    <div class="mt-3 pt-3 border-t border-stone-200/60 space-y-3">
+    <!-- Source filter (client-side, no reload) -->
+    <div class="space-y-2 pt-3 border-t border-stone-200/60">
+        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">按来源筛选 (Filter by Source)</span>
+        <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 w-full {% if not selected_source %}wp-empty{% endif %}" onclick="openDailySourceFilterPicker()">
+            <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
+            <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+    </div>
+
+    <!-- Customer search + Paid/Unpaid filter -->
+    <div class="space-y-3 pt-3 border-t border-stone-200/60">
         <div class="relative w-full max-w-full">
 
             <label for="dailyCustomerSearch" class="sr-only">Search customer name</label>
@@ -116,14 +132,14 @@
     </div>
     {% endif %}
 
-    <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
-        <span><strong class="text-stone-900">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
+    <div class="flex flex-wrap gap-4 pt-3 border-t border-stone-200/60 text-xs font-numeric text-stone-600" id="dailySummaryBar">
+        <span><strong class="text-stone-900" id="summaryOrderCount">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
         {% if show_payment %}
-        <span><strong class="text-stone-900">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
+        <span><strong class="text-stone-900" id="summaryRevenue">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
         {% endif %}
-        <span><strong class="text-stone-900">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
-        {% if not readonly and selected_source %}
-        <span>来源筛选: <strong class="text-stone-900">{{ selected_source }}</strong></span>
+        <span><strong class="text-stone-900" id="summaryDayCount">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
+        {% if not readonly %}
+        <span id="summarySourceWrap" class="{% if not selected_source %}hidden{% endif %}">来源筛选: <strong class="text-stone-900" id="summarySourceValue">{{ selected_source or '' }}</strong></span>
         {% endif %}
     </div>
 </div>
@@ -373,7 +389,7 @@ function setDailyViewMode(mode) {
     };
     Object.keys(tabs).forEach((key) => {
         const active = key === mode;
-        tabs[key].className = 'px-3.5 py-2.5 transition-all daily-view-tab-' + key + ' ' +
+        tabs[key].className = 'flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-' + key + ' ' +
             (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
     });
 }
@@ -389,9 +405,69 @@ function revealImage(btn) {
 }
 
 {% if not readonly %}
-/* Manager-only customer-name search + Paid/Unpaid filter for the Daily
-   Records dashboard. Both filter the currently displayed order cards
-   client-side (no reload); the two conditions combine with AND. */
+/* ===== Source filter (client-side, manager only) =====
+   Reuses the same static-option-list overlay as the order-form Source
+   picker (wpSourceOverlay/wpSourceList/WP_SOURCE_OPTIONS, all defined
+   globally in base.html), but instead of submitting the filter form —
+   which caused a full page reload on every pick — it just updates
+   dailySourceFilter and re-runs the same client-side filtering pass used
+   by Paid/Unpaid and the customer search below. The hidden #filterSourceHidden
+   field is still kept in sync, so the choice survives if the manager later
+   hits "筛选" to change day/month/year (a real, intentional page reload). */
+let dailySourceFilter = {{ (selected_source or '') | tojson | safe }};
+
+function openDailySourceFilterPicker() {
+    const btn = document.getElementById('filterSourceTriggerBtn');
+    const span = btn.querySelector('span');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = '按来源筛选 (Filter by Source)';
+
+    const allLabel = '全部来源 (All Sources)';
+    const options = [allLabel, ...WP_SOURCE_OPTIONS];
+
+    listEl.innerHTML = '';
+    options.forEach((opt) => {
+        const val = opt === allLabel ? '' : opt;
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (dailySourceFilter === val ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${opt}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            dailySourceFilter = val;
+            span.textContent = val || allLabel;
+            btn.classList.toggle('wp-empty', !val);
+            closeWheelOverlay('wpSourceOverlay');
+
+            const hiddenField = document.getElementById('filterSourceHidden');
+            if (hiddenField) hiddenField.value = val;
+
+            // Keep the PDF export in sync too, since it reads this object
+            // directly (see daily.html) rather than re-reading the DOM.
+            if (typeof dailyExportParams !== 'undefined') {
+                if (val) dailyExportParams.source = val;
+                else delete dailyExportParams.source;
+            }
+
+            const sourceWrap = document.getElementById('summarySourceWrap');
+            const sourceValueEl = document.getElementById('summarySourceValue');
+            if (sourceWrap && sourceValueEl) {
+                sourceValueEl.textContent = val;
+                sourceWrap.classList.toggle('hidden', !val);
+            }
+
+            if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
+}
+
+/* Manager-only customer-name search + Paid/Unpaid + Source filter for the
+   Daily Records dashboard. All three filter the currently displayed order
+   cards client-side (no reload); the conditions combine with AND. */
 let dailyPaidFilter = 'all';
 
 function setDailyPaidFilter(mode) {
@@ -420,6 +496,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = searchInput.value.trim().toLowerCase();
         const dayGroups = document.querySelectorAll('#ordersRoot .day-group');
         let matchedOrders = 0;
+        let matchedRevenue = 0;
+        let matchedDays = 0;
         let totalOrders = 0;
 
         dayGroups.forEach(function(dayGroup) {
@@ -435,13 +513,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     || (dailyPaidFilter === 'paid' && isPaid)
                     || (dailyPaidFilter === 'unpaid' && !isPaid);
 
-                const matches = nameMatches && paidMatches;
+                const cardSource = (card.getAttribute('data-source') || '').trim();
+                const sourceMatches = !dailySourceFilter || cardSource === dailySourceFilter;
+
+                const matches = nameMatches && paidMatches && sourceMatches;
 
                 card.classList.toggle('hidden', !matches);
 
                 if (matches) {
                     visibleInGroup++;
                     matchedOrders++;
+                    matchedRevenue += parseInt(card.getAttribute('data-total'), 10) || 0;
                 }
 
                 totalOrders++;
@@ -449,13 +531,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Hide an entire day section when none of its orders match.
             dayGroup.classList.toggle('hidden', visibleInGroup === 0);
+            if (visibleInGroup > 0) matchedDays++;
         });
 
         // Keep the clear button state polished on mobile and desktop.
         clearButton.classList.toggle('hidden', !query);
         clearButton.classList.toggle('flex', !!query);
 
-        const filtersActive = !!query || dailyPaidFilter !== 'all';
+        const filtersActive = !!query || dailyPaidFilter !== 'all' || !!dailySourceFilter;
         if (filtersActive) {
             searchStatus.classList.remove('hidden');
             searchStatus.textContent = matchedOrders === 1
@@ -465,6 +548,15 @@ document.addEventListener('DOMContentLoaded', function() {
             searchStatus.classList.add('hidden');
             searchStatus.textContent = '';
         }
+
+        // Keep the top summary badges (order count / revenue / day count)
+        // in sync with whatever's actually visible right now.
+        const orderCountEl = document.getElementById('summaryOrderCount');
+        if (orderCountEl) orderCountEl.textContent = matchedOrders;
+        const revenueEl = document.getElementById('summaryRevenue');
+        if (revenueEl) revenueEl.textContent = matchedRevenue.toLocaleString();
+        const dayCountEl = document.getElementById('summaryDayCount');
+        if (dayCountEl) dayCountEl.textContent = matchedDays;
 
         // Reuse the existing empty-state area when a filter combo has no matches.
         let noResults = document.getElementById('dailyCustomerSearchNoResults');
@@ -491,8 +583,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Exposed globally so setDailyPaidFilter() and the payment-toggle
-    // handler (outside this closure) can trigger a re-filter.
+    // Exposed globally so setDailyPaidFilter(), the source picker, and the
+    // payment-toggle handler (outside this closure) can trigger a re-filter.
     window.updateDailyOrderFilters = updateDailyOrderFilters;
 
     searchInput.addEventListener('input', updateDailyOrderFilters);
@@ -509,6 +601,11 @@ document.addEventListener('DOMContentLoaded', function() {
             updateDailyOrderFilters();
         }
     });
+
+    // If the page loaded with a source already selected (e.g. a bookmarked
+    // URL with ?source=...), run one pass immediately so the summary badges
+    // and "orders found" line reflect it right away.
+    if (dailySourceFilter) updateDailyOrderFilters();
 });
 {% endif %}
 
