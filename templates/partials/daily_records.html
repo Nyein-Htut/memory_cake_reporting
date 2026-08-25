@@ -1,14 +1,7 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
    toggle plus one wp-trigger picker for whichever mode is active, and a
-   single "筛选/Apply" submit button.
-
-   Source filter (manager only) is CLIENT-SIDE: it filters the already-loaded
-   order cards via their data-source attribute, same as Paid/Unpaid and the
-   customer-name search, so picking a source never reloads the page. The
-   hidden #filterSourceHidden field still carries the value along if the
-   manager later hits "筛选" to also change day/month/year, so it's preserved
-   across a real page reload too. #}
+   single "筛选/Apply" submit button. #}
 
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10 space-y-4">
 
