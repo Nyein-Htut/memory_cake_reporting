@@ -132,6 +132,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    applyDeliveredAndFoldState();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
     if (hidden && hidden.value && btn) {
@@ -194,7 +198,8 @@ async function refreshDailyRecords() {
         const data = await res.json();
 
         root.innerHTML = data.html;
-
+        applyDeliveredAndFoldState();
+       
         const orderCountEl = document.getElementById('summaryOrderCount');
         if (orderCountEl) orderCountEl.textContent = data.total_orders;
         const revenueEl = document.getElementById('summaryRevenue');
