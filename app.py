@@ -1335,6 +1335,45 @@ def update_cell():
     return {
         "success": True
     }
+
+@app.route('/toggle_delivered/<int:order_id>', methods=['POST'])
+@login_required
+def toggle_delivered(order_id):
+    order = Order.query.get_or_404(order_id)
+    data = request.get_json(silent=True) or {}
+    is_delivered = bool(data.get('is_delivered'))
+
+    order.is_delivered = is_delivered
+    if is_delivered:
+        order.is_folded = True  # auto-collapse once delivered, same as the old localStorage behavior
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'is_delivered': order.is_delivered, 'is_folded': order.is_folded})
+    except Exception as e:
+        db.session.rollback()
+        print("TOGGLE DELIVERED ERROR:", e)
+        return jsonify({'success': False, 'error': 'Update failed'}), 500
+    finally:
+        db.session.remove()
+
+
+@app.route('/toggle_fold/<int:order_id>', methods=['POST'])
+@login_required
+def toggle_fold(order_id):
+    order = Order.query.get_or_404(order_id)
+    data = request.get_json(silent=True) or {}
+    order.is_folded = bool(data.get('is_folded'))
+
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'is_folded': order.is_folded})
+    except Exception as e:
+        db.session.rollback()
+        print("TOGGLE FOLD ERROR:", e)
+        return jsonify({'success': False, 'error': 'Update failed'}), 500
+    finally:
+        db.session.remove()
     
 @app.route('/health')
 def health():
