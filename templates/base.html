@@ -281,13 +281,13 @@
         .oc-payment-date-label { font-weight: 600; opacity: .8; }
         
         .oc-fold-btn {
-            position: absolute;
-        
-            right: 12px;
-            bottom: 8px;
+            position: static;
         
             width: 30px;
             height: 30px;
+        
+            margin-top: 8px;
+            margin-left: auto;
         
             display: flex;
             align-items: center;
@@ -302,14 +302,12 @@
             color: #78716c;
         
             cursor: pointer;
-            z-index: 10;
         
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         
             transition:
                 background-color 0.15s ease,
-                color 0.15s ease,
-                transform 0.15s ease;
+                color 0.15s ease;
         }
         
         .oc-fold-btn:hover {
