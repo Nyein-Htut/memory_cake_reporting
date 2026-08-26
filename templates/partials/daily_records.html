@@ -132,10 +132,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    applyDeliveredAndFoldState();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
     if (hidden && hidden.value && btn) {
@@ -145,14 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-/* ===== Restore scroll position after edit/delete =====
-   Editing or deleting an order is a normal form POST + redirect (full page
-   reload), which used to always land back at the top of the page. The edit
-   form and delete-confirm link (see order_modals.html /
-   order_modals_staff.html) stash where the user was right before
-   navigating away — either the specific order-card's id (edit, since the
-   card still exists after saving) or a raw scrollY (delete, since the card
-   is gone afterwards) — and this restores it once the fresh page loads. */
 document.addEventListener('DOMContentLoaded', function() {
     let anchorId = null, scrollYRaw = null;
     try {
@@ -568,19 +556,6 @@ async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapp
     }
 }
 
-const MC_DELIVERED_KEY = 'mc_delivered_orders';
-const MC_FOLDED_KEY = 'mc_folded_orders';
-
-function _mcReadSet(key) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw ? new Set(JSON.parse(raw)) : new Set();
-    } catch (e) { return new Set(); }
-}
-function _mcWriteSet(key, set) {
-    try { localStorage.setItem(key, JSON.stringify([...set])); } catch (e) {}
-}
-
 function _mcSetDeliveredUI(card, isDelivered) {
     const btn = card.querySelector('.oc-delivered-toggle');
     if (!btn) return;
@@ -597,45 +572,48 @@ function _mcSetFoldUI(card, isFolded) {
     card.classList.toggle('oc-folded', isFolded);
 }
 
-function applyDeliveredAndFoldState() {
-    const deliveredSet = _mcReadSet(MC_DELIVERED_KEY);
-    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
-    document.querySelectorAll('#ordersRoot .order-card').forEach(card => {
-        const id = card.id.replace('order-card-', '');
-        _mcSetDeliveredUI(card, deliveredSet.has(id));
-        _mcSetFoldUI(card, foldedSet.has(id));
-    });
-}
-
-function toggleDeliveredCard(btn) {
+async function toggleDeliveredCard(btn) {
     const card = btn.closest('.order-card');
-    const id = card.id.replace('order-card-', '');
-    const deliveredSet = _mcReadSet(MC_DELIVERED_KEY);
-    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
+    const orderId = card.id.replace('order-card-', '');
+    const nowDelivered = !btn.classList.contains('is-delivered');
 
-    const nowDelivered = !deliveredSet.has(id);
-    if (nowDelivered) {
-        deliveredSet.add(id);
-        foldedSet.add(id); // auto-fold once marked delivered
-    } else {
-        deliveredSet.delete(id);
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/toggle_delivered/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_delivered: nowDelivered })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Update failed');
+
+        _mcSetDeliveredUI(card, data.is_delivered);
+        _mcSetFoldUI(card, data.is_folded);
+        card.setAttribute('data-delivered', data.is_delivered ? 'true' : 'false');
+    } catch (err) {
+        alert('更新送达状态失败，请重试。\n' + (err.message || ''));
+    } finally {
+        btn.disabled = false;
     }
-    _mcWriteSet(MC_DELIVERED_KEY, deliveredSet);
-    _mcWriteSet(MC_FOLDED_KEY, foldedSet);
-
-    _mcSetDeliveredUI(card, nowDelivered);
-    _mcSetFoldUI(card, foldedSet.has(id));
 }
 
-function toggleFoldCard(el) {
+async function toggleFoldCard(el) {
     const card = el.closest('.order-card');
-    const id = card.id.replace('order-card-', '');
-    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
+    const orderId = card.id.replace('order-card-', '');
+    const nowFolded = !card.classList.contains('oc-folded');
 
-    const nowFolded = !foldedSet.has(id);
-    if (nowFolded) foldedSet.add(id); else foldedSet.delete(id);
-    _mcWriteSet(MC_FOLDED_KEY, foldedSet);
+    try {
+        const res = await fetch(`/toggle_fold/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_folded: nowFolded })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Update failed');
 
-    _mcSetFoldUI(card, nowFolded);
+        _mcSetFoldUI(card, data.is_folded);
+    } catch (err) {
+        alert('更新折叠状态失败，请重试。\n' + (err.message || ''));
+    }
 }
 </script>
