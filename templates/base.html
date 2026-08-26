@@ -53,6 +53,7 @@
         }
 
         .order-card {
+            position: relative;
             background: #fff;
             border: 1px solid #e7e5e4;
             border-radius: 20px;
@@ -279,7 +280,71 @@
         }
         .oc-payment-checkbox { width: 13px; height: 13px; accent-color: #047857; cursor: pointer; }
         .oc-payment-date-label { font-weight: 600; opacity: .8; }
-        
+                
+        .oc-fold-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 9999px;
+            background: #fff;
+            border: 1px solid #e7e5e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,.06);
+            z-index: 2;
+            transition: background-color .15s ease;
+        }
+        .oc-fold-btn:hover { background: #f5f5f4; }
+        .oc-fold-btn svg { width: 14px; height: 14px; transition: transform .2s ease; color: #78716c; }
+        .order-card.oc-folded .oc-fold-btn svg { transform: rotate(-90deg); }
+
+        .oc-delivered-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 9999px;
+            padding: 4px 10px;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+            user-select: none;
+        }
+        .oc-delivered-toggle.is-delivered {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #d1fae5;
+        }
+
+        .order-card.oc-folded .oc-items,
+        .order-card.oc-folded .oc-footer {
+            display: none;
+        }
+        .oc-folded-summary {
+            display: none;
+            padding: 14px 22px;
+            text-align: center;
+            font-size: 12px;
+            color: #a8a29e;
+            cursor: pointer;
+            border-top: 1px solid #f5f5f4;
+        }
+        .order-card.oc-folded .oc-folded-summary { display: block; }
+        .oc-folded-summary:hover { color: #57534e; background: #fafaf9; }
+
+        @media print {
+            .oc-fold-btn, .oc-delivered-toggle, .oc-folded-summary { display: none !important; }
+            .order-card.oc-folded .oc-items { display: block !important; }
+            .order-card.oc-folded .oc-footer { display: flex !important; }
+        }
         .print-only { display: none !important; }
         @media print {
             .print-only { display: inline-block !important; }
