@@ -1,5 +1,6 @@
 {% for day_group in orders_by_day %}
 <div class="day-group mb-6 last:mb-0">
+
     <div class="day-separator">
         <span class="day-separator-date">{{ day_group.date_display }}</span>
         <span class="day-separator-meta">
@@ -10,31 +11,33 @@
     </div>
 
     {% for order in day_group.orders %}
+
     <div class="order-card{% if order.is_folded %} oc-folded{% endif %}"
-    id="order-card-{{ order.id }}"
-    data-date="{{ order.date }}"
-    data-customer="{{ order.customer }}"
-    data-source="{{ order.source }}"
-    data-time="{{ order.time }}"
-    data-address="{{ order.address }}"
-    data-total="{{ order.total_price }}"
-    data-delivery-fee="{{ order.delivery_fee }}"
-    data-paid="{{ 'true' if order.is_paid else 'false' }}"
-    data-delivered="{{ 'true' if order.is_delivered else 'false' }}">
+        id="order-card-{{ order.id }}"
+        data-date="{{ order.date }}"
+        data-customer="{{ order.customer }}"
+        data-source="{{ order.source }}"
+        data-time="{{ order.time }}"
+        data-address="{{ order.address }}"
+        data-total="{{ order.total_price }}"
+        data-delivery-fee="{{ order.delivery_fee }}"
+        data-paid="{{ 'true' if order.is_paid else 'false' }}"
+        data-delivered="{{ 'true' if order.is_delivered else 'false' }}">
 
-    <div class="oc-header">
+        <!-- ==================== HEADER ==================== -->
 
-        <button type="button" class="oc-fold-btn no-print" onclick="toggleFoldCard(this)"
-            title="{% if readonly %}အကျဉ်းချုံး/ဖြန့်ရန်{% else %}折叠 / 展开{% endif %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l7-7 7 7"/>
-            </svg>
-        </button>
+        <div class="oc-header">
 
-        <div class="oc-header-main">
             <div class="oc-header-main">
-                <div class="oc-date">{{ order.date }}</div>
-                <div class="oc-customer">{{ order.customer }}</div>
+
+                <div class="oc-date">
+                    {{ order.date }}
+                </div>
+
+                <div class="oc-customer">
+                    {{ order.customer }}
+                </div>
+
                 <div class="oc-source">
                     {% if readonly %}
                         Source: {{ order.source }}
@@ -67,14 +70,20 @@
                             {% endif %}
                         {% endif %}
                     </span>
+
                 </button>
+
             </div>
+
+
+            <!-- ==================== TOTAL / PAYMENT ==================== -->
 
             <div class="oc-total-wrap">
 
                 {% if show_payment %}
 
                 <label class="oc-payment-toggle no-print {% if order.is_paid %}is-paid{% endif %}">
+
                     <input type="checkbox"
                         class="oc-payment-checkbox"
                         {% if order.is_paid %}checked{% endif %}
@@ -92,61 +101,114 @@
                             标记已付款
                         {% endif %}
                     </span>
+
                 </label>
+
 
                 <div class="oc-payment-badge print-only {{ 'oc-paid' if order.is_paid else 'oc-unpaid' }}">
                     {{ '✅ 已付款' if order.is_paid else '⏳ 未付款' }}
+
                     {% if order.is_paid and order.payment_date %}
                         · {{ order.payment_date }}
                     {% endif %}
                 </div>
 
-                {# ---- Restored: voucher total + delivery fee, color-coded by payment status, small font ---- #}
+
+                <!-- PRICE -->
+
                 <div class="oc-price-line"
-                    style="font-size:12.5px; font-weight:700; margin-top:6px; text-align:right; color: {{ '#047857' if order.is_paid else '#b45309' }};">
+                    style="
+                        font-size:12.5px;
+                        font-weight:700;
+                        margin-top:6px;
+                        text-align:right;
+                        color: {{ '#047857' if order.is_paid else '#b45309' }};
+                    ">
                     {{ "{:,}".format(order.total_price) }} MMK
                 </div>
 
+
+                <!-- DELIVERY FEE -->
+
                 {% if order.delivery_fee and order.delivery_fee != '' %}
+
                 <div class="oc-delivery-fee-line"
-                    style="font-size:10.5px; font-weight:500; margin-top:2px; text-align:right; color:#a8a29e;">
+                    style="
+                        font-size:10.5px;
+                        font-weight:500;
+                        margin-top:2px;
+                        text-align:right;
+                        color:#a8a29e;
+                    ">
                     🚗 {{ order.delivery_fee }}
                 </div>
+
                 {% endif %}
+
 
                 {% else %}
 
+
                 {% if order.is_paid %}
+
                 <div class="oc-payment-badge oc-paid">
                     ✅
-                    {% if readonly %}ပေးချေပြီး{% else %}已付款{% endif %}
+
+                    {% if readonly %}
+                        ပေးချေပြီး
+                    {% else %}
+                        已付款
+                    {% endif %}
+
                     {% if order.payment_date %}
                         · {{ order.payment_date }}
                     {% endif %}
                 </div>
+
                 {% else %}
+
                 <div class="oc-payment-badge oc-unpaid">
                     ⏳
-                    {% if readonly %}မပေးရသေး{% else %}未付款{% endif %}
+
+                    {% if readonly %}
+                        မပေးရသေး
+                    {% else %}
+                        未付款
+                    {% endif %}
                 </div>
-                {% endif %}
 
                 {% endif %}
 
-                {# ---- New: order-level size summary ---- #}
+                {% endif %}
+
+
+                <!-- ==================== ORDER SIZE ==================== -->
+
                 {% set order_sizes = [] %}
 
                 {% for oi in order.items %}
+
                     {% if oi.size and oi.size != '-' and oi.size not in order_sizes %}
+
                         {% set _ = order_sizes.append(oi.size) %}
+
                     {% endif %}
+
                 {% endfor %}
 
+
                 {% if order_sizes %}
+
                     {% set size_text = order_sizes | join(' · ') %}
 
                     <div class="oc-size-line"
-                        style="font-size:12px; font-weight:700; margin-top:6px; text-align:right; color:#065f46;"
+                        style="
+                            font-size:12px;
+                            font-weight:700;
+                            margin-top:6px;
+                            text-align:right;
+                            color:#065f46;
+                        "
                         title="{{ size_text }}">
 
                         {% if readonly %}
@@ -156,11 +218,71 @@
                         {% endif %}
 
                         {{ size_text | truncate(12, True, '…', 0) }}
+
                     </div>
+
                 {% endif %}
 
+
+                <!-- ==================== FOLD TOGGLE ==================== -->
+
+                <button type="button"
+                    class="oc-fold-btn no-print"
+                    onclick="toggleFoldCard(this)"
+                    title="{% if readonly %}အကျဉ်းချုံး/ဖြန့်ရန်{% else %}折叠 / 展开{% endif %}"
+                    style="
+                        position: static !important;
+                        top: auto !important;
+                        right: auto !important;
+                        bottom: auto !important;
+                        left: auto !important;
+                        transform: none !important;
+
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        width: 30px;
+                        height: 30px;
+
+                        margin-top: 8px;
+                        margin-left: auto;
+
+                        padding: 0;
+
+                        border: 1px solid #e7e5e4;
+                        border-radius: 50%;
+
+                        background: #ffffff;
+                        color: #78716c;
+
+                        cursor: pointer;
+                        z-index: 1;
+
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                    ">
+
+                    <svg viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        width="14"
+                        height="14">
+
+                        <path stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 9l6 6 6-6"/>
+
+                    </svg>
+
+                </button>
+
             </div>
+
         </div>
+
+
+        <!-- ==================== ITEMS ==================== -->
 
         <div class="oc-items">
 
@@ -174,7 +296,12 @@
 
                 <div class="oc-item-body">
 
+
+                    <!-- IMAGES -->
+
                     <div class="oc-item-images">
+
+                        <!-- CAKE IMAGE -->
 
                         <div class="oc-img-slot oc-img-cake">
 
@@ -203,15 +330,24 @@
 
                             {% else %}
 
-                            <span class="oc-img-empty">🎂</span>
+                            <span class="oc-img-empty">
+                                🎂
+                            </span>
 
                             {% endif %}
 
                             <span class="oc-img-tag">
-                                {% if readonly %}ကိတ်မုန့်{% else %}蛋糕{% endif %}
+                                {% if readonly %}
+                                    ကိတ်မုန့်
+                                {% else %}
+                                    蛋糕
+                                {% endif %}
                             </span>
 
                         </div>
+
+
+                        <!-- FLOWER IMAGE -->
 
                         <div class="oc-img-slot oc-img-flower">
 
@@ -240,48 +376,71 @@
 
                             {% else %}
 
-                            <span class="oc-img-empty">💐</span>
+                            <span class="oc-img-empty">
+                                💐
+                            </span>
 
                             {% endif %}
 
                             <span class="oc-img-tag">
-                                {% if readonly %}ပန်းစည်း{% else %}花束{% endif %}
+                                {% if readonly %}
+                                    ပန်းစည်း
+                                {% else %}
+                                    花束
+                                {% endif %}
                             </span>
 
                         </div>
 
                     </div>
 
+
+                    <!-- ITEM DETAILS -->
+
                     <div class="oc-item-meta">
 
                         {% if item.size and item.size != '-' %}
+
                         <div class="oc-item-size">
+
                             {% if readonly %}
                                 အရွယ်အစား: {{ item.size }}
                             {% else %}
                                 尺寸: {{ item.size }}
                             {% endif %}
+
                         </div>
+
                         {% endif %}
 
+
                         {% if show_payment and item.price %}
+
                         <div class="oc-item-size">
+
                             {% if readonly %}
                                 ဈေးနှုန်: {{ "{:,}".format(item.price) }} MMK
                             {% else %}
                                 单价: {{ "{:,}".format(item.price) }} MMK
                             {% endif %}
+
                         </div>
+
                         {% endif %}
 
+
                         {% if item.remarks and item.remarks != '-' and item.remarks != '' %}
+
                         <div class="oc-item-remarks">
+
                             {% if readonly %}
                                 မှတ်ချက်: {{ item.remarks }}
                             {% else %}
                                 备注: {{ item.remarks }}
                             {% endif %}
+
                         </div>
+
                         {% endif %}
 
                     </div>
@@ -294,47 +453,74 @@
 
         </div>
 
+
+        <!-- ==================== FOLDED SUMMARY ==================== -->
+
         <div class="oc-folded-summary no-print"
             onclick="toggleFoldCard(this)">
+
             {% if readonly %}
+
                 👁️ အသေးစိတ်ကြည့်ရန် နှိပ်ပါ (Tap to see more)
+
             {% else %}
+
                 👁️ 点击查看详情 (Tap to see more)
+
             {% endif %}
+
         </div>
+
+
+        <!-- ==================== FOOTER ==================== -->
 
         <div class="oc-footer">
 
             <div class="oc-footer-text">
 
                 <span class="oc-time">
+
                     {% if readonly %}
                         အချိန်: {{ order.time }}
                     {% else %}
                         时间: {{ order.time }}
                     {% endif %}
+
                 </span>
+
 
                 <span class="oc-address">
                     {{ order.address }}
                 </span>
 
+
                 {% if order.delivery_fee and order.delivery_fee != '' %}
+
                 <span class="oc-delivery-fee">
+
                     🚗
+
                     {% if readonly %}
                         ကားခ: {{ order.delivery_fee }}
                     {% else %}
                         车费: {{ order.delivery_fee }}
                     {% endif %}
+
                 </span>
+
                 {% endif %}
 
             </div>
 
+
+            <!-- ACTION BUTTONS -->
+
             <div class="oc-actions no-print">
 
+                <!-- EDIT -->
+
                 <button type="button"
+
                     onclick='openEditModal(
                         "{{ order.id }}",
                         "{{ order.date }}",
@@ -346,7 +532,9 @@
                         {{ order.is_paid|tojson }},
                         {{ order.payment_date|tojson }},
                         [
+
                             {% for oi in order.items %}
+
                             {
                                 item_name: {{ oi.item_name|tojson }},
                                 size: {{ oi.size|tojson }},
@@ -354,11 +542,19 @@
                                 remarks: {{ oi.remarks|tojson }},
                                 image_url: {{ oi.image_url|tojson }},
                                 flower_image_url: {{ oi.flower_image_url|tojson }}
-                            }{% if not loop.last %},{% endif %}
+                            }
+
+                            {% if not loop.last %}
+                            ,
+                            {% endif %}
+
                             {% endfor %}
+
                         ]
                     )'
+
                     class="oc-action-btn oc-action-edit"
+
                     title="{% if readonly %}အော်ဒါပြင်ဆင်ရန်{% else %}编辑订单{% endif %}">
 
                     <svg viewBox="0 0 24 24"
@@ -373,14 +569,30 @@
                     </svg>
 
                     <span>
-                        {% if readonly %}ပြင်ဆင်{% else %}编辑{% endif %}
+
+                        {% if readonly %}
+                            ပြင်ဆင်
+                        {% else %}
+                            编辑
+                        {% endif %}
+
                     </span>
 
                 </button>
 
+
+                <!-- DELETE -->
+
                 <button type="button"
-                    onclick="openDeleteModal('{{ order.id }}', '{{ order.customer|escape }}', '{{ order.date }}')"
+
+                    onclick="openDeleteModal(
+                        '{{ order.id }}',
+                        '{{ order.customer|escape }}',
+                        '{{ order.date }}'
+                    )"
+
                     class="oc-action-btn oc-action-delete"
+
                     title="{% if readonly %}အော်ဒါဖျက်ရန်{% else %}删除订单{% endif %}">
 
                     <svg viewBox="0 0 24 24"
@@ -395,7 +607,13 @@
                     </svg>
 
                     <span>
-                        {% if readonly %}ဖျက်ရန်{% else %}删除{% endif %}
+
+                        {% if readonly %}
+                            ဖျက်ရန်
+                        {% else %}
+                            删除
+                        {% endif %}
+
                     </span>
 
                 </button>
@@ -405,6 +623,7 @@
         </div>
 
     </div>
+
     {% endfor %}
 
 </div>
@@ -414,9 +633,13 @@
 <div class="text-center py-16 text-stone-400 italic text-sm">
 
     {% if readonly %}
+
         ဤစစ်ထုတ်မှုအတွက် အော်ဒါမှတ်တမ်း မရှိသေးပါ။
+
     {% else %}
+
         该筛选条件下暂无订单记录。
+
     {% endif %}
 
 </div>
