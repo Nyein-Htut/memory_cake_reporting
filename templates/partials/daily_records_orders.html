@@ -11,25 +11,27 @@
 
     {% for order in day_group.orders %}
     <div class="order-card{% if order.is_folded %} oc-folded{% endif %}"
-        id="order-card-{{ order.id }}"
-        data-date="{{ order.date }}"
-        data-customer="{{ order.customer }}"
-        data-source="{{ order.source }}"
-        data-time="{{ order.time }}"
-        data-address="{{ order.address }}"
-        data-total="{{ order.total_price }}"
-        data-delivery-fee="{{ order.delivery_fee }}"
-        data-paid="{{ 'true' if order.is_paid else 'false' }}"
-        data-delivered="{{ 'true' if order.is_delivered else 'false' }}">
+    id="order-card-{{ order.id }}"
+    data-date="{{ order.date }}"
+    data-customer="{{ order.customer }}"
+    data-source="{{ order.source }}"
+    data-time="{{ order.time }}"
+    data-address="{{ order.address }}"
+    data-total="{{ order.total_price }}"
+    data-delivery-fee="{{ order.delivery_fee }}"
+    data-paid="{{ 'true' if order.is_paid else 'false' }}"
+    data-delivered="{{ 'true' if order.is_delivered else 'false' }}">
+
+    <div class="oc-header">
 
         <button type="button" class="oc-fold-btn no-print" onclick="toggleFoldCard(this)"
             title="{% if readonly %}အကျဉ်းချုံး/ဖြန့်ရန်{% else %}折叠 / 展开{% endif %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l7-7 7 7"/>
             </svg>
         </button>
 
-        <div class="oc-header">
+        <div class="oc-header-main">
             <div class="oc-header-main">
                 <div class="oc-date">{{ order.date }}</div>
                 <div class="oc-customer">{{ order.customer }}</div>
