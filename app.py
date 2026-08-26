@@ -73,7 +73,8 @@ class Order(db.Model):
     delivery_fee = db.Column(db.Text, default='')
     is_paid = db.Column(db.Boolean, nullable=False, default=False)
     payment_date = db.Column(db.String(50), default='')
-
+    is_delivered = db.Column(db.Boolean, nullable=False, default=False)  
+    is_folded = db.Column(db.Boolean, nullable=False, default=False)  
     items = db.relationship(
         'OrderItem',
         backref='order',
