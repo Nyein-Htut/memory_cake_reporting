@@ -563,8 +563,79 @@ async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapp
     } catch (err) {
         checkbox.checked = !isPaid; // roll back
         alert('更新付款状态失败，请重试。\n' + (err.message || ''));
-    } finally {
+        } finally {
         checkbox.disabled = false;
     }
+}
+
+const MC_DELIVERED_KEY = 'mc_delivered_orders';
+const MC_FOLDED_KEY = 'mc_folded_orders';
+
+function _mcReadSet(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) { return new Set(); }
+}
+function _mcWriteSet(key, set) {
+    try { localStorage.setItem(key, JSON.stringify([...set])); } catch (e) {}
+}
+
+function _mcSetDeliveredUI(card, isDelivered) {
+    const btn = card.querySelector('.oc-delivered-toggle');
+    if (!btn) return;
+    btn.classList.toggle('is-delivered', isDelivered);
+    const label = btn.querySelector('.oc-delivered-label');
+    if (label) {
+        label.textContent = isDelivered
+            ? (btn.dataset.labelDone || label.textContent)
+            : (btn.dataset.labelDefault || label.textContent);
+    }
+}
+
+function _mcSetFoldUI(card, isFolded) {
+    card.classList.toggle('oc-folded', isFolded);
+}
+
+function applyDeliveredAndFoldState() {
+    const deliveredSet = _mcReadSet(MC_DELIVERED_KEY);
+    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
+    document.querySelectorAll('#ordersRoot .order-card').forEach(card => {
+        const id = card.id.replace('order-card-', '');
+        _mcSetDeliveredUI(card, deliveredSet.has(id));
+        _mcSetFoldUI(card, foldedSet.has(id));
+    });
+}
+
+function toggleDeliveredCard(btn) {
+    const card = btn.closest('.order-card');
+    const id = card.id.replace('order-card-', '');
+    const deliveredSet = _mcReadSet(MC_DELIVERED_KEY);
+    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
+
+    const nowDelivered = !deliveredSet.has(id);
+    if (nowDelivered) {
+        deliveredSet.add(id);
+        foldedSet.add(id); // auto-fold once marked delivered
+    } else {
+        deliveredSet.delete(id);
+    }
+    _mcWriteSet(MC_DELIVERED_KEY, deliveredSet);
+    _mcWriteSet(MC_FOLDED_KEY, foldedSet);
+
+    _mcSetDeliveredUI(card, nowDelivered);
+    _mcSetFoldUI(card, foldedSet.has(id));
+}
+
+function toggleFoldCard(el) {
+    const card = el.closest('.order-card');
+    const id = card.id.replace('order-card-', '');
+    const foldedSet = _mcReadSet(MC_FOLDED_KEY);
+
+    const nowFolded = !foldedSet.has(id);
+    if (nowFolded) foldedSet.add(id); else foldedSet.delete(id);
+    _mcWriteSet(MC_FOLDED_KEY, foldedSet);
+
+    _mcSetFoldUI(card, nowFolded);
 }
 </script>
