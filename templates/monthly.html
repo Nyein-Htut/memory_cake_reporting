@@ -15,14 +15,14 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {# No "Apply/筛选" button — picking a month/year (or switching the
                月度/年度 tab) submits this form immediately via JS below, so
                the report updates as soon as a choice is made. #}
-            <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs">
+            <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
                 <input type="hidden" name="view" id="viewModeInput" value="{{ view_mode }}">
 
-                <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                     <button type="button" onclick="setViewMode('month')"
                         class="px-3.5 py-2 transition-all view-tab-month {% if view_mode != 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
                         月度
@@ -33,7 +33,7 @@
                     </button>
                 </div>
 
-                <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} min-w-[190px]">
+                <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                     <input type="hidden" name="month" id="monthHidden" value="{{ selected_month }}">
                     <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyMonthPicker()">
                         <span>{{ selected_month }}</span>
@@ -41,7 +41,7 @@
                     </button>
                 </div>
 
-                <div id="yearPicker" class="{% if view_mode != 'year' %}hidden{% endif %} min-w-[150px]">
+                <div id="yearPicker" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
                     <input type="hidden" name="year" id="yearHidden" value="{{ selected_year }}">
                     <button type="button" id="yearTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyYearPicker()">
                         <span>{{ selected_year }}</span>
