@@ -1,14 +1,25 @@
 {% for day_group in orders_by_day %}
 <div class="day-group mb-6 last:mb-0">
 
-    <div class="day-separator">
-        <span class="day-separator-date">{{ day_group.date_display }}</span>
-        <span class="day-separator-meta">
-            {{ day_group.order_count }}
-            {% if readonly %}အော်ဒါ{% else %}单{% endif %}
-            {% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}
-        </span>
-    </div>
+   {% set all_folded = day_group.orders|length > 0 and (day_group.orders | selectattr('is_folded') | list | length) == day_group.orders|length %}
+<div class="day-separator">
+    <span class="day-separator-date">{{ day_group.date_display }}</span>
+    <span class="day-separator-meta">
+        {{ day_group.order_count }}
+        {% if readonly %}အော်ဒါ{% else %}单{% endif %}
+        {% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}
+    </span>
+    <button type="button"
+        class="day-fold-toggle no-print{% if all_folded %} all-folded{% endif %}"
+        onclick="toggleDayFold(this)"
+        data-label-fold="{% if readonly %}ယနေ့ အော်ဒါအားလုံး ချုံ့ရန်{% else %}折叠当天全部订单{% endif %}"
+        data-label-unfold="{% if readonly %}ယနေ့ အော်ဒါအားလုံး ဖြန့်ရန်{% else %}展开当天全部订单{% endif %}"
+        title="{% if all_folded %}{{ 'ယနေ့ အော်ဒါအားလုံး ဖြန့်ရန်' if readonly else '展开当天全部订单' }}{% else %}{{ 'ယနေ့ အော်ဒါအားလုံး ချုံ့ရန်' if readonly else '折叠当天全部订单' }}{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+        </svg>
+    </button>
+</div>
 
     {% for order in day_group.orders %}
 
