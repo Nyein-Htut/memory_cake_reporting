@@ -104,8 +104,19 @@
                             <input type="text" name="size[]" placeholder="6in" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-stone-500 text-[11px] mb-1 font-semibold">单品金额 (Price)</label>
-                            <input type="number" name="item_price[]" placeholder="MMK" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
+                            <label class="flex items-center justify-between text-stone-500 text-[11px] mb-1 font-semibold">
+                                <span>单品金额 (Price)</span>
+                                <button type="button" onclick="toggleCakeCalculator(this)" class="text-emerald-600 hover:text-emerald-800 text-[10px] font-bold cursor-pointer">🧮 计算器</button>
+                            </label>
+                            <input type="number" name="item_price[]" placeholder="MMK" class="item-price-input w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
+                            <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
+                                <div class="cake-calc-boxes space-y-1.5"></div>
+                                <div class="flex items-center justify-between gap-2 pt-0.5">
+                                    <button type="button" onclick="addCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
+                                    <button type="button" onclick="closeCakeCalculator(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
+                                </div>
+                                <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">合计: 0 MMK</div>
+                            </div>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-stone-500 text-[11px] mb-1 font-semibold">定制备注文字 (Remarks)</label>
@@ -178,6 +189,79 @@
         }
     })();
 
+    /* ===== Layered-cake price calculator (per item row) =====
+       Each item row carries its own calculator panel, so this all operates
+       relative to `.closest('.item-row')` rather than fixed ids — that way
+       it works correctly no matter how many item rows exist, including
+       ones added later by addNewItemRow(). Opening the calculator defaults
+       to 2 box inputs; typing in any box live-sums into the item's Price
+       field. Closing the panel just hides it — the last calculated total
+       stays in the Price field (and stays editable by hand afterwards). */
+    function toggleCakeCalculator(btn) {
+        const itemRow = btn.closest('.item-row');
+        const panel = itemRow.querySelector('.cake-calc-panel');
+        const boxesWrap = panel.querySelector('.cake-calc-boxes');
+        const isHidden = panel.classList.contains('hidden');
+        if (isHidden) {
+            if (boxesWrap.children.length === 0) {
+                addCalcBoxRow(boxesWrap);
+                addCalcBoxRow(boxesWrap);
+            }
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    }
+
+    function addCalcBoxRow(boxesWrap) {
+        const idx = boxesWrap.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5';
+        row.innerHTML = `
+            <span class="cake-calc-box-label text-[10px] text-stone-400 w-10 shrink-0">第${idx}层</span>
+            <input type="number" placeholder="MMK" class="cake-calc-box-input flex-1 border border-stone-300 rounded p-1.5 text-xs bg-white outline-none focus:border-emerald-500" oninput="recalcCakeTotal(this.closest('.item-row'))">
+            <button type="button" onclick="removeCalcBox(this)" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1 cursor-pointer">✕</button>
+        `;
+        boxesWrap.appendChild(row);
+    }
+
+    function addCalcBox(btn) {
+        const itemRow = btn.closest('.item-row');
+        const boxesWrap = itemRow.querySelector('.cake-calc-boxes');
+        addCalcBoxRow(boxesWrap);
+    }
+
+    function removeCalcBox(btn) {
+        const itemRow = btn.closest('.item-row');
+        btn.parentElement.remove();
+        renumberCalcBoxes(itemRow);
+        recalcCakeTotal(itemRow);
+    }
+
+    function renumberCalcBoxes(itemRow) {
+        const boxesWrap = itemRow.querySelector('.cake-calc-boxes');
+        Array.from(boxesWrap.children).forEach((row, i) => {
+            const label = row.querySelector('.cake-calc-box-label');
+            if (label) label.textContent = `第${i + 1}层`;
+        });
+    }
+
+    function recalcCakeTotal(itemRow) {
+        if (!itemRow) return;
+        const boxInputs = itemRow.querySelectorAll('.cake-calc-box-input');
+        let total = 0;
+        boxInputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
+        const priceInput = itemRow.querySelector('.item-price-input');
+        if (priceInput) priceInput.value = total || '';
+        const totalLabel = itemRow.querySelector('.cake-calc-total');
+        if (totalLabel) totalLabel.textContent = `合计: ${total.toLocaleString()} MMK`;
+    }
+
+    function closeCakeCalculator(btn) {
+        const itemRow = btn.closest('.item-row');
+        itemRow.querySelector('.cake-calc-panel').classList.add('hidden');
+    }
+
     function addNewItemRow() {
         const container = document.getElementById('itemsContainer');
         const newRow = document.createElement('div');
@@ -190,7 +274,19 @@
                 <input type="text" name="size[]" placeholder="尺寸" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
             </div>
             <div class="md:col-span-2">
-                <input type="number" name="item_price[]" placeholder="金额 MMK" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
+                <label class="flex items-center justify-between text-stone-500 text-[11px] mb-1 font-semibold">
+                    <span>单品金额</span>
+                    <button type="button" onclick="toggleCakeCalculator(this)" class="text-emerald-600 hover:text-emerald-800 text-[10px] font-bold cursor-pointer">🧮 计算器</button>
+                </label>
+                <input type="number" name="item_price[]" placeholder="金额 MMK" class="item-price-input w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
+                <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
+                    <div class="cake-calc-boxes space-y-1.5"></div>
+                    <div class="flex items-center justify-between gap-2 pt-0.5">
+                        <button type="button" onclick="addCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
+                        <button type="button" onclick="closeCakeCalculator(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
+                    </div>
+                    <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">合计: 0 MMK</div>
+                </div>
             </div>
             <div class="md:col-span-2">
                 <input type="text" name="remarks[]" placeholder="备注要求" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-white outline-none focus:border-stone-950">
