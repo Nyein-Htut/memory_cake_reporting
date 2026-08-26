@@ -56,16 +56,15 @@
 
     {% if not readonly %}
     <!-- Source filter (client-side, no reload) -->
-    <div class="space-y-2 pt-3 border-t border-stone-200/60">
-        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">按来源筛选 (Filter by Source)</span>
+   <!-- <div class="space-y-2 pt-3 border-t border-stone-200/60"> -->
         <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 w-full {% if not selected_source %}wp-empty{% endif %}" onclick="openDailySourceFilterPicker()">
             <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
             <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
-    </div>
+    <!--</div>-->
 
     <!-- Customer search + Paid/Unpaid filter -->
-    <div class="space-y-3 pt-3 border-t border-stone-200/60">
+    <!--<div class="space-y-3 pt-3 border-t border-stone-200/60">-->
         <div class="relative w-full max-w-full">
 
             <label for="dailyCustomerSearch" class="sr-only">Search customer name</label>
@@ -94,10 +93,9 @@
                     <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path>
                 </svg>
             </button>
-        </div>
+       <!-- </div> -->
 
         <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 w-full">
-            <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">Payment:</span>
             <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                 <button type="button" id="paidFilterAllBtn" onclick="setDailyPaidFilter('all')"
                     class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-all bg-stone-900 text-white">
