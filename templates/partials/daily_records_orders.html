@@ -18,15 +18,19 @@
                 data-delivery-fee="{{ order.delivery_fee }}"
                 data-paid="{{ 'true' if order.is_paid else 'false' }}">
 
-                <button type="button" class="oc-fold-btn no-print" onclick="toggleFoldCard(this)" title="{% if readonly %}ဖွင့်/ခေါက်ရန်{% else %}展开/折叠{% endif %}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-
                 <div class="oc-header">
                     <div class="oc-header-main">
                         <div class="oc-date">{{ order.date }}</div>
                         <div class="oc-customer">{{ order.customer }}</div>
                         <div class="oc-source">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
+                        <button type="button" class="oc-delivered-toggle no-print"
+                            data-order-id="{{ order.id }}"
+                            data-label-default="{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}"
+                            data-label-done="{% if readonly %}ပို့ပြီးပြီ ✓{% else %}已送达 ✓{% endif %}"
+                            onclick="toggleDeliveredCard(this)">
+                            <span>🚚</span>
+                            <span class="oc-delivered-label">{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}</span>
+                        </button>
                     </div>
                     <div class="oc-total-wrap">
                       {% if show_payment %}
@@ -63,14 +67,18 @@
                         {% endif %}
                         {% endif %}
 
-                        <button type="button" class="oc-delivered-toggle no-print"
-                            data-order-id="{{ order.id }}"
-                            data-label-default="{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}"
-                            data-label-done="{% if readonly %}ပို့ပြီးပြီ ✓{% else %}已送达 ✓{% endif %}"
-                            onclick="toggleDeliveredCard(this)">
-                            <span>🚚</span>
-                            <span class="oc-delivered-label">{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}</span>
-                        </button>
+                        {# ---- New: order-level size summary, sits where the delivered toggle used to be ---- #}
+                        {% set order_sizes = [] %}
+                        {% for oi in order.items %}
+                            {% if oi.size and oi.size != '-' and oi.size not in order_sizes %}
+                                {% set _ = order_sizes.append(oi.size) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if order_sizes %}
+                        <div class="oc-size-line" style="font-size:12px; font-weight:700; margin-top:6px; text-align:right; color:#065f46;">
+                            📏 {% if readonly %}အရွယ်အစား: {% else %}尺寸: {% endif %}{{ order_sizes | join(' · ') }}
+                        </div>
+                        {% endif %}
                   </div>
                 </div>
 
