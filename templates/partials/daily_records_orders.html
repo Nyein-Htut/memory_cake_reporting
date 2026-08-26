@@ -5,31 +5,43 @@
             <span class="day-separator-meta">{{ day_group.order_count }} {% if readonly %}အော်ဒါ{% else %}单{% endif %}{% if show_payment %} · {{ "{:,}".format(day_group.day_total) }} MMK{% endif %}</span>
         </div>
 
-        <div class="orders-grid">
-            {% for order in day_group.orders %}
-            <div class="order-card"
-                id="order-card-{{ order.id }}"
-                data-date="{{ order.date }}"
-                data-customer="{{ order.customer }}"
-                data-source="{{ order.source }}"
-                data-time="{{ order.time }}"
-                data-address="{{ order.address }}"
-                data-total="{{ order.total_price }}"
-                data-delivery-fee="{{ order.delivery_fee }}"
-                data-paid="{{ 'true' if order.is_paid else 'false' }}">
+        <div class="order-card{% if order.is_folded %} oc-folded{% endif %}"
+            id="order-card-{{ order.id }}"
+            data-date="{{ order.date }}"
+            data-customer="{{ order.customer }}"
+            data-source="{{ order.source }}"
+            data-time="{{ order.time }}"
+            data-address="{{ order.address }}"
+            data-total="{{ order.total_price }}"
+            data-delivery-fee="{{ order.delivery_fee }}"
+            data-paid="{{ 'true' if order.is_paid else 'false' }}"
+            data-delivered="{{ 'true' if order.is_delivered else 'false' }}">
+        
+            <button type="button" class="oc-fold-btn no-print" onclick="toggleFoldCard(this)"
+                title="{% if readonly %}အကျဉ်းချုံး/ဖြန့်ရန်{% else %}折叠 / 展开{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
 
                 <div class="oc-header">
                     <div class="oc-header-main">
                         <div class="oc-date">{{ order.date }}</div>
                         <div class="oc-customer">{{ order.customer }}</div>
                         <div class="oc-source">{% if readonly %}Source: {{ order.source }}{% else %}来源: {{ order.source }}{% endif %}</div>
-                        <button type="button" class="oc-delivered-toggle no-print"
+                        <button type="button" class="oc-delivered-toggle no-print{% if order.is_delivered %} is-delivered{% endif %}"
                             data-order-id="{{ order.id }}"
                             data-label-default="{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}"
                             data-label-done="{% if readonly %}ပို့ပြီးပြီ ✓{% else %}已送达 ✓{% endif %}"
                             onclick="toggleDeliveredCard(this)">
                             <span>🚚</span>
-                            <span class="oc-delivered-label">{% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}</span>
+                            <span class="oc-delivered-label">
+                                {% if order.is_delivered %}
+                                    {% if readonly %}ပို့ပြီးပြီ ✓{% else %}已送达 ✓{% endif %}
+                                {% else %}
+                                    {% if readonly %}ပို့ရန်ရှိသေး{% else %}标记已送达{% endif %}
+                                {% endif %}
+                            </span>
                         </button>
                     </div>
                     <div class="oc-total-wrap">
