@@ -68,17 +68,18 @@
                         {% endif %}
 
                         {# ---- New: order-level size summary, sits where the delivered toggle used to be ---- #}
-                        {% set order_sizes = [] %}
-                        {% for oi in order.items %}
-                            {% if oi.size and oi.size != '-' and oi.size not in order_sizes %}
-                                {% set _ = order_sizes.append(oi.size) %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if order_sizes %}
-                        <div class="oc-size-line" style="font-size:12px; font-weight:700; margin-top:6px; text-align:right; color:#065f46;">
-                            📏 {% if readonly %}အရွယ်အစား: {% else %}尺寸: {% endif %}{{ order_sizes | join(' · ') }}
-                        </div>
+                    {% set order_sizes = [] %}
+                    {% for oi in order.items %}
+                        {% if oi.size and oi.size != '-' and oi.size not in order_sizes %}
+                            {% set _ = order_sizes.append(oi.size) %}
                         {% endif %}
+                    {% endfor %}
+                    {% if order_sizes %}
+                        {% set size_text = order_sizes | join(' · ') %}
+                        <div class="oc-size-line" style="font-size:12px; font-weight:700; margin-top:6px; text-align:right; color:#065f46;" title="{{ size_text }}">
+                            {{ size_text | truncate(12, True, '…', 0) }}
+                        </div>
+                    {% endif %}
                   </div>
                 </div>
 
