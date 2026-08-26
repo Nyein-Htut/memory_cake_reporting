@@ -77,7 +77,7 @@
                     {% if order_sizes %}
                         {% set size_text = order_sizes | join(' · ') %}
                         <div class="oc-size-line" style="font-size:12px; font-weight:700; margin-top:6px; text-align:right; color:#065f46;" title="{{ size_text }}">
-                            {{ size_text | truncate(12, True, '…', 0) }}
+                            {% if readonly %}အရွယ်အစား: {% else %}尺寸: {% endif %}{{ size_text | truncate(12, True, '…', 0) }}
                         </div>
                     {% endif %}
                   </div>
