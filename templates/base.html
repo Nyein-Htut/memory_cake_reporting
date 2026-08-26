@@ -1136,7 +1136,7 @@ function openDateWheelPicker(triggerBtnIdOrCfg, hiddenInputId) {
 
 /* ===== Filter-by-day picker (Daily Records filter bar) =====
    Reuses the same date-wheel overlay as Payment Date / Delivery Date, but
-   picking a day here submits the filter form immediately instead of
+   picking a day here refreshes the filtered results immediately instead of
    waiting for a separate "Apply" click — this is the *only* filter mode
    the daily records dashboard supports now. */
 function openFilterDayPicker() {
@@ -1189,7 +1189,7 @@ function openFilterDayPicker() {
         span.textContent = chosen.label;
         btn.classList.remove('wp-empty');
         closeWheelOverlay('wpDateOverlay');
-        document.getElementById('dailyFilterForm').submit();
+        if (window.refreshDailyRecords) { window.refreshDailyRecords(); } else { document.getElementById('dailyFilterForm').submit(); }
     };
     document.getElementById('wpDateCancelBtn').onclick = () => closeWheelOverlay('wpDateOverlay');
 }
