@@ -7,13 +7,13 @@
     <!-- Period filter -->
     <div class="space-y-2">
         <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}</span>
-        <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2">
+        <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-nowrap items-center gap-2 w-full">
             <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
             {% if not readonly %}
             <input type="hidden" name="source" id="filterSourceHidden" value="{{ selected_source or '' }}">
             {% endif %}
 
-            <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+            <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                 <button type="button" onclick="setDailyViewMode('day')"
                     class="px-3.5 py-2.5 transition-all daily-view-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
                     {% if readonly %}ရက်{% else %}日{% endif %}
@@ -28,7 +28,7 @@
                 </button>
             </div>
 
-            <div id="dailyDayPickerWrap" class="{% if view_mode != 'day' %}hidden{% endif %} min-w-[190px]">
+            <div id="dailyDayPickerWrap" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                 <input type="hidden" name="day" id="filterDayHidden" value="{{ selected_day or '' }}">
                 <button type="button" id="filterDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterDayPicker()">
                     <span>{{ selected_day }}</span>
@@ -36,7 +36,7 @@
                 </button>
             </div>
 
-            <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} min-w-[190px]">
+            <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                 <input type="hidden" name="month" id="filterMonthHidden" value="{{ selected_month }}">
                 <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterMonthPicker()">
                     <span>{{ selected_month }}</span>
@@ -44,7 +44,7 @@
                 </button>
             </div>
 
-            <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} min-w-[150px]">
+            <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
                 <input type="hidden" name="year" id="filterYearHidden" value="{{ selected_year }}">
                 <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterYearPicker()">
                     <span>{{ selected_year }}</span>
