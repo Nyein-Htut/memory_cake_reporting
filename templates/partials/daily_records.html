@@ -616,4 +616,49 @@ async function toggleFoldCard(el) {
         alert('更新折叠状态失败，请重试。\n' + (err.message || ''));
     }
 }
+
+/* ===== Fold/unfold every order card within a single day (the small
+   circular toggle on the grey day-separator bar). If any card in that
+   day is currently expanded, folds all of them; otherwise unfolds all
+   of them. Reuses the same /toggle_fold/<id> endpoint each individual
+   card's own fold button already calls — just fired once per card that
+   actually needs to change, in parallel. */
+async function toggleDayFold(btn) {
+    const dayGroup = btn.closest('.day-group');
+    if (!dayGroup) return;
+    const cards = Array.from(dayGroup.querySelectorAll('.order-card'));
+    if (!cards.length) return;
+
+    const shouldFold = cards.some(card => !card.classList.contains('oc-folded'));
+
+    btn.disabled = true;
+    btn.classList.toggle('all-folded', shouldFold);
+    btn.title = shouldFold ? btn.dataset.labelUnfold : btn.dataset.labelFold;
+
+    const toUpdate = cards.filter(card => card.classList.contains('oc-folded') !== shouldFold);
+    toUpdate.forEach(card => _mcSetFoldUI(card, shouldFold)); // optimistic UI
+
+    try {
+        await Promise.all(toUpdate.map(card => {
+            const orderId = card.id.replace('order-card-', '');
+            return fetch(`/toggle_fold/${orderId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_folded: shouldFold })
+            }).then(res => res.json()).then(data => {
+                if (!data.success) throw new Error(data.error || 'Update failed');
+            });
+        }));
+    } catch (err) {
+        // Roll back so the button/cards never claim a state that didn't
+        // actually save.
+        toUpdate.forEach(card => _mcSetFoldUI(card, !shouldFold));
+        btn.classList.toggle('all-folded', !shouldFold);
+        btn.title = !shouldFold ? btn.dataset.labelUnfold : btn.dataset.labelFold;
+        alert('更新折叠状态失败，请重试。\n' + (err.message || ''));
+    } finally {
+        btn.disabled = false;
+    }
+}
+window.toggleDayFold = toggleDayFold;
 </script>
