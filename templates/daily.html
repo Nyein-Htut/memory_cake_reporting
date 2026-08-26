@@ -153,7 +153,7 @@
         base.html) — no page reload, no DOM screenshotting, so it stays
         quick even for a full month of orders with photos. */
      const dailyExportParams = {{ export_params | tojson | safe }};
-     const dailyExportLabel = {{ period_value | tojson | safe }};
+     let dailyExportLabel = {{ period_value | tojson | safe }};
 
      async function runDailyPdfExport() {
         const btn = document.getElementById('pdfExportBtn');
