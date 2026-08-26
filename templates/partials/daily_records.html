@@ -63,7 +63,22 @@
         </button>
     <!--</div>-->
 
-    <!-- Customer search + Paid/Unpaid filter -->
+            <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                <button type="button" id="paidFilterAllBtn" onclick="setDailyPaidFilter('all')"
+                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-all bg-stone-900 text-white">
+                    All
+                </button>
+                <button type="button" id="paidFilterPaidBtn" onclick="setDailyPaidFilter('paid')"
+                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-paid bg-white text-stone-500 hover:bg-stone-50">
+                    ✅ Paid
+                </button>
+                <button type="button" id="paidFilterUnpaidBtn" onclick="setDailyPaidFilter('unpaid')"
+                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-unpaid bg-white text-stone-500 hover:bg-stone-50">
+                    ⏳ Unpaid
+                </button>
+            </div>
+
+<!-- Customer search + Paid/Unpaid filter -->
     <div class="space-y-3 pt-3 border-t border-stone-200/60">
         <div class="relative w-full max-w-full">
 
@@ -94,24 +109,7 @@
                 </svg>
             </button>
         </div> 
-
-
-            <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
-                <button type="button" id="paidFilterAllBtn" onclick="setDailyPaidFilter('all')"
-                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-all bg-stone-900 text-white">
-                    All
-                </button>
-                <button type="button" id="paidFilterPaidBtn" onclick="setDailyPaidFilter('paid')"
-                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-paid bg-white text-stone-500 hover:bg-stone-50">
-                    ✅ Paid
-                </button>
-                <button type="button" id="paidFilterUnpaidBtn" onclick="setDailyPaidFilter('unpaid')"
-                    class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-unpaid bg-white text-stone-500 hover:bg-stone-50">
-                    ⏳ Unpaid
-                </button>
-            </div>
-
-
+       
         <div id="dailySearchStatus" class="hidden text-xs text-stone-500"></div>
     </div>
     {% endif %}
