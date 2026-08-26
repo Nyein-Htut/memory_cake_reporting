@@ -68,6 +68,8 @@
         }
 
         .oc-header {
+            position: relative;
+            padding-right: 52px;
             padding: 18px 22px;
             border-bottom: 1px solid #f5f5f4;
             display: flex;
@@ -76,9 +78,6 @@
             gap: 12px;
             background: #fafaf9;
         }
-                /* ===============================
-           Manager compact card mode
-           =============================== */
         
         .manager-card {
             padding: 10px !important;
@@ -280,28 +279,43 @@
         }
         .oc-payment-checkbox { width: 13px; height: 13px; accent-color: #047857; cursor: pointer; }
         .oc-payment-date-label { font-weight: 600; opacity: .8; }
-                
+        
         .oc-fold-btn {
             position: absolute;
-            top: 14px;
-            right: 14px;
-            width: 26px;
-            height: 26px;
-            border-radius: 9999px;
-            background: #fff;
-            border: 1px solid #e7e5e4;
+            top: 12px;
+            right: 12px;
+        
+            width: 32px;
+            height: 32px;
+        
             display: flex;
             align-items: center;
             justify-content: center;
+        
+            border: 1px solid #e7e5e4;
+            border-radius: 9999px;
+        
+            background: #ffffff;
+            color: #78716c;
+        
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,.06);
-            z-index: 2;
-            transition: background-color .15s ease;
+            z-index: 5;
+        
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        
+            transition:
+                background 0.15s ease,
+                transform 0.15s ease;
         }
-        .oc-fold-btn:hover { background: #f5f5f4; }
-        .oc-fold-btn svg { width: 14px; height: 14px; transition: transform .2s ease; color: #78716c; }
-        .order-card.oc-folded .oc-fold-btn svg { transform: rotate(-90deg); }
-
+        
+        .oc-fold-btn:hover {
+            background: #f5f5f4;
+        }
+        
+        .oc-fold-btn svg {
+            width: 16px;
+            height: 16px;
+        }
         .oc-delivered-toggle {
             display: inline-flex;
             align-items: center;
