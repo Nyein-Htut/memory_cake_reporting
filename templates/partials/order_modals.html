@@ -4,14 +4,7 @@
    managed directly from the "Mark as Paid" toggle on each order card in
    daily_records.html (via /toggle_payment), so managers can flip it with a
    single tap instead of opening this modal.
-
-   Photo removal: each existing cake/flower thumbnail has a small ✕ button.
-   Clicking it clears the paired old_cake_image[]/old_flower_image[] hidden
-   input and swaps the thumbnail for a "will be removed" note. No backend
-   changes are needed for this — edit_order() in app.py already treats an
-   empty old_*_image[] value as "no image" for that item, and the existing
-   orphaned-Cloudinary-asset cleanup already deletes anything that drops out
-   of urls_after, which an emptied hidden input naturally causes. #}
+#}
 
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden flex bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
     <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
@@ -244,8 +237,19 @@
                     <input type="text" name="edit_size[]" value="${item.size || ''}" class="ef-input">
                 </div>
                 <div>
-                    <label class="ef-item-label">金额</label>
-                    <input type="number" name="edit_price[]" value="${item.price || ''}" class="ef-input">
+                    <div class="flex items-center justify-between">
+                        <label class="ef-item-label">金额</label>
+                        <button type="button" onclick="toggleCakeCalculator(this)" class="text-emerald-600 hover:text-emerald-800 text-[10px] font-bold cursor-pointer">🧮 计算器</button>
+                    </div>
+                    <input type="number" name="edit_price[]" value="${item.price || ''}" class="ef-input item-price-input">
+                    <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
+                        <div class="cake-calc-boxes space-y-1.5"></div>
+                        <div class="flex items-center justify-between gap-2 pt-0.5">
+                            <button type="button" onclick="addCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
+                            <button type="button" onclick="closeCakeCalculator(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
+                        </div>
+                        <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">合计: 0 MMK</div>
+                    </div>
                 </div>
             </div>
 
