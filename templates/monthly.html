@@ -50,13 +50,13 @@
                 </div>
             </form>
 
-            <div class="flex gap-2">
+            <div class="flex flex-nowrap gap-2 w-full sm:w-auto">
                 <a id="csvExportBtn" href="/monthly/export?view={{ view_mode }}&month={{ selected_month }}&year={{ selected_year }}"
-                    class="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold tracking-widest uppercase py-2.5 px-4 rounded-lg transition-all shadow-xs border border-stone-300/60 cursor-pointer whitespace-nowrap">
+                    class="flex-1 min-w-0 sm:flex-none bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold tracking-widest uppercase py-2.5 px-4 rounded-lg transition-all shadow-xs border border-stone-300/60 cursor-pointer whitespace-nowrap text-center">
                     导出 CSV
                 </a>
                 <button type="button" id="monthlyPdfBtn" onclick="downloadMonthlyReportPDF()"
-                    class="bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap">
+                    class="flex-1 min-w-0 sm:flex-none bg-stone-950 hover:bg-stone-800 text-white text-xs font-semibold tracking-widest uppercase py-2.5 px-5 rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap text-center">
                     下载 PDF 报表
                 </button>
             </div>
