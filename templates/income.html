@@ -37,13 +37,12 @@
     <!-- Compact row list — no horizontal scroll on mobile -->
     <div class="bg-white rounded-2xl border border-stone-100 shadow-xs overflow-hidden">
 
-        <!-- column labels (hidden on very small screens to save space) -->
-        <div class="hidden sm:flex items-center gap-2.5 px-3 py-2 bg-stone-50 border-b border-stone-100 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
+        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2 bg-stone-50 border-b border-stone-100 text-[9px] sm:text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
             <span class="w-9 shrink-0"></span>
-            <span class="flex-1">订单日期 / 客人</span>
-            <span class="w-20 text-right">价格</span>
-            <span class="w-20 text-right">车费</span>
-            <span class="w-24 text-right">付款日期</span>
+            <span class="flex-1">日期 / 客人</span>
+            <span class="w-16 sm:w-20 text-right">价格</span>
+            <span class="w-14 sm:w-20 text-right">车费</span>
+            <span class="w-16 sm:w-24 text-right">付款</span>
         </div>
 
         {% for r in rows %}
