@@ -179,13 +179,21 @@
         }, 150);
     }
 
-    // Right before the edit form actually submits (full page POST +
-    // redirect), remember which order it was so the reloaded page can
-    // scroll straight back to that card instead of landing at the top.
-    document.getElementById('editOrderForm').addEventListener('submit', function() {
+        document.getElementById('editOrderForm').addEventListener('submit', function(event) {
+        event.preventDefault();
         if (_mcEditingOrderId) {
             try { sessionStorage.setItem('mc_restore_order_id', String(_mcEditingOrderId)); } catch (e) {}
         }
+        const form = event.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '图片处理中...';
+        }
+        mcCompressAndSubmit(form).catch((err) => {
+            console.error('Image compression failed, submitting originals:', err);
+            form.submit();
+        });
     });
 
     // Renders the thumbnail block for one existing image (cake or flower),
