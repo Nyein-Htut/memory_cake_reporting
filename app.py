@@ -1235,13 +1235,20 @@ def toggle_payment(order_id):
     if 'delivery_fee' in data:
         order.delivery_fee = (data.get('delivery_fee') or '').strip()
 
+    if is_paid:
+        pm = (data.get('payment_method') or '').strip().lower()
+        order.payment_method = pm if pm in ('cash', 'kpay', 'other') else ''
+    else:
+        order.payment_method = ''
+
     try:
         db.session.commit()
         return jsonify({
             'success': True,
             'is_paid': order.is_paid,
             'payment_date': order.payment_date,
-            'delivery_fee': order.delivery_fee or ''
+            'delivery_fee': order.delivery_fee or '',
+            'payment_method': order.payment_method or ''
         })
     except Exception as e:
         db.session.rollback()
@@ -1249,7 +1256,7 @@ def toggle_payment(order_id):
         return jsonify({'success': False, 'error': 'Update failed'}), 500
     finally:
         db.session.remove()
-
+        
 @app.route('/admin/archive', methods=['GET'])
 @manager_required
 def archive_view():
