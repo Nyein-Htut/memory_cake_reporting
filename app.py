@@ -1407,10 +1407,12 @@ def income_view():
     )
 
     rows = []
-    total_income = 0
+    total_cake_price = 0
+    total_delivery_fee = 0
     for o in orders:
         fee_amount = _parse_fee_amount(o.delivery_fee)
-        total_income += (o.total_price or 0) + fee_amount
+        total_cake_price += (o.total_price or 0)
+        total_delivery_fee += fee_amount
 
         cake_img = ''
         for it in o.items:
@@ -1429,10 +1431,15 @@ def income_view():
             'payment_date': o.payment_date or '',
         })
 
+    total_income = total_cake_price + total_delivery_fee
+
     db.session.remove()
     return render_template(
         'income.html', active_page='income',
-        selected_month=selected_month, rows=rows, total_income=total_income
+        selected_month=selected_month, rows=rows,
+        total_income=total_income,
+        total_cake_price=total_cake_price,
+        total_delivery_fee=total_delivery_fee
     )
     
 @app.route('/health')
