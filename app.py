@@ -766,18 +766,19 @@ def _period_date(order, date_basis):
     return order.date or ''
 
 def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis='paid'):
-    """Shared aggregation logic for both the /monthly dashboard page and the
-    /monthly/export CSV download, so the two can never drift out of sync.
 
-    date_basis controls which date field defines "this period":
-      - 'paid'  (default): Order.payment_date — only paid orders count,
-                bucketed by when the money actually came in.
-      - 'order': Order.date — the delivery/order date, old behavior.
-    """
+    # Default to paid date
     if date_basis not in ('paid', 'order'):
         date_basis = 'paid'
 
-    date_col = Order.payment_date if date_basis == 'paid' else Order.date
+    # Which date should control the report?
+    # DEFAULT: payment_date
+    # Only use order.date if user explicitly selects "order"
+    date_col = (
+        Order.payment_date
+        if date_basis == 'paid'
+        else Order.date
+    )
 
     if view_mode == 'year':
         date_filter = f"{selected_year}%"
@@ -786,9 +787,19 @@ def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis
         date_filter = f"{selected_month}%"
         period_label = selected_month
 
-    query = Order.query.options(joinedload(Order.items)).filter(date_col.like(date_filter))
+    # Filter ONLY by the selected date column.
+    query = (
+        Order.query
+        .options(joinedload(Order.items))
+        .filter(date_col.like(date_filter))
+    )
+
+    # Paid-date mode = only paid orders
     if date_basis == 'paid':
-        query = query.filter(Order.is_paid == True)
+        query = query.filter(
+            Order.is_paid == True
+        )
+
     monthly_orders = query.all()
 
     total_revenue = sum(order.total_price for order in monthly_orders)
