@@ -2127,6 +2127,71 @@ function togglePaymentDate(wrapId, hiddenId, triggerBtnId, checkboxId) {
         btn.classList.add('wp-empty');
     }
 }
+    /* ===== Client-side image compression before upload =====
+   Vercel's serverless functions cap request bodies at 4.5MB. Phone
+   photos (especially newer iPhones) are often 3-8MB each, so a couple of
+   cake/flower photos on one order can easily exceed that and the request
+   gets rejected with 413 FUNCTION_PAYLOAD_TOO_LARGE before it ever reaches
+   Flask. This downscales + re-encodes images in the browser right before
+   the form submits — no backend changes needed. */
+const MC_COMPRESS_MAX_DIM = 1600;   // longest edge, px
+const MC_COMPRESS_QUALITY = 0.75;   // JPEG quality
+const MC_COMPRESS_SKIP_BELOW = 500 * 1024; // skip re-encoding files already under 500KB
+
+function mcCompressImageFile(file) {
+    return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.startsWith('image/') || file.size <= MC_COMPRESS_SKIP_BELOW) {
+            resolve(file);
+            return;
+        }
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            let { width, height } = img;
+            if (width > MC_COMPRESS_MAX_DIM || height > MC_COMPRESS_MAX_DIM) {
+                if (width >= height) {
+                    height = Math.round(height * (MC_COMPRESS_MAX_DIM / width));
+                    width = MC_COMPRESS_MAX_DIM;
+                } else {
+                    width = Math.round(width * (MC_COMPRESS_MAX_DIM / height));
+                    height = MC_COMPRESS_MAX_DIM;
+                }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+                if (!blob || blob.size >= file.size) { resolve(file); return; } // keep original if compression didn't help
+                const newName = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+                resolve(new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() }));
+            }, 'image/jpeg', MC_COMPRESS_QUALITY);
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(file); // fall back to original on any decode error
+        };
+        img.src = objectUrl;
+    });
+}
+
+// Compresses every file currently sitting in every <input type="file"> in
+// `form`, swaps the compressed versions back into those inputs via
+// DataTransfer, then submits the form for real. Call this from a
+// submit-handler that has already called event.preventDefault().
+async function mcCompressAndSubmit(form) {
+    const fileInputs = Array.from(form.querySelectorAll('input[type="file"]'));
+    for (const input of fileInputs) {
+        if (!input.files || input.files.length === 0) continue;
+        const dt = new DataTransfer();
+        for (const file of Array.from(input.files)) {
+            dt.items.add(await mcCompressImageFile(file));
+        }
+        input.files = dt.files;
+    }
+    form.submit();
+}
 </script>
 <body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
 
