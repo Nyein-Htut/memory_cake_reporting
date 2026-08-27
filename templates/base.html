@@ -1077,7 +1077,38 @@ function openDeliveryFeePrompt(cfg) {
         if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
     };
 }
-    
+
+    function openPaymentMethodPrompt(cfg) {
+    const overlay = document.getElementById('wpPaymentMethodOverlay');
+    const listEl = document.getElementById('wpPaymentMethodList');
+    const skipBtn = document.getElementById('wpPaymentMethodSkipBtn');
+
+    listEl.querySelectorAll('.wp-source-item').forEach(item => {
+        item.classList.toggle('wp-source-selected', item.dataset.method === (cfg.initialValue || ''));
+    });
+
+    overlay.classList.add('active');
+    wpLockBody();
+
+    function cleanup() {
+        closeWheelOverlay('wpPaymentMethodOverlay');
+        listEl.querySelectorAll('.wp-source-item').forEach(item => { item.onclick = null; });
+        skipBtn.onclick = null;
+    }
+
+    listEl.querySelectorAll('.wp-source-item').forEach(item => {
+        item.onclick = () => {
+            const method = item.dataset.method;
+            cleanup();
+            if (cfg.onSelect) cfg.onSelect(method);
+        };
+    });
+
+    skipBtn.onclick = () => {
+        cleanup();
+        if (cfg.onSkip) cfg.onSkip();
+    };
+}
 const WP_SOURCE_OPTIONS = ['Ko Kyaw', 'Memory Cake', 'Iris', 'Ama Gyi', 'Ama Nge', 'Nawaday Flower Shop', 'Khaing Win Kyi', 'Other'];
 
 function openSourcePicker(triggerBtnId, hiddenInputId, titleText) {
