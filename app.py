@@ -1374,6 +1374,66 @@ def toggle_fold(order_id):
         return jsonify({'success': False, 'error': 'Update failed'}), 500
     finally:
         db.session.remove()
+
+def _parse_fee_amount(value):
+    """Extract a numeric MMK amount from the free-text delivery_fee field
+    (e.g. '15,000', '15000 ks', ''). Non-numeric/blank input safely returns 0."""
+    if not value:
+        return 0
+    digits = ''.join(ch for ch in str(value) if ch.isdigit())
+    try:
+        return int(digits) if digits else 0
+    except ValueError:
+        return 0
+
+@app.route('/income')
+@manager_required
+def income_view():
+    """Income Records: every PAID order for a selected month, one row per
+    order (order date, first item's cake photo, total price, delivery fee,
+    payment date). Total income = sum of order totals + parsed delivery
+    fees for every row currently shown (i.e. for the selected month)."""
+    db.session.remove()
+
+    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+
+    orders = (
+        Order.query
+        .options(joinedload(Order.items))
+        .filter(Order.date.like(f"{selected_month}%"))
+        .filter(Order.is_paid == True)
+        .order_by(Order.date.desc(), Order.id.desc())
+        .all()
+    )
+
+    rows = []
+    total_income = 0
+    for o in orders:
+        fee_amount = _parse_fee_amount(o.delivery_fee)
+        total_income += (o.total_price or 0) + fee_amount
+
+        cake_img = ''
+        for it in o.items:
+            if it.image_url:
+                cake_img = it.image_url
+                break
+
+        rows.append({
+            'id': o.id,
+            'date': o.date,
+            'customer': o.customer,
+            'cake_img': cake_img,
+            'price': o.total_price or 0,
+            'delivery_fee': o.delivery_fee or '',
+            'delivery_fee_amount': fee_amount,
+            'payment_date': o.payment_date or '',
+        })
+
+    db.session.remove()
+    return render_template(
+        'income.html', active_page='income',
+        selected_month=selected_month, rows=rows, total_income=total_income
+    )
     
 @app.route('/health')
 def health():
