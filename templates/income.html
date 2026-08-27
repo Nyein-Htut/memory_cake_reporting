@@ -5,19 +5,33 @@
 {% block content %}
 <div class="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 font-sans">
 
-    <header class="flex flex-row justify-between items-center gap-3">
+    <header class="flex flex-row justify-between items-start gap-3">
         <div class="space-y-0.5">
             <h1 class="text-xl sm:text-3xl font-semibold tracking-wide text-stone-900 font-serif">收入记录</h1>
             <p class="text-[10px] sm:text-xs text-stone-400 tracking-wider uppercase">Income · 已付款订单</p>
         </div>
 
-        <form method="GET" action="/income" id="incomeFilterForm" class="shrink-0">
-            <input type="hidden" name="month" id="incomeMonthHidden" value="{{ selected_month }}">
-            <button type="button" id="incomeMonthTriggerBtn" class="wp-trigger text-xs p-2.5 min-w-[110px]" onclick="openIncomeMonthPicker()">
-                <span>{{ selected_month }}</span>
-                <svg class="w-3.5 h-3.5 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-            </button>
-        </form>
+        <div class="flex flex-col items-end gap-2 shrink-0">
+            <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[10px] font-semibold uppercase tracking-wider">
+                <button type="button" id="incomeBasisPaidBtn" onclick="setIncomeDateBasis('paid')"
+                    class="px-3 py-1.5 transition-all {% if date_basis != 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    按付款日期
+                </button>
+                <button type="button" id="incomeBasisOrderBtn" onclick="setIncomeDateBasis('order')"
+                    class="px-3 py-1.5 transition-all {% if date_basis == 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    按订单日期
+                </button>
+            </div>
+
+            <form method="GET" action="/income" id="incomeFilterForm" class="shrink-0">
+                <input type="hidden" name="month" id="incomeMonthHidden" value="{{ selected_month }}">
+                <input type="hidden" name="date_basis" id="incomeBasisHidden" value="{{ date_basis }}">
+                <button type="button" id="incomeMonthTriggerBtn" class="wp-trigger text-xs p-2.5 min-w-[110px]" onclick="openIncomeMonthPicker()">
+                    <span>{{ selected_month }}</span>
+                    <svg class="w-3.5 h-3.5 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </form>
+        </div>
     </header>
 
         <!-- Total income card -->
@@ -104,16 +118,22 @@
 </div>
 
 <script>
+function setIncomeDateBasis(basis) {
+    const month = document.getElementById('incomeMonthHidden').value;
+    window.location.href = `/income?month=${encodeURIComponent(month)}&date_basis=${encodeURIComponent(basis)}`;
+}
+
 function openIncomeMonthPicker() {
     const btn = document.getElementById('incomeMonthTriggerBtn');
     const span = btn.querySelector('span');
     const hidden = document.getElementById('incomeMonthHidden');
+    const basisHidden = document.getElementById('incomeBasisHidden');
     openMonthWheelPicker({
         initialValue: hidden.value,
         onConfirm: (value, label) => {
             hidden.value = value;
             span.textContent = value;
-            window.location.href = `/income?month=${encodeURIComponent(value)}`;
+            window.location.href = `/income?month=${encodeURIComponent(value)}&date_basis=${encodeURIComponent(basisHidden.value)}`;
         }
     });
 }
