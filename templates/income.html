@@ -3,78 +3,86 @@
 {% block title %}收入记录 — Memory Cake{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 font-sans">
+<div class="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 font-sans">
 
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="space-y-1">
-            <h1 class="text-2xl sm:text-3xl font-semibold tracking-wide text-stone-900 font-serif">收入记录</h1>
-            <p class="text-[11px] sm:text-xs text-stone-400 tracking-wider uppercase">Income Records · 已付款订单</p>
+    <header class="flex flex-row justify-between items-center gap-3">
+        <div class="space-y-0.5">
+            <h1 class="text-xl sm:text-3xl font-semibold tracking-wide text-stone-900 font-serif">收入记录</h1>
+            <p class="text-[10px] sm:text-xs text-stone-400 tracking-wider uppercase">Income · 已付款订单</p>
         </div>
 
-        <form method="GET" action="/income" id="incomeFilterForm" class="flex items-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
+        <form method="GET" action="/income" id="incomeFilterForm" class="shrink-0">
             <input type="hidden" name="month" id="incomeMonthHidden" value="{{ selected_month }}">
-            <button type="button" id="incomeMonthTriggerBtn" class="wp-trigger text-xs p-3 min-w-[150px]" onclick="openIncomeMonthPicker()">
+            <button type="button" id="incomeMonthTriggerBtn" class="wp-trigger text-xs p-2.5 min-w-[110px]" onclick="openIncomeMonthPicker()">
                 <span>{{ selected_month }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                <svg class="w-3.5 h-3.5 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
             </button>
         </form>
     </header>
 
     <!-- Total income card -->
-    <div class="bg-stone-950 text-white rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
-        <h3 class="text-[10px] sm:text-[11px] font-bold tracking-wider text-stone-400 uppercase">本月总收入 (Total Income — Paid Only)</h3>
-        <div class="flex items-baseline gap-1.5 mt-1.5">
-            <span class="text-2xl sm:text-3xl font-bold tracking-tight font-numeric">{{ "{:,}".format(total_income) }}</span>
-            <span class="text-xs font-semibold text-stone-400">MMK</span>
+    <div class="bg-stone-950 text-white rounded-2xl px-4 py-4 sm:p-6 shadow-sm flex items-center justify-between gap-3">
+        <div>
+            <h3 class="text-[9px] sm:text-[11px] font-bold tracking-wider text-stone-400 uppercase">本月总收入</h3>
+            <div class="flex items-baseline gap-1.5 mt-1">
+                <span class="text-xl sm:text-3xl font-bold tracking-tight font-numeric">{{ "{:,}".format(total_income) }}</span>
+                <span class="text-[10px] sm:text-xs font-semibold text-stone-400">MMK</span>
+            </div>
         </div>
-        <div class="mt-2 flex flex-wrap gap-3 text-[11px] text-stone-400 font-numeric">
-            <span>{{ rows|length }} 笔已付款订单</span>
+        <div class="text-right text-[10px] sm:text-[11px] text-stone-400 font-numeric shrink-0">
+            {{ rows|length }} 笔<br>已付款
         </div>
     </div>
 
-    <!-- Compact table -->
+    <!-- Compact row list — no horizontal scroll on mobile -->
     <div class="bg-white rounded-2xl border border-stone-100 shadow-xs overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-xs sm:text-sm border-collapse min-w-[560px]">
-                <thead>
-                    <tr class="bg-stone-50 text-stone-400 text-[10px] sm:text-[11px] uppercase tracking-wider border-b border-stone-100">
-                        <th class="py-2.5 px-2 sm:px-3 text-left font-semibold">订单日期</th>
-                        <th class="py-2.5 px-2 sm:px-3 text-left font-semibold">蛋糕图片</th>
-                        <th class="py-2.5 px-2 sm:px-3 text-right font-semibold">价格</th>
-                        <th class="py-2.5 px-2 sm:px-3 text-right font-semibold">车费</th>
-                        <th class="py-2.5 px-2 sm:px-3 text-left font-semibold">付款日期</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-stone-50 font-numeric text-stone-800">
-                    {% for r in rows %}
-                    <tr class="hover:bg-stone-50/60 transition-colors">
-                        <td class="py-2 px-2 sm:px-3 whitespace-nowrap">
-                            <div class="font-semibold text-stone-900">{{ r.date }}</div>
-                            <div class="text-[10px] text-stone-400 font-sans truncate max-w-[110px]">{{ r.customer }}</div>
-                        </td>
-                        <td class="py-2 px-2 sm:px-3">
-                            {% if r.cake_img %}
-                            <img src="{{ r.cake_img }}" loading="lazy" alt="Cake"
-                                 class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-stone-200 cursor-pointer"
-                                 onclick="window.open('{{ r.cake_img }}','_blank')">
-                            {% else %}
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center text-stone-300 text-xs">🎂</div>
-                            {% endif %}
-                        </td>
-                        <td class="py-2 px-2 sm:px-3 text-right font-semibold text-stone-950 whitespace-nowrap">{{ "{:,}".format(r.price) }}</td>
-                        <td class="py-2 px-2 sm:px-3 text-right text-stone-500 whitespace-nowrap">
-                            {% if r.delivery_fee %}{{ r.delivery_fee }}{% else %}—{% endif %}
-                        </td>
-                        <td class="py-2 px-2 sm:px-3 text-emerald-700 font-semibold whitespace-nowrap">{{ r.payment_date or '—' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center py-12 text-stone-400 italic text-sm">该月份暂无已付款订单记录。</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <!-- column labels (hidden on very small screens to save space) -->
+        <div class="hidden sm:flex items-center gap-2.5 px-3 py-2 bg-stone-50 border-b border-stone-100 text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
+            <span class="w-9 shrink-0"></span>
+            <span class="flex-1">订单日期 / 客人</span>
+            <span class="w-20 text-right">价格</span>
+            <span class="w-20 text-right">车费</span>
+            <span class="w-24 text-right">付款日期</span>
         </div>
+
+        {% for r in rows %}
+        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2 border-b border-stone-50 last:border-0 hover:bg-stone-50/60 transition-colors">
+
+            {% if r.cake_img %}
+            <img src="{{ r.cake_img }}" loading="lazy" alt="Cake"
+                 class="w-9 h-9 rounded-lg object-cover border border-stone-200 shrink-0 cursor-pointer"
+                 onclick="window.open('{{ r.cake_img }}','_blank')">
+            {% else %}
+            <div class="w-9 h-9 rounded-lg bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center text-stone-300 text-[11px] shrink-0">🎂</div>
+            {% endif %}
+
+            <!-- date + customer -->
+            <div class="min-w-0 flex-1">
+                <div class="text-[12px] font-semibold text-stone-900 truncate">{{ r.date }}</div>
+                <div class="text-[10px] text-stone-400 truncate">{{ r.customer }}</div>
+            </div>
+
+            <!-- price -->
+            <div class="w-16 sm:w-20 text-right shrink-0">
+                <div class="text-[12px] font-bold text-stone-950 font-numeric leading-tight">{{ "{:,}".format(r.price) }}</div>
+                <div class="text-[9px] text-stone-300">MMK</div>
+            </div>
+
+            <!-- delivery fee -->
+            <div class="w-14 sm:w-20 text-right shrink-0">
+                <div class="text-[11px] text-stone-500 font-numeric truncate">{{ r.delivery_fee if r.delivery_fee else '—' }}</div>
+            </div>
+
+            <!-- payment date -->
+            <div class="w-16 sm:w-24 text-right shrink-0">
+                <div class="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate">{{ r.payment_date or '—' }}</div>
+            </div>
+
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-stone-400 italic text-sm">该月份暂无已付款订单记录。</div>
+        {% endfor %}
     </div>
 </div>
 
