@@ -186,8 +186,18 @@ async function refreshDailyRecords() {
         const data = await res.json();
 
         root.innerHTML = data.html;
-        applyDeliveredAndFoldState();
-       
+        // NOTE: no client-side "apply state" pass needed here — the
+        // server-rendered partial (daily_records_orders.html) already bakes
+        // the delivered/folded state straight into the markup via Jinja
+        // (order.is_delivered -> 'is-delivered' class, order.is_folded ->
+        // 'oc-folded' class), so a fresh AJAX render is correct as-is.
+        // (A previous call to a since-removed applyDeliveredAndFoldState()
+        // used to live here — it was never defined anywhere in the
+        // codebase, so it silently threw a ReferenceError on every filter
+        // change and got swallowed by the catch block below, which is why
+        // the "筛选加载失败" alert used to pop up even though the filtered
+        // results had already rendered successfully just above.)
+
         const orderCountEl = document.getElementById('summaryOrderCount');
         if (orderCountEl) orderCountEl.textContent = data.total_orders;
         const revenueEl = document.getElementById('summaryRevenue');
