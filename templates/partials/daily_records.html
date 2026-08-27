@@ -522,119 +522,100 @@ function handlePaymentCheckboxChange(checkbox) {
 
 async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapper, label, deliveryFee, paymentMethod) {
     checkbox.disabled = true;
+
     try {
-        const body = { is_paid: isPaid, payment_date: paymentDate };
-        if (deliveryFee !== undefined) body.delivery_fee = deliveryFee;
-        if (paymentMethod !== undefined) body.payment_method = paymentMethod;
+        const body = {
+            is_paid: isPaid,
+            payment_date: paymentDate
+        };
 
-        const res = await fetch(`/toggle_payment/${orderId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Update failed');
-
-        checkbox.checked = data.is_paid;
-        checkbox.setAttribute('data-payment-date', data.payment_date || '');
-        checkbox.setAttribute('data-payment-method', data.payment_method || '');
-        wrapper.classList.toggle('is-paid', data.is_paid);
-        label.textContent = data.is_paid
-            ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
-            : '标记已付款';
-
-        const priceLine = wrapper.parentElement.querySelector('.oc-price-line');
-        if (priceLine) priceLine.style.color = data.is_paid ? '#047857' : '#b45309';
-        const card = checkbox.closest('.order-card');
-        if (card) card.setAttribute('data-paid', data.is_paid ? 'true' : 'false');
-       
-        if ((deliveryFee !== undefined || paymentMethod !== undefined) && window.refreshDailyRecords) {
-            await window.refreshDailyRecords();
-            return;
-        }
-
-        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-    } catch (err) {
-        checkbox.checked = !isPaid; // roll back
-        alert('更新付款状态失败，请重试。\n' + (err.message || ''));
-    } finally {
-        checkbox.disabled = false;
-    }
-}
-async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapper, label, deliveryFee) {
-    checkbox.disabled = true;
-    try {
-        const body = { is_paid: isPaid, payment_date: paymentDate };
         if (deliveryFee !== undefined) {
             body.delivery_fee = deliveryFee;
         }
 
+        if (paymentMethod !== undefined) {
+            body.payment_method = paymentMethod;
+        }
+
         const res = await fetch(`/toggle_payment/${orderId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(body)
         });
+
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Update failed');
+
+        if (!data.success) {
+            throw new Error(data.error || 'Update failed');
+        }
 
         checkbox.checked = data.is_paid;
-        checkbox.setAttribute('data-payment-date', data.payment_date || '');
-        wrapper.classList.toggle('is-paid', data.is_paid);
+
+        checkbox.setAttribute(
+            'data-payment-date',
+            data.payment_date || ''
+        );
+
+        checkbox.setAttribute(
+            'data-payment-method',
+            data.payment_method || ''
+        );
+
+        wrapper.classList.toggle(
+            'is-paid',
+            data.is_paid
+        );
+
         label.textContent = data.is_paid
             ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
             : '标记已付款';
 
-        const priceLine = wrapper.parentElement.querySelector('.oc-price-line');
-        if (priceLine) priceLine.style.color = data.is_paid ? '#047857' : '#b45309';
-        const card = checkbox.closest('.order-card');
-        if (card) card.setAttribute('data-paid', data.is_paid ? 'true' : 'false');
+        const priceLine =
+            wrapper.parentElement.querySelector('.oc-price-line');
 
-        if (deliveryFee !== undefined && window.refreshDailyRecords) {
+        if (priceLine) {
+            priceLine.style.color =
+                data.is_paid ? '#047857' : '#b45309';
+        }
+
+        const card = checkbox.closest('.order-card');
+
+        if (card) {
+            card.setAttribute(
+                'data-paid',
+                data.is_paid ? 'true' : 'false'
+            );
+        }
+
+        if (
+            (deliveryFee !== undefined ||
+             paymentMethod !== undefined) &&
+            window.refreshDailyRecords
+        ) {
             await window.refreshDailyRecords();
             return;
         }
 
-        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+        if (window.updateDailyOrderFilters) {
+            window.updateDailyOrderFilters();
+        }
+
     } catch (err) {
-        checkbox.checked = !isPaid; // roll back
-        alert('更新付款状态失败，请重试。\n' + (err.message || ''));
+
+        checkbox.checked = !isPaid;
+
+        alert(
+            '更新付款状态失败，请重试。\n' +
+            (err.message || '')
+        );
+
     } finally {
         checkbox.disabled = false;
     }
 }
-
-async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapper, label) {
-    checkbox.disabled = true;
-    try {
-        const res = await fetch(`/toggle_payment/${orderId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_paid: isPaid, payment_date: paymentDate })
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Update failed');
-
-        checkbox.checked = data.is_paid;
-        checkbox.setAttribute('data-payment-date', data.payment_date || '');
-        wrapper.classList.toggle('is-paid', data.is_paid);
-        label.textContent = data.is_paid
-            ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
-            : '标记已付款';
-
-        // Keep the price line's color in sync with the new payment status
-        const priceLine = wrapper.parentElement.querySelector('.oc-price-line');
-        if (priceLine) priceLine.style.color = data.is_paid ? '#047857' : '#b45309';
-        const card = checkbox.closest('.order-card');
-        if (card) card.setAttribute('data-paid', data.is_paid ? 'true' : 'false');
-        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-    } catch (err) {
-        checkbox.checked = !isPaid; // roll back
-        alert('更新付款状态失败，请重试。\n' + (err.message || ''));
-        } finally {
-        checkbox.disabled = false;
-    }
-}
-
+   
 function _mcSetDeliveredUI(card, isDelivered) {
     const btn = card.querySelector('.oc-delivered-toggle');
     if (!btn) return;
