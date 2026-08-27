@@ -32,7 +32,16 @@
                         年度
                     </button>
                 </div>
-
+                    <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                            <button type="button" onclick="setDateBasis('paid')"
+                                class="px-3.5 py-2 transition-all basis-tab-paid {% if date_basis != 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                                按付款日期
+                            </button>
+                            <button type="button" onclick="setDateBasis('order')"
+                                class="px-3.5 py-2 transition-all basis-tab-order {% if date_basis == 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                                按订单日期
+                            </button>
+                        </div>
                 <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                     <input type="hidden" name="month" id="monthHidden" value="{{ selected_month }}">
                     <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyMonthPicker()">
@@ -51,7 +60,7 @@
             </form>
 
             <div class="flex flex-nowrap gap-2 w-full sm:w-auto">
-                <a id="csvExportBtn" href="/monthly/export?view={{ view_mode }}&month={{ selected_month }}&year={{ selected_year }}"
+                <a id="csvExportBtn" href="/monthly/export?view={{ view_mode }}&month={{ selected_month }}&year={{ selected_year }}&date_basis={{ date_basis }}"
                     class="flex-1 min-w-0 sm:flex-none bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold tracking-widest uppercase py-2.5 px-4 rounded-lg transition-all shadow-xs border border-stone-300/60 cursor-pointer whitespace-nowrap text-center">
                     导出 CSV
                 </a>
@@ -316,10 +325,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// All the data the Monthly PDF export needs, straight from the same
-// context the page itself was rendered with — so the PDF can never drift
-// out of sync with what's on screen, and no second API round-trip is
-// needed just to build the export.
 const reportData = {
     period_label: {{ period_label | tojson | safe }},
     view_mode: {{ view_mode | tojson | safe }},
@@ -337,9 +342,6 @@ const reportData = {
     top_customers: {{ top_customers | tojson | safe }}
 };
 
-/* Day / Month / Year view toggle — there's no separate Apply/筛选 button
-   anymore, so switching tabs submits the filter form right away (using
-   whatever month/year value is already in the corresponding hidden field). */
 function setViewMode(mode) {
     document.getElementById('viewModeInput').value = mode;
     document.getElementById('monthPicker').classList.toggle('hidden', mode === 'year');
@@ -356,10 +358,31 @@ function setViewMode(mode) {
     }
 }
 
-/* ===== Month / Year pickers for the report period =====
-   Config-mode calls into the shared wheel-picker engine (base.html) whose
-   onConfirm sets the hidden field + trigger label, then immediately
-   submits the filter form — so picking a month/year applies it right away. */
+function setDateBasis(mode) {
+    document.getElementById('dateBasisInput').value = mode;
+
+    const tabPaid = document.querySelector('.basis-tab-paid');
+    const tabOrder = document.querySelector('.basis-tab-order');
+    if (mode === 'order') {
+        tabPaid.className = 'px-3.5 py-2 transition-all basis-tab-paid bg-white text-stone-500 hover:bg-stone-50';
+        tabOrder.className = 'px-3.5 py-2 transition-all basis-tab-order bg-emerald-700 text-white';
+    } else {
+        tabPaid.className = 'px-3.5 py-2 transition-all basis-tab-paid bg-emerald-700 text-white';
+        tabOrder.className = 'px-3.5 py-2 transition-all basis-tab-order bg-white text-stone-500 hover:bg-stone-50';
+    }
+
+    document.getElementById('monthlyFilterForm').submit();
+}
+
+function syncExportLinks() {
+    const view = document.getElementById('viewModeInput').value;
+    const month = document.getElementById('monthHidden').value;
+    const year = document.getElementById('yearHidden').value;
+    const basis = document.getElementById('dateBasisInput').value;
+    const csvBtn = document.getElementById('csvExportBtn');
+    csvBtn.href = `/monthly/export?view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&date_basis=${encodeURIComponent(basis)}`;
+}
+    
 function openMonthlyMonthPicker() {
     const btn = document.getElementById('monthTriggerBtn');
     const span = btn.querySelector('span');
