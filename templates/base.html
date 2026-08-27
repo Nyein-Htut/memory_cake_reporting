@@ -663,7 +663,29 @@
         </div>
     </div>
 </div>
-    
+
+    <div class="wp-overlay" id="wpPaymentMethodOverlay" onclick="if(event.target===this) closeWheelOverlay('wpPaymentMethodOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title">{% if readonly %}ငွေပေးချေမှု နည်းလမ်း ရွေးပါ (Select Payment Method){% else %}付款方式选择 (Select Payment Method){% endif %}</div>
+        <div class="wp-source-list" id="wpPaymentMethodList">
+            <div class="wp-source-item" data-method="cash" style="border-color:#a7f3d0;">
+                <span style="color:#047857;font-weight:700;">💵 Cash</span>
+                <span class="wp-source-check" style="color:#047857;">✓</span>
+            </div>
+            <div class="wp-source-item" data-method="kpay" style="border-color:#bfdbfe;">
+                <span style="color:#1d4ed8;font-weight:700;">📱 KPay</span>
+                <span class="wp-source-check" style="color:#1d4ed8;">✓</span>
+            </div>
+            <div class="wp-source-item" data-method="other" style="border-color:#fde68a;">
+                <span style="color:#92400e;font-weight:700;">🏷️ Other</span>
+                <span class="wp-source-check" style="color:#92400e;">✓</span>
+            </div>
+        </div>
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpPaymentMethodSkipBtn">{% if readonly %}ကျော်မည် Skip{% else %}跳过 Skip{% endif %}</button>
+        </div>
+    </div>
+</div>
 <script>
 const WP_FONT_SOURCES = {
     myanmar:     { name: 'NotoSansMyanmar', file: 'NotoSansMyanmar-Regular.ttf', url: '/static/fonts/NotoSansMyanmar-Regular.ttf', style: 'normal' },
