@@ -168,10 +168,19 @@
         }
     });
 
-    function handleFormSubmit(event) {
-        closeOrderModal();
+        function handleFormSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '图片处理中，请稍候...';
+        }
+        mcCompressAndSubmit(form).catch((err) => {
+            console.error('Image compression failed, submitting originals:', err);
+            form.submit();
+        });
     }
-
     // Safely gets today's local date (YYYY-MM-DD) in Myanmar/client time
     function getLocalISODate() {
         const d = new Date();
