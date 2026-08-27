@@ -510,6 +510,7 @@ def api_export_orders():
     db.session.remove()
     return jsonify(payload)
 
+
 @app.route('/add_order', methods=['POST'])
 @login_required
 def add_order():
@@ -758,9 +759,26 @@ def _normalize_source(source):
         return 'Other'
     return source
 
-def _compute_monthly_report(view_mode, selected_month, selected_year):
+def _period_date(order, date_basis):
+    """Which date string to bucket this order into, depending on basis."""
+    if date_basis == 'paid':
+        return order.payment_date or ''
+    return order.date or ''
+
+def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis='paid'):
     """Shared aggregation logic for both the /monthly dashboard page and the
-    /monthly/export CSV download, so the two can never drift out of sync."""
+    /monthly/export CSV download, so the two can never drift out of sync.
+
+    date_basis controls which date field defines "this period":
+      - 'paid'  (default): Order.payment_date — only paid orders count,
+                bucketed by when the money actually came in.
+      - 'order': Order.date — the delivery/order date, old behavior.
+    """
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
+
+    date_col = Order.payment_date if date_basis == 'paid' else Order.date
+
     if view_mode == 'year':
         date_filter = f"{selected_year}%"
         period_label = selected_year
@@ -768,12 +786,10 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
         date_filter = f"{selected_month}%"
         period_label = selected_month
 
-    monthly_orders = (
-        Order.query
-        .options(joinedload(Order.items))
-        .filter(Order.date.like(date_filter))
-        .all()
-    )
+    query = Order.query.options(joinedload(Order.items)).filter(date_col.like(date_filter))
+    if date_basis == 'paid':
+        query = query.filter(Order.is_paid == True)
+    monthly_orders = query.all()
 
     total_revenue = sum(order.total_price for order in monthly_orders)
     total_orders = len(monthly_orders)
@@ -829,8 +845,9 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         trend_data = [0] * 12
         for order in monthly_orders:
+            d = _period_date(order, date_basis)
             try:
-                m = int(order.date.split('-')[1]) - 1
+                m = int(d.split('-')[1]) - 1
                 if 0 <= m < 12:
                     trend_data[m] += order.total_price
             except (ValueError, IndexError):
@@ -845,21 +862,25 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
 
         daily_map = {f"{selected_month}-{str(day).zfill(2)}": 0 for day in range(1, num_days + 1)}
         for order in monthly_orders:
-            if order.date in daily_map:
-                daily_map[order.date] += order.total_price
+            d = _period_date(order, date_basis)
+            if d in daily_map:
+                daily_map[d] += order.total_price
 
         trend_labels = [f"{i}" for i in range(1, num_days + 1)]
         trend_data = [daily_map[f"{selected_month}-{str(i).zfill(2)}"] for i in range(1, num_days + 1)]
         num_periods = num_days
 
     if view_mode == 'year':
-        past_filter = Order.date < f"{selected_year}-01-01"
+        past_filter = date_col < f"{selected_year}-01-01"
     else:
-        past_filter = Order.date < f"{selected_month}-01"
+        past_filter = date_col < f"{selected_month}-01"
 
+    past_query = Order.query.filter(past_filter)
+    if date_basis == 'paid':
+        past_query = past_query.filter(Order.is_paid == True)
     past_customers = set(
         r[0].strip()
-        for r in Order.query.filter(past_filter).with_entities(Order.customer).all()
+        for r in past_query.with_entities(Order.customer).all()
         if r[0]
     )
     current_customers = set(o.customer.strip() for o in monthly_orders if o.customer)
@@ -870,9 +891,10 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
     weekday_sales = {'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0}
     weekday_names = list(weekday_sales.keys())
     for order in monthly_orders:
+        d = _period_date(order, date_basis)
         try:
-            d = datetime.strptime(order.date, "%Y-%m-%d")
-            weekday_sales[weekday_names[d.weekday()]] += order.total_price
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            weekday_sales[weekday_names[dt.weekday()]] += order.total_price
         except ValueError:
             pass
 
@@ -903,6 +925,7 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
 
     return {
         'period_label': period_label,
+        'date_basis': date_basis,
         'total_revenue': total_revenue,
         'total_orders': total_orders,
         'avg_ticket': int(avg_ticket),
@@ -926,7 +949,6 @@ def _compute_monthly_report(view_mode, selected_month, selected_year):
         'top_customers_all': top_customers_all,
         'forecast_revenue': forecast_revenue,
     }
-
 @app.route('/monthly')
 @manager_required
 def monthly():
@@ -936,8 +958,11 @@ def monthly():
     view_mode = request.args.get('view', 'month')
     selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
     selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
+    date_basis = request.args.get('date_basis', 'paid')
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
 
-    report = _compute_monthly_report(view_mode, selected_month, selected_year)
+    report = _compute_monthly_report(view_mode, selected_month, selected_year, date_basis)
 
     available_years = _available_years()
 
@@ -955,19 +980,21 @@ def monthly():
 @app.route('/monthly/export')
 @manager_required
 def monthly_export():
-    """CSV export of the monthly/annual report (summary + channels + top
-    items + top customers) for whichever period is currently selected."""
     view_mode = request.args.get('view', 'month')
     selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
     selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
+    date_basis = request.args.get('date_basis', 'paid')
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
 
-    report = _compute_monthly_report(view_mode, selected_month, selected_year)
+    report = _compute_monthly_report(view_mode, selected_month, selected_year, date_basis)
 
     buf = io.StringIO()
     writer = csv.writer(buf)
 
     writer.writerow(['Memory Cake — 业务报表 Business Report'])
     writer.writerow(['Period', report['period_label']])
+    writer.writerow(['Date Basis', 'Payment Date' if date_basis == 'paid' else 'Order Date'])
     writer.writerow([])
 
     writer.writerow(['SUMMARY'])
