@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Memory Cake Data Hub{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">6
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,6 +78,10 @@
         }
         @media (min-width: 768px) {
             .day-group { grid-template-columns: repeat(2, 1fr); }
+            .day-separator {
+                grid-column: 1 / -1;
+                align-self: start;
+            }
         }
         .order-card {
             position: relative;
