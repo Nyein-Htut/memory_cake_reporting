@@ -100,6 +100,7 @@
                         {% if order.is_paid %}checked{% endif %}
                         data-order-id="{{ order.id }}"
                         data-payment-date="{{ order.payment_date or '' }}"
+                        data-payment-method="{{ order.payment_method or '' }}"
                         onchange="handlePaymentCheckboxChange(this)">
 
                     <span class="oc-payment-toggle-label">
@@ -152,6 +153,24 @@
                         color:#a8a29e;
                     ">
                     🚗 {{ order.delivery_fee }}
+                </div>
+
+                {% endif %}
+
+
+                <!-- PAYMENT METHOD -->
+
+                {% if order.payment_method %}
+
+                <div class="oc-payment-method-line"
+                    style="
+                        font-size:10.5px;
+                        font-weight:700;
+                        margin-top:2px;
+                        text-align:right;
+                        color: {{ '#047857' if order.payment_method == 'cash' else ('#1d4ed8' if order.payment_method == 'kpay' else '#92400e') }};
+                    ">
+                    {% if order.payment_method == 'cash' %}💵 Cash{% elif order.payment_method == 'kpay' %}📱 KPay{% else %}🏷️ Other{% endif %}
                 </div>
 
                 {% endif %}
