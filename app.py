@@ -1486,8 +1486,8 @@ def income_view():
             'delivery_fee': o.delivery_fee or '',
             'delivery_fee_amount': fee_amount,
             'payment_date': o.payment_date or '',
+            'payment_method': o.payment_method or '',
         })
-
     total_income = total_cake_price + total_delivery_fee
 
     db.session.remove()
