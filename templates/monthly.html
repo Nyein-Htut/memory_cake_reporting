@@ -32,16 +32,7 @@
                         年度
                     </button>
                 </div>
-                    <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
-                            <button type="button" onclick="setDateBasis('paid')"
-                                class="px-3.5 py-2 transition-all basis-tab-paid {% if date_basis != 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
-                                按付款日期
-                            </button>
-                            <button type="button" onclick="setDateBasis('order')"
-                                class="px-3.5 py-2 transition-all basis-tab-order {% if date_basis == 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
-                                按订单日期
-                            </button>
-                        </div>
+                    
                 <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                     <input type="hidden" name="month" id="monthHidden" value="{{ selected_month }}">
                     <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyMonthPicker()">
