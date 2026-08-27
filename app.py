@@ -643,12 +643,6 @@ def edit_order(order_id):
     order.address = request.form.get('address') or '-'
     order.delivery_fee = request.form.get('delivery_fee') or ''
 
-    # Payment status (is_paid / payment_date) is intentionally NOT touched
-    # here for either role. It used to be a checkbox buried inside this
-    # edit form, but it's now managed directly from the order card via the
-    # "Mark as Paid" toggle (see /toggle_payment below), so the edit form
-    # no longer needs to carry or submit that field at all.
-
     names = request.form.getlist('edit_item_name[]')
     sizes = request.form.getlist('edit_size[]')
     prices = request.form.getlist('edit_price[]')
@@ -1200,10 +1194,17 @@ def toggle_payment(order_id):
 
     order.is_paid = is_paid
     order.payment_date = (custom_date or get_myanmar_now().strftime('%Y-%m-%d')) if is_paid else ''
+    if 'delivery_fee' in data:
+        order.delivery_fee = (data.get('delivery_fee') or '').strip()
 
     try:
         db.session.commit()
-        return jsonify({'success': True, 'is_paid': order.is_paid, 'payment_date': order.payment_date})
+        return jsonify({
+            'success': True,
+            'is_paid': order.is_paid,
+            'payment_date': order.payment_date,
+            'delivery_fee': order.delivery_fee or ''
+        })
     except Exception as e:
         db.session.rollback()
         print("TOGGLE PAYMENT ERROR:", e)
