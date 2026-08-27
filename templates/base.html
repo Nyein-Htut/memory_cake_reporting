@@ -716,14 +716,6 @@ async function _wpRegisterFont(pdf, key) {
     }
 }
 
-    /* ===== Myanmar text: canvas-rasterized (real shaping), not vector glyphs =====
-   jsPDF's addFont()+pdf.text() only does raw codepoint->glyph placement — no
-   OpenType shaping. Myanmar needs actual shaping (virama stacking, pre-base
-   vowel reordering), which the browser's canvas 2D text renderer already
-   does correctly (same engine that renders the on-screen dashboard). So
-   Myanmar runs are drawn to an offscreen canvas and embedded as a small PNG
-   instead of as vector text. CJK/Latin are unaffected — they don't need
-   shaping, so they stay as fast vector pdf.text() calls. */
 let _wpMyanmarCanvasFontPromise = null;
 function _wpLoadMyanmarCanvasFonts() {
     if (_wpMyanmarCanvasFontPromise) return _wpMyanmarCanvasFontPromise;
@@ -1246,11 +1238,6 @@ function openDateWheelPicker(triggerBtnIdOrCfg, hiddenInputId) {
     };
 }
 
-/* ===== Filter-by-day picker (Daily Records filter bar) =====
-   Reuses the same date-wheel overlay as Payment Date / Delivery Date, but
-   picking a day here refreshes the filtered results immediately instead of
-   waiting for a separate "Apply" click — this is the *only* filter mode
-   the daily records dashboard supports now. */
 function openFilterDayPicker() {
     const btn = document.getElementById('filterDayTriggerBtn');
     const span = btn.querySelector('span');
