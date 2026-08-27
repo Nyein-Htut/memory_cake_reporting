@@ -108,6 +108,12 @@
             <!-- payment date -->
             <div class="w-16 sm:w-24 text-right shrink-0">
                 <div class="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate">{{ r.payment_date or '—' }}</div>
+                {% if r.payment_method %}
+                <div class="text-[9px] font-bold truncate"
+                    style="color: {{ '#047857' if r.payment_method == 'cash' else ('#1d4ed8' if r.payment_method == 'kpay' else '#92400e') }};">
+                    {% if r.payment_method == 'cash' %}Cash{% elif r.payment_method == 'kpay' %}KPay{% else %}Other{% endif %}
+                </div>
+                {% endif %}
             </div>
 
         </div>
