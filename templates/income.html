@@ -20,7 +20,7 @@
         </form>
     </header>
 
-    <!-- Total income card -->
+        <!-- Total income card -->
     <div class="bg-stone-950 text-white rounded-2xl px-4 py-4 sm:p-6 shadow-sm flex items-center justify-between gap-3">
         <div>
             <h3 class="text-[9px] sm:text-[11px] font-bold tracking-wider text-stone-400 uppercase">本月总收入</h3>
@@ -31,6 +31,24 @@
         </div>
         <div class="text-right text-[10px] sm:text-[11px] text-stone-400 font-numeric shrink-0">
             {{ rows|length }} 笔<br>已付款
+        </div>
+    </div>
+
+    <!-- Sub-totals: cake price vs delivery fee, separately -->
+    <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">蛋糕总额</h4>
+            <div class="flex items-baseline gap-1 mt-1">
+                <span class="text-base sm:text-xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_cake_price) }}</span>
+                <span class="text-[9px] sm:text-[10px] font-semibold text-stone-400">MMK</span>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">车费总额</h4>
+            <div class="flex items-baseline gap-1 mt-1">
+                <span class="text-base sm:text-xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_delivery_fee) }}</span>
+                <span class="text-[9px] sm:text-[10px] font-semibold text-stone-400">MMK</span>
+            </div>
         </div>
     </div>
 
