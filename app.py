@@ -1213,6 +1213,7 @@ def run_migration():
             ('is_paid', 'BOOLEAN', 'FALSE'),
             ('payment_date', 'TEXT', "''"),
             ('delivery_fee', 'TEXT', "''"),
+            ('payment_method', 'TEXT', "''"),
         ]:
             try:
                 table = 'order_items' if col in ('image_url', 'flower_image_url') else 'orders'
