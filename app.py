@@ -1431,17 +1431,28 @@ def income_view():
     """Income Records: every PAID order for a selected month, one row per
     order (order date, first item's cake photo, total price, delivery fee,
     payment date). Total income = sum of order totals + parsed delivery
-    fees for every row currently shown (i.e. for the selected month)."""
+    fees for every row currently shown (i.e. for the selected month).
+
+    By default the selected month is matched against, and rows are sorted
+    by, the PAYMENT date (order.payment_date) rather than the order date —
+    that's what "income" conceptually means (cash landed this month).
+    Passing ?date_basis=order switches both the month-filter column and the
+    sort back to the order date instead."""
     db.session.remove()
 
     selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+    date_basis = (request.args.get('date_basis') or 'paid').strip()
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
+
+    date_col = Order.payment_date if date_basis == 'paid' else Order.date
 
     orders = (
         Order.query
         .options(joinedload(Order.items))
-        .filter(Order.date.like(f"{selected_month}%"))
+        .filter(date_col.like(f"{selected_month}%"))
         .filter(Order.is_paid == True)
-        .order_by(Order.date.desc(), Order.id.desc())
+        .order_by(date_col.desc(), Order.id.desc())
         .all()
     )
 
@@ -1475,7 +1486,7 @@ def income_view():
     db.session.remove()
     return render_template(
         'income.html', active_page='income',
-        selected_month=selected_month, rows=rows,
+        selected_month=selected_month, date_basis=date_basis, rows=rows,
         total_income=total_income,
         total_cake_price=total_cake_price,
         total_delivery_fee=total_delivery_fee
