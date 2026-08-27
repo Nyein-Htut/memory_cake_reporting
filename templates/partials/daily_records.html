@@ -232,12 +232,6 @@ async function refreshDailyRecords() {
 }
 window.refreshDailyRecords = refreshDailyRecords;
 
-/* Day / Month / Year toggle for the Daily Records filter bar — mirrors
-   setViewMode() on the Monthly Report page. There's no separate Apply
-   button anymore, so switching tabs refreshes the results right away
-   (using whatever day/month/year value is already in the corresponding
-   hidden field — e.g. defaults to "this month" the first time you switch
-   to the 月 tab). */
 function setDailyViewMode(mode) {
     document.getElementById('dailyViewModeInput').value = mode;
     document.getElementById('dailyDayPickerWrap').classList.toggle('hidden', mode !== 'day');
@@ -258,11 +252,6 @@ function setDailyViewMode(mode) {
     refreshDailyRecords();
 }
 
-/* ===== Month / Year pickers for the Period filter =====
-   Config-mode calls into the shared wheel-picker engine (base.html) whose
-   onConfirm sets the hidden field + trigger label, then immediately
-   refreshes the results — same "choose it and it's applied" behavior the
-   Day picker already had. */
 function openFilterMonthPicker() {
     const btn = document.getElementById('filterMonthTriggerBtn');
     const span = btn.querySelector('span');
@@ -305,15 +294,6 @@ function revealImage(btn) {
 }
 
 {% if not readonly %}
-/* ===== Source filter (client-side, manager only) =====
-   Reuses the same static-option-list overlay as the order-form Source
-   picker (wpSourceOverlay/wpSourceList/WP_SOURCE_OPTIONS, all defined
-   globally in base.html), but instead of submitting the filter form —
-   which caused a full page reload on every pick — it just updates
-   dailySourceFilter and re-runs the same client-side filtering pass used
-   by Paid/Unpaid and the customer search below. The hidden #filterSourceHidden
-   field is still kept in sync, so the choice survives whenever the
-   day/month/year form auto-refreshes (a real, intentional AJAX reload). */
 let dailySourceFilter = {{ (selected_source or '') | tojson | safe }};
 
 function openDailySourceFilterPicker() {
@@ -341,8 +321,6 @@ function openDailySourceFilterPicker() {
             const hiddenField = document.getElementById('filterSourceHidden');
             if (hiddenField) hiddenField.value = val;
 
-            // Keep the PDF export in sync too, since it reads this object
-            // directly (see daily.html) rather than re-reading the DOM.
             if (typeof dailyExportParams !== 'undefined') {
                 if (val) dailyExportParams.source = val;
                 else delete dailyExportParams.source;
@@ -365,9 +343,6 @@ function openDailySourceFilterPicker() {
     document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
 }
 
-/* Manager-only customer-name search + Paid/Unpaid + Source filter for the
-   Daily Records dashboard. All three filter the currently displayed order
-   cards client-side (no reload); the conditions combine with AND. */
 let dailyPaidFilter = 'all';
 
 function setDailyPaidFilter(mode) {
@@ -483,8 +458,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Exposed globally so setDailyPaidFilter(), the source picker, and the
-    // payment-toggle handler (outside this closure) can trigger a re-filter.
     window.updateDailyOrderFilters = updateDailyOrderFilters;
 
     searchInput.addEventListener('input', updateDailyOrderFilters);
@@ -502,9 +475,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // If the page loaded with a source already selected (e.g. a bookmarked
-    // URL with ?source=...), run one pass immediately so the summary badges
-    // and "orders found" line reflect it right away.
     if (dailySourceFilter) updateDailyOrderFilters();
 });
 {% endif %}
@@ -552,9 +522,6 @@ async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapp
         // Keep the price line's color in sync with the new payment status
         const priceLine = wrapper.parentElement.querySelector('.oc-price-line');
         if (priceLine) priceLine.style.color = data.is_paid ? '#047857' : '#b45309';
-
-        // Keep the Paid/Unpaid filter's data source in sync, and re-apply
-        // the filter in case a card just moved out of the active filter.
         const card = checkbox.closest('.order-card');
         if (card) card.setAttribute('data-paid', data.is_paid ? 'true' : 'false');
         if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
@@ -627,12 +594,6 @@ async function toggleFoldCard(el) {
     }
 }
 
-/* ===== Fold/unfold every order card within a single day (the small
-   circular toggle on the grey day-separator bar). If any card in that
-   day is currently expanded, folds all of them; otherwise unfolds all
-   of them. Reuses the same /toggle_fold/<id> endpoint each individual
-   card's own fold button already calls — just fired once per card that
-   actually needs to change, in parallel. */
 async function toggleDayFold(btn) {
     const dayGroup = btn.closest('.day-group');
     if (!dayGroup) return;
