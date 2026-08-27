@@ -641,9 +641,6 @@
     </div>
 </div>
 
-<!-- Year Picker: static option list (like the Source picker) — the dataset
-     is just the handful of years that actually have data, so a plain
-     tappable list reads better than a long scroll wheel. -->
 <div class="wp-overlay" id="wpYearOverlay" onclick="if(event.target===this) closeWheelOverlay('wpYearOverlay')">
     <div class="wp-sheet">
         <div class="wp-title" id="wpYearTitle">{% if readonly %}နှစ် ရွေးပါ (Select Year){% else %}年份选择 (Select Year){% endif %}</div>
@@ -654,27 +651,23 @@
     </div>
 </div>
 
+<div class="wp-overlay" id="wpDeliveryFeeOverlay" onclick="if(event.target===this) closeWheelOverlay('wpDeliveryFeeOverlay')">
+    <div class="wp-sheet">
+        <div class="wp-title">{% if readonly %}ကားခ ထည့်သွင်းရန် (Add Delivery Fee){% else %}车费录入 (Add Delivery Fee){% endif %}</div>
+        <input type="text" id="wpDeliveryFeeInput"
+            placeholder="{% if readonly %}ကားခ ပမာဏ ရေးပါ (ဥပမာ 15,000){% else %}请输入车费金额（例如 15,000）{% endif %}"
+            class="ef-input" style="margin-bottom: 18px;" inputmode="numeric">
+        <div class="wp-actions">
+            <button type="button" class="wp-btn wp-btn-cancel" id="wpDeliveryFeeSkipBtn">{% if readonly %}ကျော်မည် Skip{% else %}跳过 Skip{% endif %}</button>
+            <button type="button" class="wp-btn wp-btn-set" id="wpDeliveryFeeSaveBtn">{% if readonly %}သိမ်းမည် Save{% else %}保存 Save{% endif %}</button>
+        </div>
+    </div>
+</div>
+    
 <script>
-/* ===== Unicode font support for PDF export (Myanmar + Chinese) =====
-   jsPDF's built-in fonts (Helvetica etc.) have no Myanmar or CJK glyphs,
-   so any Burmese/Chinese text in an order (customer names, addresses,
-   remarks...) prints as garbled symbols. Fixed by embedding real Unicode
-   TTF fonts into the PDF at export time and switching fonts per run of
-   text based on which script each character belongs to.
-
-   Fonts are fetched once (as static files, same-origin — no external CDN
-   dependency) and cached in memory as base64 so repeat exports in the
-   same page session don't re-download them. They're only fetched at all
-   if the content being exported actually contains that script, so a
-   normal Burmese-only day never touches the (much larger) Chinese font. */
 const WP_FONT_SOURCES = {
     myanmar:     { name: 'NotoSansMyanmar', file: 'NotoSansMyanmar-Regular.ttf', url: '/static/fonts/NotoSansMyanmar-Regular.ttf', style: 'normal' },
     myanmarBold: { name: 'NotoSansMyanmar', file: 'NotoSansMyanmar-Bold.ttf',    url: '/static/fonts/NotoSansMyanmar-Bold.ttf',    style: 'bold'   },
-    // Registered under the jsPDF font name "NotoSansSC" for simplicity, but
-    // the actual embedded font is WenQuanYi Zen Hei — a genuine TrueType
-    // (glyf-outline) CJK font. This matters because jsPDF can only embed
-    // TrueType outlines, not the CFF/OpenType outlines that Google's own
-    // "Noto Sans SC" ships as, so a direct Noto CJK font won't load here.
     cjk:         { name: 'NotoSansSC', file: 'WenQuanYiZenHei-Regular.ttf', url: '/static/fonts/WenQuanYiZenHei-Regular.ttf', style: 'normal' }
 };
 const _wpFontBase64Cache = {};
@@ -700,9 +693,6 @@ async function _wpGetFontBase64(key) {
     return b4;
 }
 
-// Fonts must be registered on every new jsPDF() instance (the VFS is
-// per-document), but thanks to the base64 cache above that's just a fast
-// local addFileToVFS/addFont call after the first real network fetch.
 async function _wpRegisterFont(pdf, key) {
     const src = WP_FONT_SOURCES[key];
     try {
@@ -750,9 +740,6 @@ function _wpRasterCtx() {
     return _wpRasterCanvas.getContext('2d');
 }
 
-// Renders one Myanmar text run through the browser's real text-shaping
-// engine and returns a small PNG + the mm dimensions/baseline needed to
-// place it into the PDF at the right spot.
 function _wpRasterizeMyanmarRun(text, fontSizePt, bold, rgb) {
     const scalePx = Math.max(1, fontSizePt * WP_RASTER_SCALE);
     const fontStr = `${bold ? '700' : '400'} ${scalePx}px WPMyanmarCanvas, sans-serif`;
@@ -793,16 +780,6 @@ function _wpScriptFor(ch) {
     return 'latin';
 }
 
-// Real-world Burmese text (especially typed on mobile keyboards) is full of
-// invisible zero-width/format characters used as syllable-break hints —
-// ZWSP, ZWNJ, ZWJ, bidi marks, BOM, etc. Our custom fonts and Helvetica's
-// standard-14 width tables have no entries for most of these, so jsPDF's
-// getTextWidth() can return a bogus (sometimes large) fallback width for
-// them. Since each one also gets isolated into its own tiny "run" by the
-// script-splitter below, that bogus width throws every run after it off to
-// the right — the exact "correct text ... huge gap ... more text" bug seen
-// in mixed Burmese/digit strings. They're invisible anyway, so just drop
-// them before anything measures or draws.
 function _wpStripInvisible(str) {
     return String(str == null ? '' : str).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
 }
@@ -817,10 +794,6 @@ function _wpTextNeedsScript(parts, script) {
     return false;
 }
 
-// Splits a string into runs of consecutive same-script characters (spaces
-// and punctuation stay attached to whichever script surrounds them, so a
-// Burmese sentence with normal spacing doesn't get chopped into dozens of
-// tiny runs).
 function _wpSplitRuns(text) {
     const runs = [];
     let cur = '', curScript = null;
@@ -1051,10 +1024,38 @@ function closeWheelOverlay(id) {
     wpUnlockBody();
 }
 
-/* ===== Source Picker (static option list, WhatsApp-sheet style) =====
-   Reuses the same overlay shell as the date/time pickers, but the content
-   is just a list of tappable rows instead of a scrolling wheel — the
-   dataset is fixed and short, so a scroll wheel would be overkill. */
+function openDeliveryFeePrompt(cfg) {
+    const overlay = document.getElementById('wpDeliveryFeeOverlay');
+    const input = document.getElementById('wpDeliveryFeeInput');
+    const skipBtn = document.getElementById('wpDeliveryFeeSkipBtn');
+    const saveBtn = document.getElementById('wpDeliveryFeeSaveBtn');
+
+    input.value = cfg.initialValue || '';
+    overlay.classList.add('active');
+    wpLockBody();
+    setTimeout(() => input.focus(), 60);
+
+    function cleanup() {
+        closeWheelOverlay('wpDeliveryFeeOverlay');
+        skipBtn.onclick = null;
+        saveBtn.onclick = null;
+        input.onkeydown = null;
+    }
+
+    skipBtn.onclick = () => {
+        cleanup();
+        if (cfg.onSkip) cfg.onSkip();
+    };
+    saveBtn.onclick = () => {
+        const value = input.value.trim();
+        cleanup();
+        if (cfg.onSave) cfg.onSave(value);
+    };
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+    };
+}
+    
 const WP_SOURCE_OPTIONS = ['Ko Kyaw', 'Memory Cake', 'Iris', 'Ama Gyi', 'Ama Nge', 'Nawaday Flower Shop', 'Khaing Win Kyi', 'Other'];
 
 function openSourcePicker(triggerBtnId, hiddenInputId, titleText) {
@@ -1858,14 +1859,6 @@ function _wpCaptureChartHiRes(chart, targetDPR = 3) {
 }
 
 /**
- * Renders the Monthly/Annual Report page (summary metrics, channel
- * breakdown, revenue/weekday/retention charts, top items, top customers)
- * as a PDF — as opposed to renderOrderCardsPDF() above, which renders the
- * Daily Records order-card grid. Charts are grabbed directly from the
- * already-rendered Chart.js <canvas> elements via canvas.toDataURL(), so
- * there's no re-rendering and no html2canvas dependency; canvas text
- * (chart labels) already renders correctly for any script because it uses
- * the browser's own font stack, not jsPDF's.
  *
  * @param {Object} opts
  * @param {String} opts.periodLabel
