@@ -2,12 +2,52 @@
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
    toggle plus one wp-trigger picker for whichever mode is active. #}
 
+<style>
+.daily-delivered-pillbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #ababa9;
+    border-radius: 9999px;
+    padding: 3px;
+}
+.daily-delivered-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.85);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+    user-select: none;
+    border: none;
+    background: transparent;
+}
+.daily-delivered-pill:hover { color: #fff; }
+.daily-delivered-pill.active {
+    background: #fff;
+    color: #1c1917;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+@media (max-width: 480px) {
+    .daily-delivered-pillbar { justify-content: space-between; }
+    .daily-delivered-pill { flex: 1; padding: 7px 6px; }
+}
+</style>
+
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10 space-y-4">
 
-    <!-- Period filter -->
+    <!-- Period + delivery-status filter bar (combined into one row) -->
     <div class="space-y-2">
         <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}</span>
-        <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-nowrap items-center gap-2 w-full">
+        <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2 w-full">
             <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
             {% if not readonly %}
             <input type="hidden" name="source" id="filterSourceHidden" value="{{ selected_source or '' }}">
@@ -51,26 +91,22 @@
                     <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
             </div>
-        </form>
-    </div>
 
-    <!-- Delivery status filter (both roles — client-side, no reload) -->
-    <div class="space-y-2 pt-3 border-t border-stone-200/60">
-        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ပို့ဆောင်မှု အခြေအနေ{% else %}送达状态筛选{% endif %}</span>
-        <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
-            <button type="button" id="deliveredFilterAllBtn" onclick="setDailyDeliveredFilter('all')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-all bg-stone-900 text-white">
-                {% if readonly %}အားလုံး{% else %}全部{% endif %}
-            </button>
-            <button type="button" id="deliveredFilterYesBtn" onclick="setDailyDeliveredFilter('delivered')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-delivered bg-white text-stone-500 hover:bg-stone-50">
-                🚚 {% if readonly %}ပို့ပြီး{% else %}已送达{% endif %}
-            </button>
-            <button type="button" id="deliveredFilterNoBtn" onclick="setDailyDeliveredFilter('not_delivered')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-not_delivered bg-white text-stone-500 hover:bg-stone-50">
-                ⏳ {% if readonly %}မပို့ရသေး{% else %}未送达{% endif %}
-            </button>
-        </div>
+            <!-- Delivered / Not Delivered — compact gray pill filter, styled after the
+                 day-separator bar so it reads as part of the same filter row. Full-width
+                 and centered on mobile via .daily-delivered-pillbar's own CSS. -->
+            <div class="daily-delivered-pillbar w-full sm:w-auto sm:ml-auto">
+                <button type="button" id="deliveredFilterAllBtn" onclick="setDailyDeliveredFilter('all')" class="daily-delivered-pill active">
+                    {% if readonly %}အားလုံး{% else %}全部{% endif %}
+                </button>
+                <button type="button" id="deliveredFilterYesBtn" onclick="setDailyDeliveredFilter('delivered')" class="daily-delivered-pill">
+                    <span aria-hidden="true">🚚</span><span class="hidden sm:inline">{% if readonly %}ပို့ပြီး{% else %}已送达{% endif %}</span>
+                </button>
+                <button type="button" id="deliveredFilterNoBtn" onclick="setDailyDeliveredFilter('not_delivered')" class="daily-delivered-pill">
+                    <span aria-hidden="true">⏳</span><span class="hidden sm:inline">{% if readonly %}မပို့ရသေး{% else %}未送达{% endif %}</span>
+                </button>
+            </div>
+        </form>
     </div>
 
     {% if not readonly %}
@@ -385,10 +421,8 @@ function setDailyDeliveredFilter(mode) {
         not_delivered: document.getElementById('deliveredFilterNoBtn')
     };
     Object.keys(tabs).forEach((key) => {
-        const active = key === mode;
         if (!tabs[key]) return;
-        tabs[key].className = 'flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-' + key + ' ' +
-            (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
+        tabs[key].classList.toggle('active', key === mode);
     });
     if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
 }
