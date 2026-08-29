@@ -1699,7 +1699,7 @@ async function renderOrderCardsPDF(opts) {
     const thumb = 15;      // mm square thumbnail — only drawn when a photo actually exists
     const thumbGap = 2;
     const rowPad = 3;      // inner left/right padding for each order row
-    const orderGap = 6;    // vertical space between one order's bottom line and the next order
+    const orderGap = 2;    // vertical space between one order's bottom line and the next order
 
     // Only fetch the Unicode font(s) this particular export actually needs
     // (e.g. a Chinese-only manager day never downloads the Myanmar font).
