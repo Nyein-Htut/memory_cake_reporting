@@ -1434,23 +1434,20 @@ def _parse_fee_amount(value):
     except ValueError:
         return 0
 
-@app.route('/income')
-@manager_required
-def income_view():
-    """Income Records: every PAID order for a selected month, one row per
-    order (order date, first item's cake photo, total price, delivery fee,
-    payment date). Total income = sum of order totals + parsed delivery
-    fees for every row currently shown (i.e. for the selected month).
+def _compute_income_rows(selected_month, date_basis):
+    """Shared row-building logic for Income Records: every PAID order for a
+    selected month, one row per order (order date, first item's cake photo,
+    total price, delivery fee, payment date/method), plus running totals.
 
-    By default the selected month is matched against, and rows are sorted
-    by, the PAYMENT date (order.payment_date) rather than the order date —
-    that's what "income" conceptually means (cash landed this month).
-    Passing ?date_basis=order switches both the month-filter column and the
-    sort back to the order date instead."""
-    db.session.remove()
+    Used by the on-page Income view (income_view), the CSV export
+    (income_export), and the JSON feed backing the client-side PDF export
+    (api_income_data) — so all three can never disagree on which rows or
+    totals are shown for a given month/date_basis.
 
-    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
-    date_basis = (request.args.get('date_basis') or 'paid').strip()
+    By default `date_basis='paid'` matches against and sorts by the
+    PAYMENT date (order.payment_date), since that's what "income"
+    conceptually means (cash landed this month). Pass date_basis='order' to
+    switch both the month-filter column and the sort back to order date."""
     if date_basis not in ('paid', 'order'):
         date_basis = 'paid'
 
@@ -1490,17 +1487,101 @@ def income_view():
             'payment_date': o.payment_date or '',
             'payment_method': o.payment_method or '',
         })
-    total_income = total_cake_price + total_delivery_fee
+
+    return {
+        'rows': rows,
+        'total_cake_price': total_cake_price,
+        'total_delivery_fee': total_delivery_fee,
+        'total_income': total_cake_price + total_delivery_fee,
+    }
+
+@app.route('/income')
+@manager_required
+def income_view():
+    db.session.remove()
+
+    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+    date_basis = (request.args.get('date_basis') or 'paid').strip()
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
+
+    data = _compute_income_rows(selected_month, date_basis)
 
     db.session.remove()
     return render_template(
         'income.html', active_page='income',
-        selected_month=selected_month, date_basis=date_basis, rows=rows,
-        total_income=total_income,
-        total_cake_price=total_cake_price,
-        total_delivery_fee=total_delivery_fee
+        selected_month=selected_month, date_basis=date_basis, rows=data['rows'],
+        total_income=data['total_income'],
+        total_cake_price=data['total_cake_price'],
+        total_delivery_fee=data['total_delivery_fee']
     )
-    
+
+@app.route('/income/export')
+@manager_required
+def income_export():
+    """CSV export of the Income Records page: same rows and totals as
+    income_view (and api_income_data), scoped to the same month/date_basis
+    currently selected on the page."""
+    db.session.remove()
+
+    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+    date_basis = (request.args.get('date_basis') or 'paid').strip()
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
+
+    data = _compute_income_rows(selected_month, date_basis)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+
+    writer.writerow(['Memory Cake — 收入记录 Income Records'])
+    writer.writerow(['Period', selected_month])
+    writer.writerow(['Date Basis', 'Payment Date' if date_basis == 'paid' else 'Order Date'])
+    writer.writerow([])
+
+    writer.writerow(['Date', 'Customer', 'Price (MMK)', 'Delivery Fee', 'Payment Date', 'Payment Method'])
+    for r in data['rows']:
+        writer.writerow([
+            r['date'], r['customer'], r['price'], r['delivery_fee'],
+            r['payment_date'], r['payment_method']
+        ])
+    writer.writerow([])
+
+    writer.writerow(['Total Cake Price (MMK)', data['total_cake_price']])
+    writer.writerow(['Total Delivery Fee (MMK)', data['total_delivery_fee']])
+    writer.writerow(['Total Income (MMK)', data['total_income']])
+
+    mem = io.BytesIO(('\ufeff' + buf.getvalue()).encode('utf-8'))
+    filename = f"Memory_Cake_Income_{selected_month}.csv"
+    db.session.remove()
+    return send_file(mem, mimetype='text/csv', as_attachment=True, download_name=filename)
+
+@app.route('/api/income_data')
+@manager_required
+def api_income_data():
+    """JSON data feed for the client-side Income PDF export (mirrors how
+    /api/export_orders feeds the Daily page's PDF export). Same rows and
+    totals as income_view/income_export for the given month/date_basis."""
+    db.session.remove()
+
+    selected_month = (request.args.get('month') or '').strip() or get_myanmar_now().strftime('%Y-%m')
+    date_basis = (request.args.get('date_basis') or 'paid').strip()
+    if date_basis not in ('paid', 'order'):
+        date_basis = 'paid'
+
+    data = _compute_income_rows(selected_month, date_basis)
+
+    payload = {
+        'month': selected_month,
+        'date_basis': date_basis,
+        'rows': data['rows'],
+        'total_cake_price': data['total_cake_price'],
+        'total_delivery_fee': data['total_delivery_fee'],
+        'total_income': data['total_income'],
+    }
+    db.session.remove()
+    return jsonify(payload)
+
 @app.route('/health')
 def health():
     return "OK", 200
