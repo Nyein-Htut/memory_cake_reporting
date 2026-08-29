@@ -2143,6 +2143,127 @@ async function renderMonthlyReportPDF(opts) {
     pdf.save(opts.filename);
 }
 
+
+async function renderIncomeReportPDF(opts) {
+    if (typeof window.jspdf === 'undefined') {
+        alert('PDF 组件加载失败，请检查网络连接后重试。\n(PDF library failed to load — check your network connection and try again.)');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297, margin = 12, usableW = pageW - margin * 2;
+
+    const rows = opts.rows || [];
+    const textParts = [
+        opts.periodLabel,
+        ...rows.flatMap(r => [r.customer, r.delivery_fee])
+    ];
+    const T = await wpPrepareUnicodeText(pdf, textParts);
+
+    function ensureSpace(need, y) {
+        if (y + need > pageH - margin) { pdf.addPage(); return margin; }
+        return y;
+    }
+
+    let y = margin;
+
+    // Header
+    pdf.setTextColor(28, 25, 23);
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Memory Cake', margin, y + 6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(120, 113, 108);
+    const basisLabel = opts.dateBasis === 'order' ? 'By Order Date' : 'By Payment Date';
+    pdf.text(`Income Report \u2014 ${opts.periodLabel} (${basisLabel})`, margin, y + 12);
+    y += 18;
+    pdf.setDrawColor(225, 222, 219);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    // Summary metric cards
+    const metrics = [
+        ['Total Income', `${Number(opts.totalIncome || 0).toLocaleString()} MMK`],
+        ['Cake Total', `${Number(opts.totalCakePrice || 0).toLocaleString()} MMK`],
+        ['Delivery Fee Total', `${Number(opts.totalDeliveryFee || 0).toLocaleString()} MMK`],
+        ['Paid Orders', `${rows.length}`]
+    ];
+    const mCols = 4, mGap = 4;
+    const mW = (usableW - mGap * (mCols - 1)) / mCols, mH = 20;
+    metrics.forEach((m, i) => {
+        const mx = margin + i * (mW + mGap), my = y;
+        pdf.setDrawColor(231, 229, 228);
+        pdf.roundedRect(mx, my, mW, mH, 2, 2, 'S');
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text(m[0].toUpperCase(), mx + 3, my + 6);
+        pdf.setFontSize(10.5);
+        pdf.setTextColor(28, 25, 23);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(m[1], mx + 3, my + 14);
+    });
+    pdf.setFont('helvetica', 'normal');
+    y += mH + 10;
+
+    // Table
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(28, 25, 23);
+    pdf.text('Income Detail', margin, y + 5);
+    pdf.setFont('helvetica', 'normal');
+    y += 9;
+
+    const xDate = margin;
+    const xCustomer = margin + 24;
+    const xPriceEnd = margin + 112;   // right-aligned
+    const xDeliveryEnd = margin + 142; // right-aligned
+    const xPaidOn = margin + 148;
+    const xMethodEnd = pageW - margin; // right-aligned
+    const colGap = 3;
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(168, 162, 158);
+    pdf.text('Date', xDate, y);
+    pdf.text('Customer', xCustomer, y);
+    pdf.text('Price', xPriceEnd, y, { align: 'right' });
+    pdf.text('Delivery', xDeliveryEnd, y, { align: 'right' });
+    pdf.text('Paid On', xPaidOn, y);
+    pdf.text('Method', xMethodEnd, y, { align: 'right' });
+    y += 3;
+    pdf.setDrawColor(231, 229, 228);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 5;
+
+    rows.forEach((r) => {
+        y = ensureSpace(6, y);
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(String(r.date || ''), xDate, y);
+        T.textClipped(r.customer || '', xCustomer, y, xPriceEnd - xCustomer - colGap, { fontSize: 8.5 });
+        pdf.setTextColor(28, 25, 23);
+        pdf.text(Number(r.price || 0).toLocaleString(), xPriceEnd, y, { align: 'right' });
+        pdf.setTextColor(120, 113, 108);
+        T.textClipped(r.delivery_fee || '-', xDeliveryEnd, y, xDeliveryEnd - xPriceEnd - colGap, { fontSize: 8.5, align: 'right' });
+        pdf.setTextColor(4, 120, 87);
+        pdf.text(String(r.payment_date || '-'), xPaidOn, y);
+        const methodLabel = r.payment_method === 'cash' ? 'Cash'
+            : r.payment_method === 'kpay' ? 'KPay'
+            : (r.payment_method ? 'Other' : '-');
+        pdf.setTextColor(120, 113, 108);
+        pdf.text(methodLabel, xMethodEnd, y, { align: 'right' });
+        y += 6;
+    });
+
+    if (!rows.length) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(168, 162, 158);
+        pdf.text('No paid orders for this period.', margin, y);
+    }
+
+    pdf.save(opts.filename);
+}
 /* ===== Payment checkbox toggle (updated for wheel-picker trigger) ===== */
 function togglePaymentDate(wrapId, hiddenId, triggerBtnId, checkboxId) {
     const cb = document.getElementById(checkboxId);
