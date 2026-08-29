@@ -54,6 +54,25 @@
         </form>
     </div>
 
+    <!-- Delivery status filter (both roles — client-side, no reload) -->
+    <div class="space-y-2 pt-3 border-t border-stone-200/60">
+        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ပို့ဆောင်မှု အခြေအနေ{% else %}送达状态筛选{% endif %}</span>
+        <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+            <button type="button" id="deliveredFilterAllBtn" onclick="setDailyDeliveredFilter('all')"
+                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-all bg-stone-900 text-white">
+                {% if readonly %}အားလုံး{% else %}全部{% endif %}
+            </button>
+            <button type="button" id="deliveredFilterYesBtn" onclick="setDailyDeliveredFilter('delivered')"
+                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-delivered bg-white text-stone-500 hover:bg-stone-50">
+                🚚 {% if readonly %}ပို့ပြီး{% else %}已送达{% endif %}
+            </button>
+            <button type="button" id="deliveredFilterNoBtn" onclick="setDailyDeliveredFilter('not_delivered')"
+                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-not_delivered bg-white text-stone-500 hover:bg-stone-50">
+                ⏳ {% if readonly %}မပို့ရသေး{% else %}未送达{% endif %}
+            </button>
+        </div>
+    </div>
+
     {% if not readonly %}
     <!-- Source filter (client-side, no reload) -->
    <!-- <div class="space-y-2 pt-3 border-t border-stone-200/60"> -->
@@ -191,12 +210,6 @@ async function refreshDailyRecords() {
         // the delivered/folded state straight into the markup via Jinja
         // (order.is_delivered -> 'is-delivered' class, order.is_folded ->
         // 'oc-folded' class), so a fresh AJAX render is correct as-is.
-        // (A previous call to a since-removed applyDeliveredAndFoldState()
-        // used to live here — it was never defined anywhere in the
-        // codebase, so it silently threw a ReferenceError on every filter
-        // change and got swallowed by the catch block below, which is why
-        // the "筛选加载失败" alert used to pop up even though the filtered
-        // results had already rendered successfully just above.)
 
         const orderCountEl = document.getElementById('summaryOrderCount');
         if (orderCountEl) orderCountEl.textContent = data.total_orders;
@@ -220,7 +233,7 @@ async function refreshDailyRecords() {
         url.search = params.toString();
         history.pushState({}, '', url);
 
-        // Re-apply customer/paid/source filters onto the freshly loaded cards.
+        // Re-apply customer/paid/source/delivered filters onto the freshly loaded cards.
         if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
     } catch (err) {
         console.error('Failed to refresh daily records:', err);
@@ -359,16 +372,39 @@ function setDailyPaidFilter(mode) {
     });
     if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
 }
+{% endif %}
 
+/* ===== Delivered / Not Delivered / All filter (both roles) ===== */
+let dailyDeliveredFilter = 'all';
+
+function setDailyDeliveredFilter(mode) {
+    dailyDeliveredFilter = mode;
+    const tabs = {
+        all: document.getElementById('deliveredFilterAllBtn'),
+        delivered: document.getElementById('deliveredFilterYesBtn'),
+        not_delivered: document.getElementById('deliveredFilterNoBtn')
+    };
+    Object.keys(tabs).forEach((key) => {
+        const active = key === mode;
+        if (!tabs[key]) return;
+        tabs[key].className = 'flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-delivered-tab-' + key + ' ' +
+            (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
+    });
+    if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+}
+
+/* ===== Combined client-side filtering (search + paid + source + delivered) =====
+   Defined unconditionally so the Delivered filter works on both the
+   manager and staff Daily pages. Search/paid/source inputs only exist on
+   the manager page, so every lookup below is guarded — on staff, this
+   still runs and only the delivered filter has any effect. */
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('dailyCustomerSearch');
     const clearButton = document.getElementById('clearDailyCustomerSearch');
     const searchStatus = document.getElementById('dailySearchStatus');
 
-    if (!searchInput) return;
-
     function updateDailyOrderFilters() {
-        const query = searchInput.value.trim().toLowerCase();
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
         const dayGroups = document.querySelectorAll('#ordersRoot .day-group');
         let matchedOrders = 0;
         let matchedRevenue = 0;
@@ -384,14 +420,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 const nameMatches = !query || customerName.includes(query);
 
                 const isPaid = card.getAttribute('data-paid') === 'true';
-                const paidMatches = dailyPaidFilter === 'all'
+                const paidMatches = (typeof dailyPaidFilter === 'undefined' || dailyPaidFilter === 'all')
                     || (dailyPaidFilter === 'paid' && isPaid)
                     || (dailyPaidFilter === 'unpaid' && !isPaid);
 
-                const cardSource = (card.getAttribute('data-source') || '').trim();
-                const sourceMatches = !dailySourceFilter || cardSource === dailySourceFilter;
+                const isDelivered = card.getAttribute('data-delivered') === 'true';
+                const deliveredMatches = dailyDeliveredFilter === 'all'
+                    || (dailyDeliveredFilter === 'delivered' && isDelivered)
+                    || (dailyDeliveredFilter === 'not_delivered' && !isDelivered);
 
-                const matches = nameMatches && paidMatches && sourceMatches;
+                const cardSource = (card.getAttribute('data-source') || '').trim();
+                const sourceMatches = (typeof dailySourceFilter === 'undefined' || !dailySourceFilter) || cardSource === dailySourceFilter;
+
+                const matches = nameMatches && paidMatches && deliveredMatches && sourceMatches;
 
                 card.classList.toggle('hidden', !matches);
 
@@ -410,18 +451,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Keep the clear button state polished on mobile and desktop.
-        clearButton.classList.toggle('hidden', !query);
-        clearButton.classList.toggle('flex', !!query);
+        if (clearButton) {
+            clearButton.classList.toggle('hidden', !query);
+            clearButton.classList.toggle('flex', !!query);
+        }
 
-        const filtersActive = !!query || dailyPaidFilter !== 'all' || !!dailySourceFilter;
-        if (filtersActive) {
-            searchStatus.classList.remove('hidden');
-            searchStatus.textContent = matchedOrders === 1
-                ? '1 order found'
-                : `${matchedOrders} orders found`;
-        } else {
-            searchStatus.classList.add('hidden');
-            searchStatus.textContent = '';
+        const filtersActive = !!query
+            || (typeof dailyPaidFilter !== 'undefined' && dailyPaidFilter !== 'all')
+            || dailyDeliveredFilter !== 'all'
+            || (typeof dailySourceFilter !== 'undefined' && !!dailySourceFilter);
+
+        if (searchStatus) {
+            if (filtersActive) {
+                searchStatus.classList.remove('hidden');
+                searchStatus.textContent = matchedOrders === 1
+                    ? '1 order found'
+                    : `${matchedOrders} orders found`;
+            } else {
+                searchStatus.classList.add('hidden');
+                searchStatus.textContent = '';
+            }
         }
 
         // Keep the top summary badges (order count / revenue / day count)
@@ -460,24 +509,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.updateDailyOrderFilters = updateDailyOrderFilters;
 
-    searchInput.addEventListener('input', updateDailyOrderFilters);
+    if (searchInput) {
+        searchInput.addEventListener('input', updateDailyOrderFilters);
+    }
 
-    clearButton.addEventListener('click', function() {
-        searchInput.value = '';
-        searchInput.focus();
-        updateDailyOrderFilters();
-    });
-
-    searchInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && searchInput.value) {
+    if (clearButton && searchInput) {
+        clearButton.addEventListener('click', function() {
             searchInput.value = '';
+            searchInput.focus();
             updateDailyOrderFilters();
-        }
-    });
+        });
+    }
 
-    if (dailySourceFilter) updateDailyOrderFilters();
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && searchInput.value) {
+                searchInput.value = '';
+                updateDailyOrderFilters();
+            }
+        });
+    }
+
+    if ((typeof dailySourceFilter !== 'undefined' && dailySourceFilter) || dailyDeliveredFilter !== 'all') {
+        updateDailyOrderFilters();
+    }
 });
-{% endif %}
 
 function handlePaymentCheckboxChange(checkbox) {
     const orderId = checkbox.getAttribute('data-order-id');
@@ -650,6 +706,9 @@ async function toggleDeliveredCard(btn) {
         _mcSetDeliveredUI(card, data.is_delivered);
         _mcSetFoldUI(card, data.is_folded);
         card.setAttribute('data-delivered', data.is_delivered ? 'true' : 'false');
+
+        // Keep the Delivered/Not Delivered filter in sync immediately.
+        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
     } catch (err) {
         alert('更新送达状态失败，请重试。\n' + (err.message || ''));
     } finally {
