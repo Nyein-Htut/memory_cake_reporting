@@ -1699,6 +1699,7 @@ async function renderOrderCardsPDF(opts) {
     const thumb = 15;      // mm square thumbnail — only drawn when a photo actually exists
     const thumbGap = 2;
     const rowPad = 3;      // inner left/right padding for each order row
+    const orderGap = 6;    // vertical space between one order's bottom line and the next order
 
     // Only fetch the Unicode font(s) this particular export actually needs
     // (e.g. a Chinese-only manager day never downloads the Myanmar font).
@@ -1715,6 +1716,21 @@ async function renderOrderCardsPDF(opts) {
         if (it.flower_image_url) allUrls.push(it.flower_image_url);
     })));
     const imageMap = await _wpPreloadImages(allUrls, onProgress);
+
+    // Parses a numeric MMK amount out of the free-text delivery_fee field
+    // (e.g. '15,000', '15000 ks', ''). Non-numeric/blank input -> 0.
+    function _wpParseFeeAmount(value) {
+        if (!value) return 0;
+        const digits = String(value).replace(/[^0-9]/g, '');
+        return digits ? parseInt(digits, 10) : 0;
+    }
+
+    // Grand total across every order in this export: cake/item prices
+    // (order.total_price) PLUS every order's parsed delivery fee.
+    let grandTotal = 0;
+    (ordersByDay || []).forEach(g => (g.orders || []).forEach(o => {
+        grandTotal += Number(o.total_price || 0) + _wpParseFeeAmount(o.delivery_fee);
+    }));
 
     function textLines(text, maxWidth, size) {
         return T.lines(text, maxWidth, size);
@@ -1744,6 +1760,7 @@ async function renderOrderCardsPDF(opts) {
     }
 
     const HEADER_H = 9; // customer+total line, source+payment line
+    const DAY_HEADER_H = 11; // lighter (non-black-bar) day-group header + rule
 
     function measureOrder(order) {
         const items = order.items || [];
@@ -1753,7 +1770,7 @@ async function renderOrderCardsPDF(opts) {
             h += itemHeight(item, textW) + 1.2;
         });
         h += 4.5; // footer line (time / address / delivery fee)
-        return h + 2.5; // breathing room before the separator line
+        return h + orderGap; // breathing room before the separator line
     }
 
     function drawOrder(y, order) {
@@ -1827,7 +1844,7 @@ async function renderOrderCardsPDF(opts) {
 
     let curY = margin;
 
-    // Report header (first page only)
+    // ===== Report header (first page only) =====
     pdf.setTextColor(28, 25, 23);
     pdf.setFontSize(16);
     pdf.setFont('helvetica', 'bold');
@@ -1836,36 +1853,62 @@ async function renderOrderCardsPDF(opts) {
     pdf.setFontSize(9.5);
     pdf.setTextColor(120, 113, 108);
     T.text(`Order Report${periodLabel ? ' \u2014 ' + periodLabel : ''}`, margin, curY + 11.5, { fontSize: 9.5 });
+
+    // Grand-total highlight box — top-right corner, visible at a glance.
+    // Only shown when prices are visible at all (manager view).
+    let headerBottom = curY + 15;
+    if (showPayment) {
+        const boxW = 62, boxH = 19;
+        const boxX = margin + usableW - boxW;
+        const boxY = curY - 1;
+        pdf.setFillColor(5, 150, 105); // emerald — matches the app's accent color
+        pdf.roundedRect(boxX, boxY, boxW, boxH, 3, 3, 'F');
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(6.8);
+        pdf.setTextColor(209, 250, 229);
+        pdf.text('TOTAL (CAKE + DELIVERY)', boxX + boxW / 2, boxY + 6.5, { align: 'center' });
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`${grandTotal.toLocaleString()} MMK`, boxX + boxW / 2, boxY + 14.5, { align: 'center' });
+        pdf.setFont('helvetica', 'normal');
+        headerBottom = Math.max(headerBottom, boxY + boxH + 2);
+    }
+
     pdf.setDrawColor(225, 222, 219);
-    pdf.line(margin, curY + 15, margin + usableW, curY + 15);
-    curY += 20;
+    pdf.line(margin, headerBottom, margin + usableW, headerBottom);
+    curY = headerBottom + 5;
 
     let anyOrder = false;
 
     (ordersByDay || []).forEach((group) => {
         const orders = group.orders || [];
-        const headerH = 7;
         const firstOrderH = orders.length ? measureOrder(orders[0]) : 0;
-        const neededH = headerH + 2 + firstOrderH;
+        const neededH = DAY_HEADER_H + firstOrderH;
 
         if (curY > margin && curY + neededH > margin + usableH) {
             pdf.addPage();
             curY = margin;
         }
 
-        pdf.setFillColor(41, 37, 36);
-        pdf.rect(margin, curY, usableW, headerH, 'F');
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(9);
+        // Lighter day-group header — no black bar, just bold date text,
+        // a right-aligned summary, and a thin rule underneath.
+        pdf.setTextColor(28, 25, 23);
         pdf.setFont(undefined, 'bold');
-        pdf.text(String(group.date_display || group.date || ''), margin + 3, curY + 4.8);
+        pdf.setFontSize(10.5);
+        pdf.text(String(group.date_display || group.date || ''), margin, curY + 4.5);
         pdf.setFont(undefined, 'normal');
-        pdf.setFontSize(7.5);
+        pdf.setFontSize(8);
+        pdf.setTextColor(120, 113, 108);
         const meta = showPayment
             ? `${group.order_count} orders  \u00b7  ${Number(group.day_total || 0).toLocaleString()} MMK`
             : `${group.order_count} orders`;
-        pdf.text(meta, margin + usableW - 3, curY + 4.8, { align: 'right' });
-        curY += headerH + 2;
+        pdf.text(meta, margin + usableW, curY + 4.5, { align: 'right' });
+        curY += 6.5;
+        pdf.setDrawColor(214, 211, 209);
+        pdf.setLineWidth(0.4);
+        pdf.line(margin, curY, margin + usableW, curY);
+        curY += 4.5;
 
         orders.forEach((order) => {
             anyOrder = true;
@@ -1878,11 +1921,11 @@ async function renderOrderCardsPDF(opts) {
 
             const bottomY = drawOrder(curY, order);
             pdf.setDrawColor(235, 233, 231);
-            pdf.line(margin, bottomY, margin + usableW, bottomY);
-            curY = bottomY + 2.5;
+            pdf.line(margin, bottomY + 1.5, margin + usableW, bottomY + 1.5);
+            curY = bottomY + orderGap;
         });
 
-        curY += 3;
+        curY += 4;
     });
 
     if (!anyOrder) {
@@ -1893,7 +1936,6 @@ async function renderOrderCardsPDF(opts) {
 
     pdf.save(filename);
 }
-
 // Chart.js renders its canvas backing store at `options.devicePixelRatio`
 // (defaulting to the screen's own DPR, often 1-2 on desktop). Exporting
 // straight from that canvas and stretching it to fill a PDF page is what
