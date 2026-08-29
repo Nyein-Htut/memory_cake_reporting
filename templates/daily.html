@@ -167,6 +167,7 @@
                 filename: `Memory_Cake_Orders_${dailyExportLabel}.pdf`,
                 showPayment: {{ show_payment | tojson | safe }},
                 emptyMessage: `No orders found for ${dailyExportLabel}.`,
+                periodLabel: dailyExportLabel,
                 onProgress: (loaded, total) => {
                     btn.textContent = total ? `生成中… (${loaded}/${total})` : '生成中…';
                 }
