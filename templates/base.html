@@ -711,8 +711,8 @@ async function _wpGetFontBase64(key) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const buf = await res.arrayBuffer();
     const b64 = _wpArrayBufferToBase64(buf);
-    _wpFontBase4Cache[key] = b4;
-    return b4;
+    _wpFontBase64Cache[key] = b64;
+    return b64;
 }
 
 async function _wpRegisterFont(pdf, key) {
