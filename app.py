@@ -1980,6 +1980,161 @@ def expense_report():
         category_breakdown=category_breakdown,
         filter_action=url_for('expense_report')
     )
+
+def _available_years_for_balance():
+    date_strs = [r[0] for r in StaffFunding.query.with_entities(StaffFunding.date).distinct().all() if r[0]]
+    date_strs += [
+        r[0] for r in Expense.query.filter(Expense.created_by_role == 'staff')
+        .with_entities(Expense.date).distinct().all() if r[0]
+    ]
+    years = sorted({d[:4] for d in date_strs if d and len(d) >= 4}, reverse=True)
+    return years or [get_myanmar_now().strftime('%Y')]
+
+def _build_balance_ledger():
+    """Full history of cash movements, oldest first, with a running
+    balance computed cumulatively from the very first entry ever recorded.
+
+    IN  = every StaffFunding row (manager handing cash to staff).
+    OUT = every Expense row where created_by_role == 'staff' — i.e. an
+    expense entered while logged in as staff, which is the "check" that
+    it came out of the cash the manager gave her (an expense entered by
+    the manager's own login is assumed to be paid from the manager's own
+    money, not staff's cash-on-hand, so it's excluded here)."""
+    fundings = StaffFunding.query.order_by(StaffFunding.date.asc(), StaffFunding.id.asc()).all()
+    staff_expenses = (
+        Expense.query
+        .options(joinedload(Expense.category), joinedload(Expense.subcategory))
+        .filter(Expense.created_by_role == 'staff')
+        .order_by(Expense.date.asc(), Expense.id.asc())
+        .all()
+    )
+
+    entries = []
+    for f in fundings:
+        entries.append({
+            'kind': 'funding',
+            'id': f.id,
+            'date': f.date,
+            'type': 'in',
+            'amount': f.amount or 0,
+            'label': f.remarks or '',
+            'sort_key': (f.date, 0, f.id),
+        })
+    for e in staff_expenses:
+        cat_label = e.category.name_zh if e.category else '未分类'
+        if e.subcategory:
+            cat_label += f" · {e.subcategory.name_zh}"
+        entries.append({
+            'kind': 'expense',
+            'id': e.id,
+            'date': e.date,
+            'type': 'out',
+            'amount': e.price or 0,
+            'label': cat_label + (f"（{e.remarks}）" if e.remarks else ''),
+            'sort_key': (e.date, 1, e.id),
+        })
+
+    entries.sort(key=lambda x: x['sort_key'])
+
+    running = 0
+    for entry in entries:
+        running += entry['amount'] if entry['type'] == 'in' else -entry['amount']
+        entry['running_balance'] = running
+
+    return entries
+
+@app.route('/balance')
+@login_required
+def balance_view():
+    db.session.remove()
+
+    is_staff = session.get('role') == 'staff'
+    can_add_funding = is_staff  # only staff needs to log when the manager pays her
+
+    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters('month')
+
+    all_entries = _build_balance_ledger()
+
+    total_in_all = sum(e['amount'] for e in all_entries if e['type'] == 'in')
+    total_out_all = sum(e['amount'] for e in all_entries if e['type'] == 'out')
+    current_balance = total_in_all - total_out_all
+
+    def _matches_period(d):
+        if view_mode == 'day':
+            return d == filter_value
+        return (d or '').startswith(filter_value)
+
+    period_entries = [e for e in all_entries if _matches_period(e['date'])]
+    prior_entries = [e for e in all_entries if e['date'] < filter_value]
+
+    starting_balance = prior_entries[-1]['running_balance'] if prior_entries else 0
+    ending_balance = period_entries[-1]['running_balance'] if period_entries else starting_balance
+
+    period_in = sum(e['amount'] for e in period_entries if e['type'] == 'in')
+    period_out = sum(e['amount'] for e in period_entries if e['type'] == 'out')
+
+    entries_desc = list(reversed(period_entries))  # newest first for display
+
+    db.session.remove()
+    return render_template(
+        'balance.html', active_page='balance',
+        is_staff=is_staff, can_add_funding=can_add_funding,
+        view_mode=view_mode, selected_day=selected_day, selected_month=selected_month,
+        selected_year=selected_year, available_years=_available_years_for_balance(),
+        total_in_all=total_in_all, total_out_all=total_out_all, current_balance=current_balance,
+        period_in=period_in, period_out=period_out,
+        starting_balance=starting_balance, ending_balance=ending_balance,
+        entries=entries_desc,
+        filter_action=url_for('balance_view')
+    )
+
+@app.route('/balance/add_funding', methods=['POST'])
+@login_required
+def add_staff_funding():
+    date = request.form.get('date') or get_myanmar_now().strftime('%Y-%m-%d')
+    try:
+        amount = int(request.form.get('amount') or 0)
+    except (ValueError, TypeError):
+        amount = 0
+    remarks = (request.form.get('remarks') or '').strip()
+
+    funding = StaffFunding(date=date, amount=amount, remarks=remarks, recorded_by_role=session.get('role', ''))
+    db.session.add(funding)
+    db.session.commit()
+    db.session.remove()
+    flash('款项已记录。/ Funding recorded.')
+    return redirect(url_for('balance_view'))
+
+@app.route('/balance/edit_funding/<int:funding_id>', methods=['POST'])
+@login_required
+def edit_staff_funding(funding_id):
+    funding = StaffFunding.query.get_or_404(funding_id)
+    funding.date = request.form.get('date') or funding.date
+    try:
+        funding.amount = int(request.form.get('amount') or 0)
+    except (ValueError, TypeError):
+        pass
+    funding.remarks = (request.form.get('remarks') or '').strip()
+    db.session.commit()
+    db.session.remove()
+    flash('记录已更新。/ Funding updated.')
+    return redirect(url_for('balance_view'))
+
+@app.route('/balance/delete_funding/<int:funding_id>', methods=['GET', 'POST'])
+@login_required
+def delete_staff_funding(funding_id):
+    funding = StaffFunding.query.get_or_404(funding_id)
+    try:
+        db.session.delete(funding)
+        db.session.commit()
+        flash('记录已删除。/ Funding deleted.')
+    except Exception as e:
+        db.session.rollback()
+        print("DELETE FUNDING ERROR:", e)
+        flash('删除失败，请重试。/ Failed to delete.', 'error')
+    finally:
+        db.session.remove()
+    return redirect(url_for('balance_view'))
     
 @app.route('/health')
 def health():
