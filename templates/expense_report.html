@@ -14,7 +14,6 @@
         <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <form method="GET" action="{{ filter_action }}" id="erFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
                 <input type="hidden" name="view" id="erViewModeInput" value="{{ view_mode }}">
-                <input type="hidden" name="date_basis" id="erDateBasisInput" value="{{ date_basis }}">
 
                 <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                     <button type="button" onclick="erSetViewMode('day')"
@@ -49,13 +48,6 @@
                     </button>
                 </div>
             </form>
-
-            <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider w-full sm:w-auto">
-                <button type="button" id="erBasisOrderBtn" onclick="erSetDateBasis('order')"
-                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all {% if date_basis != 'paid' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">按订单日期</button>
-                <button type="button" id="erBasisPaidBtn" onclick="erSetDateBasis('paid')"
-                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all {% if date_basis == 'paid' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">按付款日期</button>
-            </div>
         </div>
     </header>
 
@@ -67,7 +59,7 @@
                 <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_revenue) }}</span>
                 <span class="text-xs font-semibold text-stone-400">MMK</span>
             </div>
-            <p class="text-[10px] text-stone-400">蛋糕销售总额，不含车费 · {{ '按付款日期' if date_basis == 'paid' else '按订单日期' }}</p>
+            <p class="text-[10px] text-stone-400">蛋糕销售总额，不含车费</p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2">
@@ -302,11 +294,6 @@ function erSetViewMode(mode) {
     document.getElementById('erDayPicker').classList.toggle('hidden', mode !== 'day');
     document.getElementById('erMonthPicker').classList.toggle('hidden', mode !== 'month');
     document.getElementById('erYearPicker').classList.toggle('hidden', mode !== 'year');
-    document.getElementById('erFilterForm').submit();
-}
-
-function erSetDateBasis(basis) {
-    document.getElementById('erDateBasisInput').value = basis;
     document.getElementById('erFilterForm').submit();
 }
 
