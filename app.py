@@ -128,6 +128,14 @@ class Expense(db.Model):
     category = db.relationship('ExpenseCategory')
     subcategory = db.relationship('ExpenseSubCategory')
 
+class StaffFunding(db.Model):
+    __tablename__ = 'staff_fundings'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(50), nullable=False, default=lambda: get_myanmar_now().strftime('%Y-%m-%d'))
+    amount = db.Column(db.Integer, nullable=False, default=0)
+    remarks = db.Column(db.Text, default='')
+    recorded_by_role = db.Column(db.String(20), default='')
+    created_at = db.Column(db.DateTime, default=lambda: get_myanmar_now().replace(tzinfo=None))
 # ==========================================
 # AUTHENTICATION DECORATORS
 # ==========================================
