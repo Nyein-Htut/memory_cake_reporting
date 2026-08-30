@@ -1689,7 +1689,7 @@ def expenses_view():
     default_view = 'day' if is_staff else 'month'
     view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters(default_view)
 
-        query = Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory))
+    query = Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory))
     if view_mode == 'day' and filter_value:
         query = query.filter(Expense.date == filter_value)
     elif view_mode in ('month', 'year') and filter_value:
