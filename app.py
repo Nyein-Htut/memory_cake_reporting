@@ -1881,28 +1881,15 @@ def expense_report():
     db.session.remove()
 
     view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters('month')
-    date_basis = (request.args.get('date_basis') or 'order').strip()
-    if date_basis not in ('order', 'paid'):
-        date_basis = 'order'
 
     # ---- Revenue: cake price totals only (no delivery fee) ----
-    if date_basis == 'paid':
-        revenue_q = _apply_period_filter(Order.query, Order.payment_date, view_mode, filter_value).filter(Order.is_paid == True)
-    else:
-        revenue_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
+    revenue_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
     total_revenue = revenue_q.with_entities(db.func.sum(Order.total_price)).scalar() or 0
 
-    # ---- Delivery fee income collected from orders (same period/basis as revenue) ----
-    if date_basis == 'paid':
-        fee_orders_q = _apply_period_filter(Order.query, Order.payment_date, view_mode, filter_value).filter(Order.is_paid == True)
-    else:
-        fee_orders_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
+    # ---- Delivery fee income collected from orders (same period as revenue) ----
+    fee_orders_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
     total_delivery_fee_income = sum(_parse_fee_amount(o.delivery_fee) for o in fee_orders_q.all())
-
     # ---- Expenses grouped by category -> subcategory ----
-    # Categories flagged (flag == 1, i.e. 车费) are pulled out of the normal
-    # expense totals/breakdown entirely — they're accounted for separately
-    # via the delivery-fee-net calculation below instead.
     expenses_q = _apply_period_filter(
         Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory)),
         Expense.date, view_mode, filter_value
