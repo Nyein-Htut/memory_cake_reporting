@@ -1877,13 +1877,30 @@ def expense_report():
         revenue_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
     total_revenue = revenue_q.with_entities(db.func.sum(Order.total_price)).scalar() or 0
 
+    # ---- Delivery fee income collected from orders (same period/basis as revenue) ----
+    if date_basis == 'paid':
+        fee_orders_q = _apply_period_filter(Order.query, Order.payment_date, view_mode, filter_value).filter(Order.is_paid == True)
+    else:
+        fee_orders_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
+    total_delivery_fee_income = sum(_parse_fee_amount(o.delivery_fee) for o in fee_orders_q.all())
+
     # ---- Expenses grouped by category -> subcategory ----
+    # Categories flagged (flag == 1, i.e. 车费) are pulled out of the normal
+    # expense totals/breakdown entirely — they're accounted for separately
+    # via the delivery-fee-net calculation below instead.
     expenses_q = _apply_period_filter(
         Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory)),
         Expense.date, view_mode, filter_value
     )
-    expenses = expenses_q.all()
-    total_expenses = sum(e.price for e in expenses)
+    all_expenses = expenses_q.all()
+
+    car_fee_expenses = [e for e in all_expenses if e.category and e.category.flag == 1]
+    expenses = [e for e in all_expenses if not (e.category and e.category.flag == 1)]
+
+    total_car_fee_expense = sum(e.price or 0 for e in car_fee_expenses)
+    net_delivery = total_delivery_fee_income - total_car_fee_expense
+
+    total_expenses = sum(e.price or 0 for e in expenses)
     net_profit = total_revenue - total_expenses
 
     cat_map = {}
@@ -1945,9 +1962,13 @@ def expense_report():
         total_revenue=total_revenue,
         total_expenses=total_expenses,
         net_profit=net_profit,
+        total_delivery_fee_income=total_delivery_fee_income,
+        total_car_fee_expense=total_car_fee_expense,
+        net_delivery=net_delivery,
         category_breakdown=category_breakdown,
         filter_action=url_for('expense_report')
     )
+    
 @app.route('/health')
 def health():
     return "OK", 200
