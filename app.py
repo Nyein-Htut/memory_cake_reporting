@@ -94,6 +94,39 @@ class OrderItem(db.Model):
     image_url = db.Column(db.Text, default='')
     flower_image_url = db.Column(db.Text, default='')
 
+class ExpenseCategory(db.Model):
+    __tablename__ = 'expense_categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name_zh = db.Column(db.String(100), nullable=False)   # shown to managers
+    name_mm = db.Column(db.String(100), nullable=False)   # shown to staff
+    created_at = db.Column(db.DateTime, default=lambda: get_myanmar_now().replace(tzinfo=None))
+    subcategories = db.relationship(
+        'ExpenseSubCategory',
+        backref='category',
+        cascade="all, delete-orphan",
+        lazy='selectin',
+        order_by='ExpenseSubCategory.id'
+    )
+
+class ExpenseSubCategory(db.Model):
+    __tablename__ = 'expense_subcategories'
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('expense_categories.id'), nullable=False)
+    name_zh = db.Column(db.String(100), nullable=False)
+    name_mm = db.Column(db.String(100), nullable=False)
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(50), nullable=False, default=lambda: get_myanmar_now().strftime('%Y-%m-%d'))
+    category_id = db.Column(db.Integer, db.ForeignKey('expense_categories.id'), nullable=True)
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('expense_subcategories.id'), nullable=True)
+    remarks = db.Column(db.Text, default='')
+    price = db.Column(db.Integer, nullable=False, default=0)
+    created_by_role = db.Column(db.String(20), default='')
+    category = db.relationship('ExpenseCategory')
+    subcategory = db.relationship('ExpenseSubCategory')
+
 # ==========================================
 # AUTHENTICATION DECORATORS
 # ==========================================
@@ -1205,6 +1238,17 @@ def test_upload_form():
 @manager_required
 def run_migration():
     results = []
+
+    # Ensures any brand-new tables defined as SQLAlchemy models (e.g. the
+    # expense_categories / expense_subcategories / expenses tables) get
+    # created. This is a no-op for tables that already exist, so it's safe
+    # to run alongside the column-level ALTER TABLE migration below.
+    try:
+        db.create_all()
+        results.append("Ensured all model tables exist (db.create_all).")
+    except Exception as e:
+        results.append(f"db.create_all() error: {e}")
+
     with db.engine.connect() as conn:
         from sqlalchemy import text
         for col, col_type, default in [
@@ -1581,6 +1625,157 @@ def api_income_data():
     }
     db.session.remove()
     return jsonify(payload)
+
+# ==========================================
+# EXPENSES
+# ==========================================
+def _available_years_for_expenses():
+    years = sorted({
+        r[0][:4]
+        for r in Expense.query.with_entities(Expense.date).distinct().all()
+        if r[0] and len(r[0]) >= 4
+    }, reverse=True)
+    return years or [get_myanmar_now().strftime('%Y')]
+
+def _serialize_categories():
+    """Returns (categories_json_ready_list, category_model_objects). Kept
+    together so the template can render from the ORM objects (for
+    server-rendered bilingual labels) while the same data also ships to
+    the page as JSON for the add-expense form's category -> subcategory
+    cascading select."""
+    cats = ExpenseCategory.query.order_by(ExpenseCategory.name_zh).all()
+    serialized = [
+        {
+            'id': c.id,
+            'name_zh': c.name_zh,
+            'name_mm': c.name_mm,
+            'subcategories': [
+                {'id': s.id, 'name_zh': s.name_zh, 'name_mm': s.name_mm}
+                for s in c.subcategories
+            ]
+        }
+        for c in cats
+    ]
+    return serialized, cats
+
+@app.route('/expenses')
+@login_required
+def expenses_view():
+    db.session.remove()
+
+    is_staff = session.get('role') == 'staff'
+    default_view = 'day' if is_staff else 'month'
+    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters(default_view)
+
+    query = Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory))
+    if view_mode == 'day' and filter_value:
+        query = query.filter(Expense.date == filter_value)
+    elif view_mode in ('month', 'year') and filter_value:
+        query = query.filter(Expense.date.like(f"{filter_value}%"))
+
+    expenses = query.order_by(Expense.date.desc(), Expense.id.desc()).all()
+
+    groups = {}
+    for e in expenses:
+        groups.setdefault(e.date, []).append(e)
+
+    expenses_by_day = []
+    for date in sorted(groups.keys(), reverse=True):
+        day_exps = groups[date]
+        expenses_by_day.append({
+            'date': date,
+            'date_display': _format_date_display(date),
+            'expenses': day_exps,
+            'count': len(day_exps),
+            'day_total': sum(e.price for e in day_exps),
+        })
+
+    total_expenses = len(expenses)
+    total_amount = sum(e.price for e in expenses)
+
+    categories_json, categories = _serialize_categories()
+
+    db.session.remove()
+    return render_template(
+        'expenses.html', active_page='expenses', readonly=is_staff,
+        expenses_by_day=expenses_by_day, categories=categories, categories_json=categories_json,
+        view_mode=view_mode, selected_day=selected_day, selected_month=selected_month,
+        selected_year=selected_year, available_years=_available_years_for_expenses(),
+        total_expenses=total_expenses, total_amount=total_amount,
+        filter_action=url_for('expenses_view')
+    )
+
+@app.route('/expenses/add_category', methods=['POST'])
+@manager_required
+def add_expense_category():
+    name_zh = (request.form.get('name_zh') or '').strip()
+    name_mm = (request.form.get('name_mm') or '').strip()
+    if name_zh and name_mm:
+        db.session.add(ExpenseCategory(name_zh=name_zh, name_mm=name_mm))
+        db.session.commit()
+        flash('类别已添加。/ Category added.')
+    else:
+        flash('请填写中文和缅甸文名称。/ Please fill in both languages.', 'error')
+    db.session.remove()
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/add_subcategory', methods=['POST'])
+@manager_required
+def add_expense_subcategory():
+    category_id = request.form.get('category_id')
+    name_zh = (request.form.get('name_zh') or '').strip()
+    name_mm = (request.form.get('name_mm') or '').strip()
+    category = ExpenseCategory.query.get(category_id) if category_id else None
+    if category and name_zh and name_mm:
+        db.session.add(ExpenseSubCategory(category_id=category.id, name_zh=name_zh, name_mm=name_mm))
+        db.session.commit()
+        flash('子类别已添加。/ Sub-category added.')
+    else:
+        flash('请选择类别并填写中文和缅甸文名称。/ Please choose a category and fill in both languages.', 'error')
+    db.session.remove()
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/add', methods=['POST'])
+@login_required
+def add_expense():
+    date = request.form.get('date') or get_myanmar_now().strftime('%Y-%m-%d')
+    category_id = request.form.get('category_id') or None
+    subcategory_id = request.form.get('subcategory_id') or None
+    remarks = (request.form.get('remarks') or '').strip()
+    try:
+        price = int(request.form.get('price') or 0)
+    except (ValueError, TypeError):
+        price = 0
+
+    expense = Expense(
+        date=date,
+        category_id=int(category_id) if category_id else None,
+        subcategory_id=int(subcategory_id) if subcategory_id else None,
+        remarks=remarks,
+        price=price,
+        created_by_role=session.get('role', '')
+    )
+    db.session.add(expense)
+    db.session.commit()
+    db.session.remove()
+    flash('支出已记录。/ Expense recorded.')
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/delete/<int:expense_id>', methods=['GET', 'POST'])
+@login_required
+def delete_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    try:
+        db.session.delete(expense)
+        db.session.commit()
+        flash('支出记录已删除。/ Expense deleted.')
+    except Exception as e:
+        db.session.rollback()
+        print("DELETE EXPENSE ERROR:", e)
+        flash('删除失败，请重试。/ Failed to delete expense.', 'error')
+    finally:
+        db.session.remove()
+    return redirect(url_for('expenses_view'))
 
 @app.route('/health')
 def health():
