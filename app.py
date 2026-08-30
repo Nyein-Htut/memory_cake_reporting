@@ -1735,6 +1735,79 @@ def add_expense_subcategory():
     db.session.remove()
     return redirect(url_for('expenses_view'))
 
+@app.route('/expenses/edit_category/<int:category_id>', methods=['POST'])
+@manager_required
+def edit_expense_category(category_id):
+    category = ExpenseCategory.query.get_or_404(category_id)
+    name_zh = (request.form.get('name_zh') or '').strip()
+    name_mm = (request.form.get('name_mm') or '').strip()
+    if name_zh and name_mm:
+        category.name_zh = name_zh
+        category.name_mm = name_mm
+        db.session.commit()
+        flash('类别已更新。/ Category updated.')
+    else:
+        flash('请填写中文和缅甸文名称。/ Please fill in both languages.', 'error')
+    db.session.remove()
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/delete_category/<int:category_id>', methods=['GET', 'POST'])
+@manager_required
+def delete_expense_category(category_id):
+    """Deletes a category (and, via ORM cascade, its subcategories). Any
+    existing Expense rows pointing at this category or its subcategories
+    are un-linked first (set to NULL) rather than blocked or cascade-deleted
+    — past expense records should survive a category clean-up."""
+    category = ExpenseCategory.query.options(joinedload(ExpenseCategory.subcategories)).get_or_404(category_id)
+    try:
+        sub_ids = [s.id for s in category.subcategories]
+        Expense.query.filter(Expense.category_id == category.id).update({'category_id': None}, synchronize_session=False)
+        if sub_ids:
+            Expense.query.filter(Expense.subcategory_id.in_(sub_ids)).update({'subcategory_id': None}, synchronize_session=False)
+        db.session.delete(category)
+        db.session.commit()
+        flash('类别已删除。/ Category deleted.')
+    except Exception as e:
+        db.session.rollback()
+        print("DELETE EXPENSE CATEGORY ERROR:", e)
+        flash('删除失败，请重试。/ Failed to delete category.', 'error')
+    finally:
+        db.session.remove()
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/edit_subcategory/<int:subcategory_id>', methods=['POST'])
+@manager_required
+def edit_expense_subcategory(subcategory_id):
+    sub = ExpenseSubCategory.query.get_or_404(subcategory_id)
+    name_zh = (request.form.get('name_zh') or '').strip()
+    name_mm = (request.form.get('name_mm') or '').strip()
+    if name_zh and name_mm:
+        sub.name_zh = name_zh
+        sub.name_mm = name_mm
+        db.session.commit()
+        flash('子类别已更新。/ Sub-category updated.')
+    else:
+        flash('请填写中文和缅甸文名称。/ Please fill in both languages.', 'error')
+    db.session.remove()
+    return redirect(url_for('expenses_view'))
+
+@app.route('/expenses/delete_subcategory/<int:subcategory_id>', methods=['GET', 'POST'])
+@manager_required
+def delete_expense_subcategory(subcategory_id):
+    sub = ExpenseSubCategory.query.get_or_404(subcategory_id)
+    try:
+        Expense.query.filter(Expense.subcategory_id == sub.id).update({'subcategory_id': None}, synchronize_session=False)
+        db.session.delete(sub)
+        db.session.commit()
+        flash('子类别已删除。/ Sub-category deleted.')
+    except Exception as e:
+        db.session.rollback()
+        print("DELETE EXPENSE SUBCATEGORY ERROR:", e)
+        flash('删除失败，请重试。/ Failed to delete sub-category.', 'error')
+    finally:
+        db.session.remove()
+    return redirect(url_for('expenses_view'))
+
 @app.route('/expenses/add', methods=['POST'])
 @login_required
 def add_expense():
