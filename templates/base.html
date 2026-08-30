@@ -3319,20 +3319,18 @@ async function mcCompressAndSubmit(form) {
 </script>
 <body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
 
-    {% if request.endpoint != 'login' %}
+{% if request.endpoint != 'login' %}
 
 <!-- =========================================================
-     MEMORY CAKE — TOP NAVIGATION
+     MEMORY CAKE TOP NAV
      ========================================================= -->
 
 <nav class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
-
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-center justify-between h-20 sm:h-24">
 
-            <!-- ================= BRAND ================= -->
-
+            <!-- BRAND -->
             <div class="flex items-center gap-3">
 
                 <img
@@ -3361,12 +3359,10 @@ async function mcCompressAndSubmit(form) {
             </div>
 
 
-            <!-- ================= HAMBURGER ================= -->
-
+            <!-- HAMBURGER -->
             <button
                 type="button"
                 id="navHamburgerBtn"
-                onclick="openNavDrawer()"
                 class="nav-hamburger-btn"
                 aria-label="Open navigation"
                 aria-expanded="false"
@@ -3389,24 +3385,21 @@ async function mcCompressAndSubmit(form) {
         </div>
 
     </div>
-
 </nav>
 
 
 
 <!-- =========================================================
-     FLOATING NAVIGATION OVERLAY
+     FLOATING MENU OVERLAY
      ========================================================= -->
 
 <div
     class="nav-drawer-overlay"
     id="navDrawerOverlay"
-    onclick="if(event.target === this) closeNavDrawer()"
 >
 
-
     <!-- =====================================================
-         FLOATING MENU CARD
+         FLOATING MENU
          ===================================================== -->
 
     <div
@@ -3417,25 +3410,21 @@ async function mcCompressAndSubmit(form) {
         aria-label="Memory Cake navigation"
     >
 
-
-        <!-- =================================================
-             HEADER
-             ================================================= -->
-
+        <!-- HEADER -->
         <div class="nav-drawer-header">
 
             <div>
 
-                <!-- Brand -->
                 <div class="nav-drawer-header-title">
                     Memory Cake
                 </div>
 
+                <span class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}">
 
-                <!-- Role -->
-                <span
-                    class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}"
-                >
+                    <span
+                        class="w-1.5 h-1.5 rounded-full {% if session.get('role') == 'staff' %}bg-blue-500{% else %}bg-emerald-500{% endif %}"
+                        style="display:inline-block;"
+                    ></span>
 
                     {% if session.get('role') == 'staff' %}
                         Staff
@@ -3448,12 +3437,12 @@ async function mcCompressAndSubmit(form) {
             </div>
 
 
-            <!-- Close -->
+            <!-- CLOSE -->
             <button
                 type="button"
+                id="navDrawerCloseBtn"
                 class="nav-drawer-close-btn"
-                onclick="closeNavDrawer()"
-                aria-label="Close menu"
+                aria-label="Close navigation"
             >
 
                 <svg
@@ -3476,23 +3465,20 @@ async function mcCompressAndSubmit(form) {
 
 
         <!-- =================================================
-             NAVIGATION ITEMS
+             MENU ITEMS
              ================================================= -->
 
         <div class="nav-drawer-body">
 
-
             {% if session.get('role') == 'staff' %}
 
 
-            <!-- ================= STAFF ================= -->
-
+            <!-- STAFF DAILY -->
             <a
                 href="/staff"
                 class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3510,12 +3496,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
+            <!-- STAFF EXPENSES -->
             <a
                 href="/expenses"
                 class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3533,12 +3519,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
+            <!-- STAFF BALANCE -->
             <a
                 href="/balance"
                 class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3565,15 +3551,12 @@ async function mcCompressAndSubmit(form) {
                  MANAGER
                  ================================================= -->
 
-
-            <!-- ================= DAILY ================= -->
-
+            <!-- DAILY -->
             <a
                 href="/"
                 class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3591,15 +3574,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
-
-            <!-- ================= INCOME ================= -->
-
+            <!-- INCOME -->
             <a
                 href="/income"
                 class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3618,15 +3598,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
-
-            <!-- ================= EXPENSES ================= -->
-
+            <!-- EXPENSES -->
             <a
                 href="/expenses"
                 class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3644,15 +3621,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
-
-            <!-- ================= EXPENSE REPORT ================= -->
-
+            <!-- EXPENSE REPORT -->
             <a
                 href="/expense_report"
                 class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3670,15 +3644,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
-
-            <!-- ================= BALANCE ================= -->
-
+            <!-- BALANCE -->
             <a
                 href="/balance"
                 class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3698,15 +3669,12 @@ async function mcCompressAndSubmit(form) {
             </a>
 
 
-
-            <!-- ================= MONTHLY ================= -->
-
+            <!-- MONTHLY -->
             <a
                 href="/monthly"
                 class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3736,10 +3704,10 @@ async function mcCompressAndSubmit(form) {
 
         <div class="nav-drawer-footer">
 
-
-            <!-- ================= STATUS ================= -->
-
+            <!-- STATUS -->
             <div class="nav-drawer-status">
+
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
 
                 {% if session.get('role') == 'staff' %}
                     ချိတ်ဆက်ပြီး
@@ -3750,15 +3718,12 @@ async function mcCompressAndSubmit(form) {
             </div>
 
 
-
-            <!-- ================= LOGOUT ================= -->
-
+            <!-- LOGOUT -->
             <a
                 href="/logout"
                 class="nav-drawer-link logout-link"
             >
 
-                <!-- CURRENT ICON — UNCHANGED -->
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -3789,143 +3754,157 @@ async function mcCompressAndSubmit(form) {
 
 
 <!-- =========================================================
-     NAVIGATION JAVASCRIPT
+     JAVASCRIPT
      ========================================================= -->
 
 <script>
 
-function openNavDrawer() {
+(function () {
 
-    const overlay = document.getElementById('navDrawerOverlay');
     const hamburger = document.getElementById('navHamburgerBtn');
+    const overlay = document.getElementById('navDrawerOverlay');
+    const drawer = document.getElementById('navDrawer');
+    const closeBtn = document.getElementById('navDrawerCloseBtn');
 
-    if (!overlay) return;
+    if (!hamburger || !overlay || !drawer) {
+        return;
+    }
 
-    overlay.classList.add('active');
 
-    if (hamburger) {
+    /* =====================================================
+       OPEN
+       ===================================================== */
+
+    function openMenu() {
+
+        overlay.classList.add('active');
+
         hamburger.classList.add('is-open');
+
         hamburger.setAttribute('aria-expanded', 'true');
-        hamburger.setAttribute('aria-label', 'Close navigation');
-    }
 
-    /*
-     * Keep the page from scrolling behind the menu.
-     * Uses your existing helper if available.
-     */
-    if (typeof wpLockBody === 'function') {
-        wpLockBody();
-    } else {
-        document.body.style.overflow = 'hidden';
-    }
-}
+        hamburger.setAttribute(
+            'aria-label',
+            'Close navigation'
+        );
 
-
-function closeNavDrawer() {
-
-    const overlay = document.getElementById('navDrawerOverlay');
-    const hamburger = document.getElementById('navHamburgerBtn');
-
-    if (!overlay) return;
-
-    overlay.classList.remove('active');
-
-    if (hamburger) {
-        hamburger.classList.remove('is-open');
-        hamburger.setAttribute('aria-expanded', 'false');
-        hamburger.setAttribute('aria-label', 'Open navigation');
-    }
-
-    /*
-     * Restore page scrolling.
-     */
-    if (typeof wpUnlockBody === 'function') {
-        wpUnlockBody();
-    } else {
-        document.body.style.overflow = '';
-    }
-}
-
-
-/* =========================================================
-   ESC KEY
-   ========================================================= */
-
-document.addEventListener('keydown', function(e) {
-
-    if (e.key === 'Escape') {
-
-        const overlay =
-            document.getElementById('navDrawerOverlay');
-
-        if (
-            overlay &&
-            overlay.classList.contains('active')
-        ) {
-            closeNavDrawer();
+        if (typeof wpLockBody === 'function') {
+            wpLockBody();
+        } else {
+            document.body.style.overflow = 'hidden';
         }
 
     }
 
-});
 
+    /* =====================================================
+       CLOSE
+       ===================================================== */
 
-/* =========================================================
-   HAMBURGER TOGGLE
-   ========================================================= */
+    function closeMenu() {
 
-document.addEventListener('DOMContentLoaded', function() {
+        overlay.classList.remove('active');
 
-    const hamburger =
-        document.getElementById('navHamburgerBtn');
+        hamburger.classList.remove('is-open');
 
-    if (!hamburger) return;
+        hamburger.setAttribute('aria-expanded', 'false');
 
-    hamburger.addEventListener('click', function() {
+        hamburger.setAttribute(
+            'aria-label',
+            'Open navigation'
+        );
 
-        const overlay =
-            document.getElementById('navDrawerOverlay');
-
-        if (
-            overlay &&
-            overlay.classList.contains('active')
-        ) {
-            closeNavDrawer();
+        if (typeof wpUnlockBody === 'function') {
+            wpUnlockBody();
         } else {
-            openNavDrawer();
+            document.body.style.overflow = '';
+        }
+
+    }
+
+
+    /* =====================================================
+       HAMBURGER
+       ===================================================== */
+
+    hamburger.addEventListener('click', function (e) {
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (overlay.classList.contains('active')) {
+            closeMenu();
+        } else {
+            openMenu();
         }
 
     });
 
-});
 
+    /* =====================================================
+       CLOSE BUTTON
+       ===================================================== */
 
-/* =========================================================
-   CLOSE WHEN CLICKING A NAVIGATION LINK
-   ========================================================= */
+    if (closeBtn) {
 
-document.addEventListener('click', function(e) {
+        closeBtn.addEventListener('click', function (e) {
 
-    const link =
-        e.target.closest('.nav-drawer-link');
+            e.preventDefault();
+            e.stopPropagation();
 
-    if (!link) return;
+            closeMenu();
 
-    /*
-     * Don't interfere with logout/navigation itself.
-     * Just close the visual menu before navigating.
-     */
-    const overlay =
-        document.getElementById('navDrawerOverlay');
+        });
 
-    if (
-        overlay &&
-        overlay.classList.contains('active')
-    ) {
-        closeNavDrawer();
     }
 
-});
+
+    /* =====================================================
+       CLICK OUTSIDE
+       ===================================================== */
+
+    overlay.addEventListener('click', function (e) {
+
+        if (e.target === overlay) {
+            closeMenu();
+        }
+
+    });
+
+
+    /* =====================================================
+       ESCAPE
+       ===================================================== */
+
+    document.addEventListener('keydown', function (e) {
+
+        if (
+            e.key === 'Escape' &&
+            overlay.classList.contains('active')
+        ) {
+            closeMenu();
+        }
+
+    });
+
+
+    /* =====================================================
+       NAVIGATION LINKS
+       ===================================================== */
+
+    drawer.addEventListener('click', function (e) {
+
+        const link = e.target.closest('.nav-drawer-link');
+
+        if (!link) {
+            return;
+        }
+
+        closeMenu();
+
+    });
+
+})();
 
 </script>
 
