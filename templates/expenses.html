@@ -19,29 +19,61 @@
     <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-5 space-y-4">
         <div class="flex justify-between items-center">
             <h2 class="text-sm font-bold text-stone-800 uppercase tracking-wider">支出类别管理</h2>
-            <button type="button" onclick="openAddCategoryModal()"
-                class="flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow-sm cursor-pointer">
-                <span class="text-base leading-none">➕</span> 添加类别
-            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openAddCategoryModal()"
+                    class="flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow-sm cursor-pointer">
+                    <span class="text-base leading-none">➕</span> 添加类别
+                </button>
+                <button type="button" id="categoryFoldToggle" onclick="toggleCategoryFold()"
+                    class="day-fold-toggle"
+                    style="position: static; box-shadow: 0 1px 3px rgba(0,0,0,.12);"
+                    title="展开 / 折叠类别列表 (Expand / Collapse)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
-        <div class="space-y-3">
+        <div class="space-y-3" id="categoryListWrap">
             {% for cat in categories %}
-            <div class="border border-stone-200 rounded-xl p-3.5 bg-stone-50/40">
+            <div class="border border-stone-200 rounded-xl p-3.5 bg-stone-50/40" data-category-id="{{ cat.id }}">
                 <div class="flex justify-between items-center gap-3">
                     <span class="font-semibold text-stone-900 text-sm">
                         {{ cat.name_zh }} <span class="text-stone-400 font-normal text-xs">({{ cat.name_mm }})</span>
                     </span>
-                    <button type="button" onclick="openAddSubcategoryModal('{{ cat.id }}', {{ cat.name_zh|tojson }})"
-                        class="shrink-0 text-xs text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer whitespace-nowrap">
-                        ➕ 添加子类别
-                    </button>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" class="cat-add-sub-btn text-xs text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer whitespace-nowrap"
+                            data-cat-id="{{ cat.id }}" data-cat-label="{{ cat.name_zh }}">
+                            ➕ 子类别
+                        </button>
+                        <button type="button" class="cat-edit-btn text-sm text-stone-500 hover:text-stone-800 cursor-pointer"
+                            data-cat-id="{{ cat.id }}" data-cat-zh="{{ cat.name_zh }}" data-cat-mm="{{ cat.name_mm }}"
+                            title="编辑类别 (Edit)">
+                            ✏️
+                        </button>
+                        <button type="button" class="cat-delete-btn text-sm text-rose-500 hover:text-rose-700 cursor-pointer"
+                            data-cat-id="{{ cat.id }}" data-cat-zh="{{ cat.name_zh }}"
+                            title="删除类别 (Delete)">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
                 {% if cat.subcategories %}
                 <div class="flex flex-wrap gap-1.5 mt-2.5">
                     {% for sub in cat.subcategories %}
-                    <span class="inline-block bg-white border border-stone-200 text-stone-600 text-[11px] px-2.5 py-1 rounded-full">
-                        {{ sub.name_zh }} <span class="text-stone-400">({{ sub.name_mm }})</span>
+                    <span class="inline-flex items-center gap-1.5 bg-white border border-stone-200 text-stone-600 text-[11px] px-2.5 py-1 rounded-full">
+                        <span>{{ sub.name_zh }} <span class="text-stone-400">({{ sub.name_mm }})</span></span>
+                        <button type="button" class="sub-edit-btn text-stone-400 hover:text-stone-700 cursor-pointer leading-none"
+                            data-sub-id="{{ sub.id }}" data-sub-zh="{{ sub.name_zh }}" data-sub-mm="{{ sub.name_mm }}"
+                            title="编辑子类别 (Edit)">
+                            ✏️
+                        </button>
+                        <button type="button" class="sub-delete-btn text-rose-400 hover:text-rose-700 cursor-pointer font-bold leading-none"
+                            data-sub-id="{{ sub.id }}" data-sub-zh="{{ sub.name_zh }}"
+                            title="删除子类别 (Delete)">
+                            ✕
+                        </button>
                     </span>
                     {% endfor %}
                 </div>
@@ -164,27 +196,27 @@
             </h3>
             <button type="button" onclick="closeAddExpenseModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
         </div>
-        <form method="POST" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto">
+        <form method="POST" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto" onsubmit="return validateExpenseForm(event)">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}အမျိုးအစား{% else %}主类别{% endif %}
                 </label>
-                <select name="category_id" id="expCategorySelect" onchange="updateExpSubcategoryOptions()" required
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:border-stone-950">
-                    <option value="">{% if readonly %}ရွေးပါ{% else %}请选择{% endif %}</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name_mm if readonly else cat.name_zh }}</option>
-                    {% endfor %}
-                </select>
+                <input type="hidden" name="category_id" id="expCategoryHidden" value="">
+                <button type="button" id="expCategoryTriggerBtn" class="wp-trigger wp-empty text-sm p-3 w-full" onclick="openExpCategoryPicker()">
+                    <span>{% if readonly %}ရွေးပါ{% else %}请选择{% endif %}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}အမျိုးအစားခွဲ{% else %}子类别{% endif %}
                 </label>
-                <select name="subcategory_id" id="expSubcategorySelect"
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:border-stone-950">
-                    <option value="">{% if readonly %}မရှိပါ{% else %}无 / 不需要{% endif %}</option>
-                </select>
+                <input type="hidden" name="subcategory_id" id="expSubcategoryHidden" value="">
+                <button type="button" id="expSubcategoryTriggerBtn" disabled
+                    class="wp-trigger wp-empty text-sm p-3 w-full opacity-50 cursor-not-allowed" onclick="openExpSubcategoryPicker()">
+                    <span>{% if readonly %}အရင်ဆုံး အမျိုးအစား ရွေးပါ{% else %}请先选择主类别{% endif %}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
@@ -234,27 +266,33 @@
 </button>
 
 {% if not readonly %}
-<!-- ==================== ADD CATEGORY / SUBCATEGORY (manager only) ==================== -->
+<!-- ==================== ADD / EDIT CATEGORY (manager only) ==================== -->
 <div id="addCategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
         <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
-            <h3 class="text-base font-bold text-stone-900">添加支出类别</h3>
+            <h3 class="text-base font-bold text-stone-900" id="categoryModalTitleText">添加支出类别</h3>
             <button type="button" onclick="closeAddCategoryModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
         </div>
-        <form method="POST" action="/expenses/add_category" class="p-6 space-y-4 text-sm">
+        <form method="POST" id="categoryForm" action="/expenses/add_category" class="p-6 space-y-4 text-sm">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="categoryNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="categoryNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="closeAddCategoryModal()"
-                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
-                <button type="submit"
-                    class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+            <div class="flex justify-between items-center gap-3 pt-2">
+                <button type="button" id="categoryDeleteBtn" onclick="deleteCategoryFromModal()"
+                    class="hidden text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer whitespace-nowrap">
+                    🗑️ 删除此类别
+                </button>
+                <div class="flex justify-end gap-3 flex-1">
+                    <button type="button" onclick="closeAddCategoryModal()"
+                        class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                    <button type="submit"
+                        class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+                </div>
             </div>
         </form>
     </div>
@@ -263,24 +301,33 @@
 <div id="addSubcategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
         <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
-            <h3 class="text-base font-bold text-stone-900">添加子类别 <span id="subcatParentLabel" class="text-stone-400 font-normal text-xs"></span></h3>
+            <h3 class="text-base font-bold text-stone-900">
+                <span id="subcategoryModalTitleText">添加子类别</span>
+                <span id="subcatParentLabel" class="text-stone-400 font-normal text-xs"></span>
+            </h3>
             <button type="button" onclick="closeAddSubcategoryModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
         </div>
-        <form method="POST" action="/expenses/add_subcategory" class="p-6 space-y-4 text-sm">
+        <form method="POST" id="subcategoryForm" action="/expenses/add_subcategory" class="p-6 space-y-4 text-sm">
             <input type="hidden" name="category_id" id="subcatCategoryIdInput" value="">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="subcatNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="subcatNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="closeAddSubcategoryModal()"
-                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
-                <button type="submit"
-                    class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+            <div class="flex justify-between items-center gap-3 pt-2">
+                <button type="button" id="subcategoryDeleteBtn" onclick="deleteSubcategoryFromModal()"
+                    class="hidden text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer whitespace-nowrap">
+                    🗑️ 删除此子类别
+                </button>
+                <div class="flex justify-end gap-3 flex-1">
+                    <button type="button" onclick="closeAddSubcategoryModal()"
+                        class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                    <button type="submit"
+                        class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+                </div>
             </div>
         </form>
     </div>
@@ -302,6 +349,20 @@ function openAddExpenseModal() {
         document.getElementById('expDateTriggerBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
         document.getElementById('expDateTriggerBtn').classList.remove('wp-empty');
     }
+
+    // Reset the category/subcategory pickers to a blank state every time
+    // the modal is (re)opened, so a stale selection from a previous entry
+    // never carries over silently.
+    const catBtn = document.getElementById('expCategoryTriggerBtn');
+    document.getElementById('expCategoryHidden').value = '';
+    catBtn.querySelector('span').textContent = EXP_READONLY ? 'ရွေးပါ' : '请选择';
+    catBtn.classList.add('wp-empty');
+
+    const subBtn = document.getElementById('expSubcategoryTriggerBtn');
+    document.getElementById('expSubcategoryHidden').value = '';
+    subBtn.disabled = true;
+    subBtn.classList.add('opacity-50', 'cursor-not-allowed', 'wp-empty');
+    subBtn.querySelector('span').textContent = EXP_READONLY ? 'အရင်ဆုံး အမျိုးအစား ရွေးပါ' : '请先选择主类别';
 }
 function closeAddExpenseModal() {
     const modal = document.getElementById('addExpenseModal');
@@ -311,6 +372,16 @@ function closeAddExpenseModal() {
 document.getElementById('addExpenseModal').addEventListener('click', function(e) {
     if (e.target === this) closeAddExpenseModal();
 });
+
+function validateExpenseForm(e) {
+    const catHidden = document.getElementById('expCategoryHidden');
+    if (!catHidden.value) {
+        e.preventDefault();
+        alert(EXP_READONLY ? 'အမျိုးအစား ရွေးပေးပါ (Please select a category)' : '请选择主类别 (Please select a category)');
+        return false;
+    }
+    return true;
+}
 
 function openExpDateEntryPicker() {
     const btn = document.getElementById('expDateTriggerBtn');
@@ -327,26 +398,152 @@ function openExpDateEntryPicker() {
     });
 }
 
-function updateExpSubcategoryOptions() {
-    const catId = document.getElementById('expCategorySelect').value;
-    const subSelect = document.getElementById('expSubcategorySelect');
-    subSelect.innerHTML = `<option value="">${EXP_READONLY ? 'မရှိပါ' : '无 / 不需要'}</option>`;
-    const cat = EXP_CATEGORIES.find(c => String(c.id) === String(catId));
-    if (cat) {
-        cat.subcategories.forEach(sub => {
-            const opt = document.createElement('option');
-            opt.value = sub.id;
-            opt.textContent = EXP_READONLY ? sub.name_mm : sub.name_zh;
-            subSelect.appendChild(opt);
-        });
+/* ===== Category / Subcategory pickers for the Add Expense form =====
+   Styled and behaved exactly like the order-source picker (the same
+   bottom-sheet + emerald "selected" state), instead of native <select>
+   dropdowns. Reuses the shared #wpSourceOverlay defined in base.html. */
+function openExpCategoryPicker() {
+    const btn = document.getElementById('expCategoryTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('expCategoryHidden');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = EXP_READONLY ? 'အမျိုးအစား ရွေးပါ (Select Category)' : '主类别选择 (Select Category)';
+
+    listEl.innerHTML = '';
+    if (!EXP_CATEGORIES.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-stone-400 italic py-2 px-1';
+        empty.textContent = EXP_READONLY ? 'အမျိုးအစား မရှိသေးပါ' : '暂无类别，请先添加类别。';
+        listEl.appendChild(empty);
     }
+    EXP_CATEGORIES.forEach((cat) => {
+        const label = EXP_READONLY ? cat.name_mm : cat.name_zh;
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (String(hidden.value) === String(cat.id) ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${label}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            hidden.value = cat.id;
+            span.textContent = label;
+            btn.classList.remove('wp-empty');
+            closeWheelOverlay('wpSourceOverlay');
+            resetExpSubcategoryPicker(cat.id);
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
+}
+
+function resetExpSubcategoryPicker(catId) {
+    const subBtn = document.getElementById('expSubcategoryTriggerBtn');
+    const subHidden = document.getElementById('expSubcategoryHidden');
+    subHidden.value = '';
+    subBtn.disabled = false;
+    subBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    subBtn.classList.add('wp-empty');
+    subBtn.querySelector('span').textContent = EXP_READONLY ? 'ရွေးပါ (မရှိလည်းရ)' : '请选择（可留空）';
+}
+
+function openExpSubcategoryPicker() {
+    const catId = document.getElementById('expCategoryHidden').value;
+    if (!catId) return;
+
+    const cat = EXP_CATEGORIES.find(c => String(c.id) === String(catId));
+    const btn = document.getElementById('expSubcategoryTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('expSubcategoryHidden');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = EXP_READONLY ? 'အမျိုးအစားခွဲ ရွေးပါ (Select Sub-category)' : '子类别选择 (Select Sub-category)';
+
+    const noneLabel = EXP_READONLY ? 'မရှိပါ' : '无 / 不需要';
+    listEl.innerHTML = '';
+
+    const noneItem = document.createElement('div');
+    noneItem.className = 'wp-source-item' + (!hidden.value ? ' wp-source-selected' : '');
+    noneItem.innerHTML = `<span>${noneLabel}</span><span class="wp-source-check">✓</span>`;
+    noneItem.addEventListener('click', () => {
+        hidden.value = '';
+        span.textContent = noneLabel;
+        btn.classList.add('wp-empty');
+        closeWheelOverlay('wpSourceOverlay');
+    });
+    listEl.appendChild(noneItem);
+
+    (cat ? cat.subcategories : []).forEach((sub) => {
+        const label = EXP_READONLY ? sub.name_mm : sub.name_zh;
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (String(hidden.value) === String(sub.id) ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${label}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            hidden.value = sub.id;
+            span.textContent = label;
+            btn.classList.remove('wp-empty');
+            closeWheelOverlay('wpSourceOverlay');
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
 }
 
 {% if not readonly %}
+/* ===== Category fold/unfold (collapsed by default) ===== */
+function toggleCategoryFold() {
+    const wrap = document.getElementById('categoryListWrap');
+    const btn = document.getElementById('categoryFoldToggle');
+    const nowFolded = wrap.classList.toggle('hidden');
+    btn.classList.toggle('all-folded', nowFolded);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const wrap = document.getElementById('categoryListWrap');
+    const btn = document.getElementById('categoryFoldToggle');
+    if (wrap && btn) {
+        wrap.classList.add('hidden');       // collapsed by default
+        btn.classList.add('all-folded');
+    }
+});
+
+/* ===== Add / Edit Category modal ===== */
 function openAddCategoryModal() {
+    document.getElementById('categoryModalTitleText').textContent = '添加支出类别';
+    document.getElementById('categoryForm').setAttribute('action', '/expenses/add_category');
+    document.getElementById('categoryNameZh').value = '';
+    document.getElementById('categoryNameMm').value = '';
+    const delBtn = document.getElementById('categoryDeleteBtn');
+    delBtn.classList.add('hidden');
+    delete delBtn.dataset.catId;
+    delete delBtn.dataset.catZh;
     const modal = document.getElementById('addCategoryModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+function openEditCategoryModal(catId, nameZh, nameMm) {
+    document.getElementById('categoryModalTitleText').textContent = '编辑支出类别';
+    document.getElementById('categoryForm').setAttribute('action', `/expenses/edit_category/${catId}`);
+    document.getElementById('categoryNameZh').value = nameZh || '';
+    document.getElementById('categoryNameMm').value = nameMm || '';
+    const delBtn = document.getElementById('categoryDeleteBtn');
+    delBtn.classList.remove('hidden');
+    delBtn.dataset.catId = catId;
+    delBtn.dataset.catZh = nameZh || '';
+    const modal = document.getElementById('addCategoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function deleteCategoryFromModal() {
+    const btn = document.getElementById('categoryDeleteBtn');
+    const catId = btn.dataset.catId;
+    if (!catId) return;
+    const zh = btn.dataset.catZh || '';
+    if (confirm(`确认删除类别"${zh}"吗？关联的支出记录会保留，但会失去类别标签。`)) {
+        window.location.href = `/expenses/delete_category/${catId}`;
+    }
 }
 function closeAddCategoryModal() {
     const modal = document.getElementById('addCategoryModal');
@@ -357,12 +554,45 @@ document.getElementById('addCategoryModal').addEventListener('click', function(e
     if (e.target === this) closeAddCategoryModal();
 });
 
+/* ===== Add / Edit Subcategory modal ===== */
 function openAddSubcategoryModal(catId, catLabel) {
-    document.getElementById('subcatCategoryIdInput').value = catId;
-    document.getElementById('subcatParentLabel').textContent = '(' + catLabel + ')';
+    document.getElementById('subcategoryModalTitleText').textContent = '添加子类别';
+    document.getElementById('subcatParentLabel').textContent = catLabel ? '(' + catLabel + ')' : '';
+    document.getElementById('subcategoryForm').setAttribute('action', '/expenses/add_subcategory');
+    document.getElementById('subcatCategoryIdInput').value = catId || '';
+    document.getElementById('subcatNameZh').value = '';
+    document.getElementById('subcatNameMm').value = '';
+    const delBtn = document.getElementById('subcategoryDeleteBtn');
+    delBtn.classList.add('hidden');
+    delete delBtn.dataset.subId;
+    delete delBtn.dataset.subZh;
     const modal = document.getElementById('addSubcategoryModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+function openEditSubcategoryModal(subId, nameZh, nameMm) {
+    document.getElementById('subcategoryModalTitleText').textContent = '编辑子类别';
+    document.getElementById('subcatParentLabel').textContent = '';
+    document.getElementById('subcategoryForm').setAttribute('action', `/expenses/edit_subcategory/${subId}`);
+    document.getElementById('subcatCategoryIdInput').value = '';
+    document.getElementById('subcatNameZh').value = nameZh || '';
+    document.getElementById('subcatNameMm').value = nameMm || '';
+    const delBtn = document.getElementById('subcategoryDeleteBtn');
+    delBtn.classList.remove('hidden');
+    delBtn.dataset.subId = subId;
+    delBtn.dataset.subZh = nameZh || '';
+    const modal = document.getElementById('addSubcategoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function deleteSubcategoryFromModal() {
+    const btn = document.getElementById('subcategoryDeleteBtn');
+    const subId = btn.dataset.subId;
+    if (!subId) return;
+    const zh = btn.dataset.subZh || '';
+    if (confirm(`确认删除子类别"${zh}"吗？`)) {
+        window.location.href = `/expenses/delete_subcategory/${subId}`;
+    }
 }
 function closeAddSubcategoryModal() {
     const modal = document.getElementById('addSubcategoryModal');
@@ -371,6 +601,43 @@ function closeAddSubcategoryModal() {
 }
 document.getElementById('addSubcategoryModal').addEventListener('click', function(e) {
     if (e.target === this) closeAddSubcategoryModal();
+});
+
+/* ===== Delegated click handling for every category/subcategory action
+   button (add sub / edit / delete). Using data-* attributes read via JS,
+   instead of inline onclick="...{{ jinja }}..." strings, means a category
+   or subcategory name can never accidentally break the button's markup —
+   this is also the fix for "can't click add subcategory". ===== */
+document.getElementById('categoryListWrap').addEventListener('click', function(e) {
+    const addSubBtn = e.target.closest('.cat-add-sub-btn');
+    if (addSubBtn) {
+        openAddSubcategoryModal(addSubBtn.dataset.catId, addSubBtn.dataset.catLabel);
+        return;
+    }
+    const editCatBtn = e.target.closest('.cat-edit-btn');
+    if (editCatBtn) {
+        openEditCategoryModal(editCatBtn.dataset.catId, editCatBtn.dataset.catZh, editCatBtn.dataset.catMm);
+        return;
+    }
+    const delCatBtn = e.target.closest('.cat-delete-btn');
+    if (delCatBtn) {
+        if (confirm(`确认删除类别"${delCatBtn.dataset.catZh}"吗？关联的支出记录会保留，但会失去类别标签。`)) {
+            window.location.href = `/expenses/delete_category/${delCatBtn.dataset.catId}`;
+        }
+        return;
+    }
+    const editSubBtn = e.target.closest('.sub-edit-btn');
+    if (editSubBtn) {
+        openEditSubcategoryModal(editSubBtn.dataset.subId, editSubBtn.dataset.subZh, editSubBtn.dataset.subMm);
+        return;
+    }
+    const delSubBtn = e.target.closest('.sub-delete-btn');
+    if (delSubBtn) {
+        if (confirm(`确认删除子类别"${delSubBtn.dataset.subZh}"吗？`)) {
+            window.location.href = `/expenses/delete_subcategory/${delSubBtn.dataset.subId}`;
+        }
+        return;
+    }
 });
 {% endif %}
 
