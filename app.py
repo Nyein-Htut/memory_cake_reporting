@@ -100,6 +100,7 @@ class ExpenseCategory(db.Model):
     name_zh = db.Column(db.String(100), nullable=False)   # shown to managers
     name_mm = db.Column(db.String(100), nullable=False)   # shown to staff
     created_at = db.Column(db.DateTime, default=lambda: get_myanmar_now().replace(tzinfo=None))
+    flag = db.Column(db.Integer, nullable=False, default=0)   # 1 = 车费 (delivery fee category), excluded from normal expense totals
     subcategories = db.relationship(
         'ExpenseSubCategory',
         backref='category',
