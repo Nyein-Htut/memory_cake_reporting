@@ -1960,7 +1960,6 @@ def expense_report():
         selected_month=selected_month,
         selected_year=selected_year,
         available_years=_available_years(),
-        date_basis=date_basis,
         total_revenue=total_revenue,
         total_expenses=total_expenses,
         net_profit=net_profit,
