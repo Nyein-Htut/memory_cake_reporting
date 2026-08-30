@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_staff %}လက်ကျန်ငွေ စစ်ဆေးရန်{% else %}余额核对{% endif %} — Memory Cake{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
+
+    <header class="space-y-1">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-wide text-stone-900 font-serif">
+            {% if is_staff %}လက်ကျန်ငွေ စစ်ဆေးရန်{% else %}余额核对{% endif %}
+        </h1>
+        <p class="text-xs text-stone-400 tracking-widest uppercase">
+            {% if is_staff %}Cash In / Out Tracking{% else %}Staff Cash Balance · In vs Out{% endif %}
+        </p>
+    </header>
+
+    <!-- ==================== CURRENT BALANCE (all-time, always visible) ==================== -->
+    <div class="rounded-2xl p-6 sm:p-8 text-white shadow-sm {% if current_balance >= 0 %}bg-stone-950{% else %}bg-rose-800{% endif %}">
+        <h2 class="text-[11px] font-bold tracking-wider uppercase opacity-70">
+            {% if is_staff %}လက်ရှိ လက်ကျန်ငွေ (Current Balance){% else %}员工现金结余 (Current Balance){% endif %}
+        </h2>
+        <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-4xl font-bold tracking-tight font-numeric">{{ "{:,}".format(current_balance) }}</span>
+            <span class="text-sm font-semibold opacity-70">MMK</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-white/15 text-sm font-numeric">
+            <div>
+                <div class="text-[10px] uppercase tracking-wider opacity-60">{% if is_staff %}စုစုပေါင်း ရရှိငွေ{% else %}累计收到{% endif %}</div>
+                <div class="font-bold text-emerald-300">+{{ "{:,}".format(total_in_all) }} MMK</div>
+            </div>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider opacity-60">{% if is_staff %}စုစုပေါင်း သုံးစွဲငွေ{% else %}累计支出{% endif %}</div>
+                <div class="font-bold text-rose-300">-{{ "{:,}".format(total_out_all) }} MMK</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FILTER BAR ==================== -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-4 sm:p-5 space-y-3">
+        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+            {% if is_staff %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}
+        </span>
+        <form method="GET" action="{{ filter_action }}" id="balFilterForm" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="view" id="balViewModeInput" value="{{ view_mode }}">
+
+            <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                <button type="button" onclick="setBalViewMode('day')"
+                    class="px-3.5 py-2.5 transition-all bal-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if is_staff %}ရက်{% else %}日{% endif %}
+                </button>
+                <button type="button" onclick="setBalViewMode('month')"
+                    class="px-3.5 py-2.5 transition-all bal-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if is_staff %}လ{% else %}月{% endif %}
+                </button>
+                <button type="button" onclick="setBalViewMode('year')"
+                    class="px-3.5 py-2.5 transition-all bal-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if is_staff %}နှစ်{% else %}年{% endif %}
+                </button>
+            </div>
+
+            <div id="balDayWrap" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                <input type="hidden" name="day" id="balDayHidden" value="{{ selected_day }}">
+                <button type="button" id="balDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openBalDayPicker()">
+                    <span>{{ selected_day }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div id="balMonthWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                <input type="hidden" name="month" id="balMonthHidden" value="{{ selected_month }}">
+                <button type="button" id="balMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openBalMonthPicker()">
+                    <span>{{ selected_month }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div id="balYearWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
+                <input type="hidden" name="year" id="balYearHidden" value="{{ selected_year }}">
+                <button type="button" id="balYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openBalYearPicker()">
+                    <span>{{ selected_year }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ==================== PERIOD SUMMARY ==================== -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">{% if is_staff %}အစပိုင်း{% else %}期初结余{% endif %}</h4>
+            <div class="text-base sm:text-lg font-bold text-stone-800 font-numeric mt-1">{{ "{:,}".format(starting_balance) }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-emerald-600 uppercase">{% if is_staff %}ဝင်ငွေ{% else %}本期收入{% endif %}</h4>
+            <div class="text-base sm:text-lg font-bold text-emerald-700 font-numeric mt-1">+{{ "{:,}".format(period_in) }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-rose-500 uppercase">{% if is_staff %}ထွက်ငွေ{% else %}本期支出{% endif %}</h4>
+            <div class="text-base sm:text-lg font-bold text-rose-600 font-numeric mt-1">-{{ "{:,}".format(period_out) }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
+            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">{% if is_staff %}နောက်ဆုံး{% else %}期末结余{% endif %}</h4>
+            <div class="text-base sm:text-lg font-bold text-stone-950 font-numeric mt-1">{{ "{:,}".format(ending_balance) }}</div>
+        </div>
+    </div>
+
+    <!-- ==================== LEDGER ==================== -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs overflow-hidden">
+        <div class="px-4 sm:px-5 py-3 bg-stone-50 border-b border-stone-100">
+            <h3 class="text-xs font-bold text-stone-600 uppercase tracking-wider">
+                {% if is_staff %}မှတ်တမ်း (Ledger){% else %}收支明细 (Ledger){% endif %}
+            </h3>
+        </div>
+        <div class="divide-y divide-stone-50">
+            {% for entry in entries %}
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-stone-50/60 transition-colors">
+                <span class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+                    {% if entry.type == 'in' %}bg-emerald-50 text-emerald-600{% else %}bg-rose-50 text-rose-600{% endif %}">
+                    {{ '+' if entry.type == 'in' else '−' }}
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold text-stone-900 truncate">
+                        {% if entry.kind == 'funding' %}
+                            {% if is_staff %}မန်နေဂျာက ငွေပေးအပ်ခြင်း{% else %}管理员发放现金{% endif %}
+                            {% if entry.label %}<span class="text-stone-400 font-normal"> · {{ entry.label }}</span>{% endif %}
+                        {% else %}
+                            {{ entry.label }}
+                        {% endif %}
+                    </div>
+                    <div class="text-[11px] text-stone-400 font-numeric">{{ entry.date }}</div>
+                </div>
+                <div class="text-right shrink-0 font-numeric">
+                    <div class="text-sm font-bold {% if entry.type == 'in' %}text-emerald-700{% else %}text-rose-600{% endif %}">
+                        {{ '+' if entry.type == 'in' else '-' }}{{ "{:,}".format(entry.amount) }}
+                    </div>
+                    <div class="text-[10px] text-stone-400">
+                        {% if is_staff %}လက်ကျန်{% else %}结余{% endif %} {{ "{:,}".format(entry.running_balance) }}
+                    </div>
+                </div>
+                {% if entry.kind == 'funding' %}
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" class="funding-edit-btn text-stone-400 hover:text-stone-700 cursor-pointer text-sm px-1"
+                        data-id="{{ entry.id }}" data-date="{{ entry.date }}" data-amount="{{ entry.amount }}" data-remarks="{{ entry.label }}"
+                        title="{% if is_staff %}ပြင်ဆင်ရန်{% else %}编辑{% endif %}">✏️</button>
+                    <button type="button" class="funding-delete-btn text-rose-400 hover:text-rose-600 cursor-pointer text-sm px-1"
+                        data-id="{{ entry.id }}"
+                        title="{% if is_staff %}ဖျက်ရန်{% else %}删除{% endif %}">🗑️</button>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center py-16 text-stone-400 italic text-sm">
+                {% if is_staff %}ဤကာလအတွက် မှတ်တမ်း မရှိသေးပါ။{% else %}该周期暂无收支记录。{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if can_add_funding %}
+<!-- ==================== ADD / EDIT FUNDING (staff only) ==================== -->
+<div id="addFundingModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
+            <h3 class="text-base font-bold text-stone-900" id="fundingModalTitleText">
+                {% if is_staff %}ငွေ ရရှိကြောင်း မှတ်တမ်းတင်ရန်{% else %}添加现金记录{% endif %}
+            </h3>
+            <button type="button" onclick="closeAddFundingModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
+        <form method="POST" id="fundingForm" action="/balance/add_funding" class="p-6 space-y-4 text-sm">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if is_staff %}ရက်စွဲ{% else %}日期{% endif %}
+                </label>
+                <input type="hidden" name="date" id="fundingDateHidden" value="">
+                <button type="button" id="fundingDateTriggerBtn" class="wp-trigger text-sm p-3 w-full" onclick="openFundingDatePicker()">
+                    <span>{% if is_staff %}ရက်စွဲရွေးပါ{% else %}选择日期{% endif %}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if is_staff %}ပမာဏ (MMK){% else %}金额 (MMK){% endif %}
+                </label>
+                <input type="number" name="amount" id="fundingAmountInput" required
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if is_staff %}မှတ်ချက် (ရွေးချယ်ခွင့်){% else %}备注 (可选){% endif %}
+                </label>
+                <input type="text" name="remarks" id="fundingRemarksInput"
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeAddFundingModal()"
+                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">
+                    {% if is_staff %}ပယ်ဖျက်{% else %}取消{% endif %}
+                </button>
+                <button type="submit"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">
+                    {% if is_staff %}သိမ်းမည်{% else %}保存{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<button type="button" id="fabAddFundingBtn" onclick="openAddFundingModal()"
+    aria-label="{% if is_staff %}ငွေ ရရှိကြောင်း မှတ်တမ်းတင်ရန်{% else %}添加现金记录{% endif %}"
+    class="fixed z-40 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-700 hover:bg-emerald-800 active:scale-90 text-white shadow-lg shadow-stone-900/20 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+    style="right: max(1.1rem, env(safe-area-inset-right)); bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.5rem));">
+    <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+</button>
+{% endif %}
+
+<script>
+const IS_STAFF = {{ is_staff | tojson | safe }};
+
+/* ===== Filter bar ===== */
+function setBalViewMode(mode) {
+    document.getElementById('balViewModeInput').value = mode;
+    document.getElementById('balDayWrap').classList.toggle('hidden', mode !== 'day');
+    document.getElementById('balMonthWrap').classList.toggle('hidden', mode !== 'month');
+    document.getElementById('balYearWrap').classList.toggle('hidden', mode !== 'year');
+    document.getElementById('balFilterForm').submit();
+}
+
+function openBalDayPicker() {
+    const btn = document.getElementById('balDayTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('balDayHidden');
+    openDateWheelPicker({
+        title: IS_STAFF ? 'ရက်စွဲ ရွေးပါ (Filter by Day)' : '按日期筛选 (Filter by Day)',
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('balFilterForm').submit();
+        }
+    });
+}
+
+function openBalMonthPicker() {
+    const btn = document.getElementById('balMonthTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('balMonthHidden');
+    openMonthWheelPicker({
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('balFilterForm').submit();
+        }
+    });
+}
+
+function openBalYearPicker() {
+    const hidden = document.getElementById('balYearHidden');
+    openYearListPicker({
+        years: {{ available_years | tojson | safe }},
+        initialValue: hidden.value,
+        onConfirm: (value) => {
+            hidden.value = value;
+            document.getElementById('balYearTriggerBtn').querySelector('span').textContent = value;
+            document.getElementById('balFilterForm').submit();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dayHidden = document.getElementById('balDayHidden');
+    const dayBtn = document.getElementById('balDayTriggerBtn');
+    if (dayHidden && dayHidden.value && dayBtn) {
+        dayBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dayHidden.value);
+    }
+});
+
+{% if can_add_funding %}
+/* ===== Add / Edit Funding modal ===== */
+function openAddFundingModal() {
+    document.getElementById('fundingModalTitleText').textContent = IS_STAFF ? 'ငွေ ရရှိကြောင်း မှတ်တမ်းတင်ရန်' : '添加现金记录';
+    document.getElementById('fundingForm').setAttribute('action', '/balance/add_funding');
+    document.getElementById('fundingAmountInput').value = '';
+    document.getElementById('fundingRemarksInput').value = '';
+    const dateHidden = document.getElementById('fundingDateHidden');
+    dateHidden.value = wpIsoForOffset(0);
+    document.getElementById('fundingDateTriggerBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
+    document.getElementById('fundingDateTriggerBtn').classList.remove('wp-empty');
+    const modal = document.getElementById('addFundingModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function openEditFundingModal(id, date, amount, remarks) {
+    document.getElementById('fundingModalTitleText').textContent = IS_STAFF ? 'မှတ်တမ်း ပြင်ဆင်ရန်' : '编辑记录';
+    document.getElementById('fundingForm').setAttribute('action', `/balance/edit_funding/${id}`);
+    document.getElementById('fundingAmountInput').value = amount || '';
+    document.getElementById('fundingRemarksInput').value = remarks || '';
+    const dateHidden = document.getElementById('fundingDateHidden');
+    dateHidden.value = date || wpIsoForOffset(0);
+    document.getElementById('fundingDateTriggerBtn').querySelector('span').textContent = wpFormatDisplayFromISO(dateHidden.value);
+    document.getElementById('fundingDateTriggerBtn').classList.remove('wp-empty');
+    const modal = document.getElementById('addFundingModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeAddFundingModal() {
+    const modal = document.getElementById('addFundingModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('addFundingModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddFundingModal();
+});
+
+function openFundingDatePicker() {
+    const btn = document.getElementById('fundingDateTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('fundingDateHidden');
+    openDateWheelPicker({
+        title: IS_STAFF ? 'ရက်စွဲ ရွေးပါ (Set Date)' : '选择日期 (Set Date)',
+        initialValue: hidden.value || wpIsoForOffset(0),
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            btn.classList.remove('wp-empty');
+        }
+    });
+}
+
+document.addEventListener('click', function(e) {
+    const editBtn = e.target.closest('.funding-edit-btn');
+    if (editBtn) {
+        openEditFundingModal(editBtn.dataset.id, editBtn.dataset.date, editBtn.dataset.amount, editBtn.dataset.remarks);
+        return;
+    }
+    const delBtn = e.target.closest('.funding-delete-btn');
+    if (delBtn) {
+        const msg = IS_STAFF ? 'ဤမှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?' : '确认删除此记录吗？';
+        if (confirm(msg)) {
+            window.location.href = `/balance/delete_funding/${delBtn.dataset.id}`;
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}
