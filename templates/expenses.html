@@ -167,7 +167,7 @@
         <form method="POST" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
-                    {% if readonly %}ကြီးအမျိုးအစား{% else %}主类别{% endif %}
+                    {% if readonly %}အမျိုးအစား{% else %}主类别{% endif %}
                 </label>
                 <select name="category_id" id="expCategorySelect" onchange="updateExpSubcategoryOptions()" required
                     class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:border-stone-950">
