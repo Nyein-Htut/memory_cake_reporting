@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}{% if readonly %}အသုံးစရိတ်မှတ်တမ်း{% else %}支出记录{% endif %} — Memory Cake{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
+
+    <header class="space-y-1">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-wide text-stone-900 font-serif">
+            {% if readonly %}အသုံးစရိတ်မှတ်တမ်း{% else %}支出记录{% endif %}
+        </h1>
+        <p class="text-xs text-stone-400 tracking-widest uppercase">
+            {% if readonly %}Expenses{% else %}Expense Tracking · Business Costs{% endif %}
+        </p>
+    </header>
+
+    {% if not readonly %}
+    <!-- ==================== CATEGORY MANAGEMENT (manager only) ==================== -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-5 space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-sm font-bold text-stone-800 uppercase tracking-wider">支出类别管理</h2>
+            <button type="button" onclick="openAddCategoryModal()"
+                class="flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow-sm cursor-pointer">
+                <span class="text-base leading-none">➕</span> 添加类别
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            {% for cat in categories %}
+            <div class="border border-stone-200 rounded-xl p-3.5 bg-stone-50/40">
+                <div class="flex justify-between items-center gap-3">
+                    <span class="font-semibold text-stone-900 text-sm">
+                        {{ cat.name_zh }} <span class="text-stone-400 font-normal text-xs">({{ cat.name_mm }})</span>
+                    </span>
+                    <button type="button" onclick="openAddSubcategoryModal('{{ cat.id }}', {{ cat.name_zh|tojson }})"
+                        class="shrink-0 text-xs text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer whitespace-nowrap">
+                        ➕ 添加子类别
+                    </button>
+                </div>
+                {% if cat.subcategories %}
+                <div class="flex flex-wrap gap-1.5 mt-2.5">
+                    {% for sub in cat.subcategories %}
+                    <span class="inline-block bg-white border border-stone-200 text-stone-600 text-[11px] px-2.5 py-1 rounded-full">
+                        {{ sub.name_zh }} <span class="text-stone-400">({{ sub.name_mm }})</span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-xs text-stone-400 italic py-2">暂无类别，请先添加一个类别。</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ==================== FILTER BAR ==================== -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-4 sm:p-5 space-y-3">
+        <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+            {% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}
+        </span>
+        <form method="GET" action="{{ filter_action }}" id="expenseFilterForm" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="view" id="expViewModeInput" value="{{ view_mode }}">
+
+            <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                <button type="button" onclick="setExpViewMode('day')"
+                    class="px-3.5 py-2.5 transition-all exp-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}ရက်{% else %}日{% endif %}
+                </button>
+                <button type="button" onclick="setExpViewMode('month')"
+                    class="px-3.5 py-2.5 transition-all exp-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}လ{% else %}月{% endif %}
+                </button>
+                <button type="button" onclick="setExpViewMode('year')"
+                    class="px-3.5 py-2.5 transition-all exp-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    {% if readonly %}နှစ်{% else %}年{% endif %}
+                </button>
+            </div>
+
+            <div id="expDayWrap" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                <input type="hidden" name="day" id="expDayHidden" value="{{ selected_day }}">
+                <button type="button" id="expDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openExpDayPicker()">
+                    <span>{{ selected_day }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div id="expMonthWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
+                <input type="hidden" name="month" id="expMonthHidden" value="{{ selected_month }}">
+                <button type="button" id="expMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openExpMonthPicker()">
+                    <span>{{ selected_month }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div id="expYearWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
+                <input type="hidden" name="year" id="expYearHidden" value="{{ selected_year }}">
+                <button type="button" id="expYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openExpYearPicker()">
+                    <span>{{ selected_year }}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </form>
+
+        <div class="flex flex-wrap gap-4 pt-3 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
+            <span><strong class="text-stone-900">{{ total_expenses }}</strong> {% if readonly %}အသုံးစရိတ်{% else %}笔支出{% endif %}</span>
+            <span><strong class="text-stone-900">{{ "{:,}".format(total_amount) }}</strong> MMK</span>
+        </div>
+    </div>
+
+    <!-- ==================== EXPENSE LIST ==================== -->
+    <div class="space-y-6" id="expensesRoot">
+        {% for day_group in expenses_by_day %}
+        <div>
+            <div class="day-separator">
+                <span class="day-separator-date">{{ day_group.date_display }}</span>
+                <span class="day-separator-meta">
+                    {{ day_group.count }} {% if readonly %}ခု{% else %}笔{% endif %} · {{ "{:,}".format(day_group.day_total) }} MMK
+                </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {% for exp in day_group.expenses %}
+                <div class="bg-white border border-stone-200 rounded-xl p-4 flex justify-between items-start gap-3 shadow-xs">
+                    <div class="min-w-0 space-y-1">
+                        <div class="text-sm font-semibold text-stone-900">
+                            {% if exp.category %}
+                                {{ exp.category.name_mm if readonly else exp.category.name_zh }}
+                                {% if exp.subcategory %}
+                                    <span class="text-stone-400 font-normal"> · {{ exp.subcategory.name_mm if readonly else exp.subcategory.name_zh }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-stone-400 font-normal">{% if readonly %}အမျိုးအစားမရှိ{% else %}未分类{% endif %}</span>
+                            {% endif %}
+                        </div>
+                        {% if exp.remarks %}
+                        <div class="text-xs text-stone-400 break-words">{{ exp.remarks }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-right shrink-0 space-y-1.5">
+                        <div class="text-sm font-bold text-stone-950 font-numeric whitespace-nowrap">{{ "{:,}".format(exp.price) }} MMK</div>
+                        <button type="button" onclick="confirmDeleteExpense('{{ exp.id }}')"
+                            class="text-[11px] text-rose-500 hover:text-rose-700 font-semibold cursor-pointer">
+                            {% if readonly %}ဖျက်ရန်{% else %}删除{% endif %}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-16 text-stone-400 italic text-sm">
+            {% if readonly %}ဤကာလအတွက် အသုံးစရိတ် မှတ်တမ်း မရှိသေးပါ။{% else %}该周期暂无支出记录。{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ==================== ADD EXPENSE (both roles) ==================== -->
+<div id="addExpenseModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100 shrink-0">
+            <h3 class="text-base font-bold text-stone-900">
+                {% if readonly %}အသုံးစရိတ် အသစ်ထည့်ရန်{% else %}添加支出{% endif %}
+            </h3>
+            <button type="button" onclick="closeAddExpenseModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
+        <form method="POST" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if readonly %}ကြီးအမျိုးအစား{% else %}主类别{% endif %}
+                </label>
+                <select name="category_id" id="expCategorySelect" onchange="updateExpSubcategoryOptions()" required
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:border-stone-950">
+                    <option value="">{% if readonly %}ရွေးပါ{% else %}请选择{% endif %}</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name_mm if readonly else cat.name_zh }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if readonly %}အမျိုးအစားခွဲ{% else %}子类别{% endif %}
+                </label>
+                <select name="subcategory_id" id="expSubcategorySelect"
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm bg-white outline-none focus:border-stone-950">
+                    <option value="">{% if readonly %}မရှိပါ{% else %}无 / 不需要{% endif %}</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if readonly %}ဈေးနှုန်း (MMK){% else %}金额 (MMK){% endif %}
+                </label>
+                <input type="number" name="price" required
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if readonly %}မှတ်ချက်{% else %}备注{% endif %}
+                </label>
+                <input type="text" name="remarks"
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
+                    {% if readonly %}ရက်စွဲ{% else %}日期{% endif %}
+                </label>
+                <input type="hidden" name="date" id="expDateHidden" value="">
+                <button type="button" id="expDateTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openExpDateEntryPicker()">
+                    <span>{% if readonly %}ရက်စွဲရွေးပါ{% else %}选择日期{% endif %}</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeAddExpenseModal()"
+                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">
+                    {% if readonly %}ပယ်ဖျက်{% else %}取消{% endif %}
+                </button>
+                <button type="submit"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">
+                    {% if readonly %}သိမ်းမည်{% else %}保存{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<button type="button" id="fabAddExpenseBtn" onclick="openAddExpenseModal()"
+    aria-label="{% if readonly %}အသုံးစရိတ်အသစ် ထည့်ရန်{% else %}添加支出{% endif %}"
+    class="fixed z-40 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-700 hover:bg-emerald-800 active:scale-90 text-white shadow-lg shadow-stone-900/20 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+    style="right: max(1.1rem, env(safe-area-inset-right)); bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.5rem));">
+    <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+</button>
+
+{% if not readonly %}
+<!-- ==================== ADD CATEGORY / SUBCATEGORY (manager only) ==================== -->
+<div id="addCategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
+            <h3 class="text-base font-bold text-stone-900">添加支出类别</h3>
+            <button type="button" onclick="closeAddCategoryModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
+        <form method="POST" action="/expenses/add_category" class="p-6 space-y-4 text-sm">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
+                <input type="text" name="name_zh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
+                <input type="text" name="name_mm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeAddCategoryModal()"
+                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                <button type="submit"
+                    class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="addSubcategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
+            <h3 class="text-base font-bold text-stone-900">添加子类别 <span id="subcatParentLabel" class="text-stone-400 font-normal text-xs"></span></h3>
+            <button type="button" onclick="closeAddSubcategoryModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
+        <form method="POST" action="/expenses/add_subcategory" class="p-6 space-y-4 text-sm">
+            <input type="hidden" name="category_id" id="subcatCategoryIdInput" value="">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
+                <input type="text" name="name_zh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
+                <input type="text" name="name_mm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeAddSubcategoryModal()"
+                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                <button type="submit"
+                    class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+const EXP_CATEGORIES = {{ categories_json | tojson | safe }};
+const EXP_READONLY = {{ readonly | tojson | safe }};
+
+/* ===== Add Expense modal ===== */
+function openAddExpenseModal() {
+    const modal = document.getElementById('addExpenseModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    const dateHidden = document.getElementById('expDateHidden');
+    if (!dateHidden.value) {
+        dateHidden.value = wpIsoForOffset(0);
+        document.getElementById('expDateTriggerBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
+        document.getElementById('expDateTriggerBtn').classList.remove('wp-empty');
+    }
+}
+function closeAddExpenseModal() {
+    const modal = document.getElementById('addExpenseModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('addExpenseModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddExpenseModal();
+});
+
+function openExpDateEntryPicker() {
+    const btn = document.getElementById('expDateTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('expDateHidden');
+    openDateWheelPicker({
+        title: EXP_READONLY ? 'ရက်စွဲ ရွေးပါ (Set Date)' : '选择日期 (Set Date)',
+        initialValue: hidden.value || wpIsoForOffset(0),
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            btn.classList.remove('wp-empty');
+        }
+    });
+}
+
+function updateExpSubcategoryOptions() {
+    const catId = document.getElementById('expCategorySelect').value;
+    const subSelect = document.getElementById('expSubcategorySelect');
+    subSelect.innerHTML = `<option value="">${EXP_READONLY ? 'မရှိပါ' : '无 / 不需要'}</option>`;
+    const cat = EXP_CATEGORIES.find(c => String(c.id) === String(catId));
+    if (cat) {
+        cat.subcategories.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = EXP_READONLY ? sub.name_mm : sub.name_zh;
+            subSelect.appendChild(opt);
+        });
+    }
+}
+
+{% if not readonly %}
+function openAddCategoryModal() {
+    const modal = document.getElementById('addCategoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeAddCategoryModal() {
+    const modal = document.getElementById('addCategoryModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('addCategoryModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddCategoryModal();
+});
+
+function openAddSubcategoryModal(catId, catLabel) {
+    document.getElementById('subcatCategoryIdInput').value = catId;
+    document.getElementById('subcatParentLabel').textContent = '(' + catLabel + ')';
+    const modal = document.getElementById('addSubcategoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeAddSubcategoryModal() {
+    const modal = document.getElementById('addSubcategoryModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+document.getElementById('addSubcategoryModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddSubcategoryModal();
+});
+{% endif %}
+
+function confirmDeleteExpense(id) {
+    const msg = EXP_READONLY ? 'ဤအသုံးစရိတ်ကို ဖျက်မှာ သေချာပါသလား?' : '确认删除此支出记录吗？';
+    if (confirm(msg)) {
+        window.location.href = '/expenses/delete/' + id;
+    }
+}
+
+/* ===== Filter bar (day / month / year) — full page reload, same period
+   filter language as the Daily Records page. ===== */
+function setExpViewMode(mode) {
+    document.getElementById('expViewModeInput').value = mode;
+    document.getElementById('expDayWrap').classList.toggle('hidden', mode !== 'day');
+    document.getElementById('expMonthWrap').classList.toggle('hidden', mode !== 'month');
+    document.getElementById('expYearWrap').classList.toggle('hidden', mode !== 'year');
+    document.getElementById('expenseFilterForm').submit();
+}
+
+function openExpDayPicker() {
+    const btn = document.getElementById('expDayTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('expDayHidden');
+    openDateWheelPicker({
+        title: EXP_READONLY ? 'ရက်စွဲ ရွေးပါ (Filter by Day)' : '按日期筛选 (Filter by Day)',
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('expenseFilterForm').submit();
+        }
+    });
+}
+
+function openExpMonthPicker() {
+    const btn = document.getElementById('expMonthTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('expMonthHidden');
+    openMonthWheelPicker({
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('expenseFilterForm').submit();
+        }
+    });
+}
+
+function openExpYearPicker() {
+    const hidden = document.getElementById('expYearHidden');
+    openYearListPicker({
+        years: {{ available_years | tojson | safe }},
+        initialValue: hidden.value,
+        onConfirm: (value) => {
+            hidden.value = value;
+            document.getElementById('expYearTriggerBtn').querySelector('span').textContent = value;
+            document.getElementById('expenseFilterForm').submit();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dayHidden = document.getElementById('expDayHidden');
+    const dayBtn = document.getElementById('expDayTriggerBtn');
+    if (dayHidden && dayHidden.value && dayBtn) {
+        dayBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dayHidden.value);
+    }
+});
+</script>
+{% endblock %}
