@@ -318,6 +318,15 @@ def _fetch_orders_for_period(mode, value, source=None):
 _fetch_orders_grouped_by_day = _fetch_orders_for_period
 _fetch_orders_for_export = _fetch_orders_for_period
 
+def _apply_period_filter(query, date_column, mode, value):
+    """Applies the same day/month/year date filter used across Daily
+    Records, Expenses, and Monthly Report to any query + date column."""
+    if mode == 'day' and value:
+        return query.filter(date_column == value)
+    elif mode in ('month', 'year') and value:
+        return query.filter(date_column.like(f"{value}%"))
+    return query
+    
 def _available_years():
     years = sorted({
         r[0][:4]
@@ -1850,6 +1859,94 @@ def delete_expense(expense_id):
         db.session.remove()
     return redirect(url_for('expenses_view'))
 
+@app.route('/expense_report')
+@manager_required
+def expense_report():
+    db.session.remove()
+
+    view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters('month')
+    date_basis = (request.args.get('date_basis') or 'order').strip()
+    if date_basis not in ('order', 'paid'):
+        date_basis = 'order'
+
+    # ---- Revenue: cake price totals only (no delivery fee) ----
+    if date_basis == 'paid':
+        revenue_q = _apply_period_filter(Order.query, Order.payment_date, view_mode, filter_value).filter(Order.is_paid == True)
+    else:
+        revenue_q = _apply_period_filter(Order.query, Order.date, view_mode, filter_value)
+    total_revenue = revenue_q.with_entities(db.func.sum(Order.total_price)).scalar() or 0
+
+    # ---- Expenses grouped by category -> subcategory ----
+    expenses_q = _apply_period_filter(
+        Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory)),
+        Expense.date, view_mode, filter_value
+    )
+    expenses = expenses_q.all()
+    total_expenses = sum(e.price for e in expenses)
+    net_profit = total_revenue - total_expenses
+
+    cat_map = {}
+    cat_order = []
+    for e in expenses:
+        if e.category:
+            key = f"cat_{e.category.id}"
+            name_zh, name_mm = e.category.name_zh, e.category.name_mm
+        else:
+            key = "uncategorized"
+            name_zh, name_mm = "未分类", "အမျိုးအစားမရှိ"
+        if key not in cat_map:
+            cat_map[key] = {'name_zh': name_zh, 'name_mm': name_mm, 'total': 0, 'subs': {}}
+            cat_order.append(key)
+        cat_map[key]['total'] += (e.price or 0)
+
+        if e.subcategory:
+            skey = f"sub_{e.subcategory.id}"
+            sname_zh, sname_mm = e.subcategory.name_zh, e.subcategory.name_mm
+        else:
+            skey = "uncategorized_sub"
+            sname_zh, sname_mm = "未分类子项", "အမျိုးအစားခွဲမရှိ"
+        subs = cat_map[key]['subs']
+        if skey not in subs:
+            subs[skey] = {'name_zh': sname_zh, 'name_mm': sname_mm, 'total': 0}
+        subs[skey]['total'] += (e.price or 0)
+
+    category_breakdown = []
+    for key in cat_order:
+        data = cat_map[key]
+        sub_list = sorted(data['subs'].values(), key=lambda s: s['total'], reverse=True)
+        category_breakdown.append({
+            'name': data['name_zh'],
+            'name_mm': data['name_mm'],
+            'total': data['total'],
+            'percentage': round(data['total'] / total_expenses * 100) if total_expenses else 0,
+            'subcategories': [
+                {
+                    'name': s['name_zh'],
+                    'name_mm': s['name_mm'],
+                    'total': s['total'],
+                    'percentage': round(s['total'] / data['total'] * 100) if data['total'] else 0
+                }
+                for s in sub_list
+            ]
+        })
+    category_breakdown.sort(key=lambda c: c['total'], reverse=True)
+
+    db.session.remove()
+    return render_template(
+        'expense_report.html',
+        active_page='expense_report',
+        view_mode=view_mode,
+        selected_day=selected_day,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        available_years=_available_years(),
+        date_basis=date_basis,
+        total_revenue=total_revenue,
+        total_expenses=total_expenses,
+        net_profit=net_profit,
+        category_breakdown=category_breakdown,
+        filter_action=url_for('expense_report')
+    )
 @app.route('/health')
 def health():
     return "OK", 200
