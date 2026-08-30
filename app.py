@@ -809,15 +809,16 @@ def _period_date(order, date_basis):
         return order.payment_date or ''
     return order.date or ''
 
-def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis='paid'):
+def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis='order'):
 
-    # Default to paid date
+    # Default to order date now, so stats include ALL orders (paid + unpaid),
+    # not just paid ones. 'paid' is still supported if ever passed explicitly.
     if date_basis not in ('paid', 'order'):
-        date_basis = 'paid'
+        date_basis = 'order'
 
     # Which date should control the report?
-    # DEFAULT: payment_date
-    # Only use order.date if user explicitly selects "order"
+    # DEFAULT: order date (all orders)
+    # Only use payment_date if user explicitly selects "paid"
     date_col = (
         Order.payment_date
         if date_basis == 'paid'
@@ -838,7 +839,8 @@ def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis
         .filter(date_col.like(date_filter))
     )
 
-    # Paid-date mode = only paid orders
+    # Paid-date mode = only paid orders (payment_date only exists for paid
+    # orders anyway). This branch is now opt-in only, not the default.
     if date_basis == 'paid':
         query = query.filter(
             Order.is_paid == True
@@ -1004,6 +1006,8 @@ def _compute_monthly_report(view_mode, selected_month, selected_year, date_basis
         'top_customers_all': top_customers_all,
         'forecast_revenue': forecast_revenue,
     }
+
+
 @app.route('/monthly')
 @manager_required
 def monthly():
@@ -1013,9 +1017,9 @@ def monthly():
     view_mode = request.args.get('view', 'month')
     selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
     selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
-    date_basis = request.args.get('date_basis', 'paid')
+    date_basis = request.args.get('date_basis', 'order')
     if date_basis not in ('paid', 'order'):
-        date_basis = 'paid'
+        date_basis = 'order'
 
     report = _compute_monthly_report(view_mode, selected_month, selected_year, date_basis)
 
@@ -1038,9 +1042,9 @@ def monthly_export():
     view_mode = request.args.get('view', 'month')
     selected_month = request.args.get('month', get_myanmar_now().strftime('%Y-%m'))
     selected_year = request.args.get('year', get_myanmar_now().strftime('%Y'))
-    date_basis = request.args.get('date_basis', 'paid')
+    date_basis = request.args.get('date_basis', 'order')
     if date_basis not in ('paid', 'order'):
-        date_basis = 'paid'
+        date_basis = 'order'
 
     report = _compute_monthly_report(view_mode, selected_month, selected_year, date_basis)
 
