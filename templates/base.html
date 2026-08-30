@@ -2450,6 +2450,9 @@ async function mcCompressAndSubmit(form) {
                         <a href="/expenses" class="{% if active_page == 'expenses' %}bg-emerald-700 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
                             အသုံးစရိတ် (Expenses)
                         </a>
+                        <a href="/balance" class="{% if active_page == 'balance' %}bg-emerald-700 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            လက်ကျန်ငွေ (Balance)
+                        </a>
                         <a href="/logout" class="text-red-600 hover:bg-red-50 px-3.5 py-2 rounded font-medium transition-all">
                             အကောင့်ထွက်ရန် (Logout)
                         </a>
@@ -2465,6 +2468,9 @@ async function mcCompressAndSubmit(form) {
                         </a>
                         <a href="/expense_report" class="{% if active_page == 'expense_report' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
                             支出报表 (Report)
+                        </a>
+                        <a href="/balance" class="{% if active_page == 'balance' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
+                            余额核对 (Balance)
                         </a>
                         <a href="/monthly" class="{% if active_page == 'monthly' %}bg-stone-950 text-white shadow-xs{% else %}text-stone-500 hover:text-stone-900 hover:bg-stone-100{% endif %} px-3.5 py-2 rounded font-medium transition-all">
                             月度报表 (Monthly)
