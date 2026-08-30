@@ -3320,113 +3320,615 @@ async function mcCompressAndSubmit(form) {
 <body class="bg-[#FCFAF7] text-[#21201F] min-h-screen pb-12">
 
     {% if request.endpoint != 'login' %}
+
+<!-- =========================================================
+     MEMORY CAKE — TOP NAVIGATION
+     ========================================================= -->
+
 <nav class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         <div class="flex items-center justify-between h-20 sm:h-24">
+
+            <!-- ================= BRAND ================= -->
+
             <div class="flex items-center gap-3">
-                <img src="/static/logo.jpg" class="h-12 w-12 sm:h-14 sm:w-14 object-contain rounded-md" alt="Memory Cake Logo" onerror="this.src='https://placehold.co/100x100?text=MC';">
+
+                <img
+                    src="/static/logo.jpg"
+                    class="h-12 w-12 sm:h-14 sm:w-14 object-contain rounded-md"
+                    alt="Memory Cake Logo"
+                    onerror="this.src='https://placehold.co/100x100?text=MC';"
+                >
+
                 <div class="flex flex-col">
+
                     <span class="font-bold text-lg sm:text-2xl tracking-[0.10em] text-stone-950 uppercase font-serif leading-tight">
                         Memory Cake
                     </span>
+
                     <span class="hidden sm:block text-[10px] text-stone-400 font-sans tracking-widest uppercase">
-                        {% if session.get('role') == 'staff' %}ဝန်ထမ်းစာမျက်နှာ{% else %}Manager Console{% endif %}
+                        {% if session.get('role') == 'staff' %}
+                            ဝန်ထမ်းစာမျက်နှာ
+                        {% else %}
+                            Manager Console
+                        {% endif %}
                     </span>
+
                 </div>
+
             </div>
 
-            <button type="button" id="navHamburgerBtn" onclick="openNavDrawer()" class="nav-hamburger-btn" aria-label="Menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <!-- ================= HAMBURGER ================= -->
+
+            <button
+                type="button"
+                id="navHamburgerBtn"
+                onclick="openNavDrawer()"
+                class="nav-hamburger-btn"
+                aria-label="Open navigation"
+                aria-expanded="false"
+                aria-controls="navDrawerOverlay"
+            >
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
                     <path d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
+
             </button>
+
         </div>
+
     </div>
+
 </nav>
 
-<div class="nav-drawer-overlay" id="navDrawerOverlay" onclick="if(event.target===this) closeNavDrawer()">
-    <div class="nav-drawer">
+
+
+<!-- =========================================================
+     FLOATING NAVIGATION OVERLAY
+     ========================================================= -->
+
+<div
+    class="nav-drawer-overlay"
+    id="navDrawerOverlay"
+    onclick="if(event.target === this) closeNavDrawer()"
+>
+
+
+    <!-- =====================================================
+         FLOATING MENU CARD
+         ===================================================== -->
+
+    <div
+        class="nav-drawer"
+        id="navDrawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Memory Cake navigation"
+    >
+
+
+        <!-- =================================================
+             HEADER
+             ================================================= -->
+
         <div class="nav-drawer-header">
+
             <div>
-                <div class="nav-drawer-header-title">Menu</div>
-                <span class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}">
-                    <span class="w-1.5 h-1.5 rounded-full {% if session.get('role') == 'staff' %}bg-blue-500{% else %}bg-emerald-500{% endif %}" style="display:inline-block;"></span>
-                    {% if session.get('role') == 'staff' %}Staff{% else %}Manager{% endif %}
+
+                <!-- Brand -->
+                <div class="nav-drawer-header-title">
+                    Memory Cake
+                </div>
+
+
+                <!-- Role -->
+                <span
+                    class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}"
+                >
+
+                    {% if session.get('role') == 'staff' %}
+                        Staff
+                    {% else %}
+                        Manager
+                    {% endif %}
+
                 </span>
+
             </div>
-            <button type="button" class="nav-drawer-close-btn" onclick="closeNavDrawer()" aria-label="Close menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 6l12 12M18 6 6 18"/></svg>
+
+
+            <!-- Close -->
+            <button
+                type="button"
+                class="nav-drawer-close-btn"
+                onclick="closeNavDrawer()"
+                aria-label="Close menu"
+            >
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    width="16"
+                    height="16"
+                >
+                    <path d="M6 6l12 12M18 6 6 18"/>
+                </svg>
+
             </button>
+
         </div>
+
+
+
+        <!-- =================================================
+             NAVIGATION ITEMS
+             ================================================= -->
 
         <div class="nav-drawer-body">
+
+
             {% if session.get('role') == 'staff' %}
-            <a href="/staff" class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+
+
+            <!-- ================= STAFF ================= -->
+
+            <a
+                href="/staff"
+                class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+
                 နေ့စဉ်မှတ်တမ်း (Daily)
+
             </a>
-            <a href="/expenses" class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+
+
+            <a
+                href="/expenses"
+                class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/>
+                    <path d="M9 8h6M9 12h6M9 16h4"/>
+                </svg>
+
                 အသုံးစရိတ် (Expenses)
+
             </a>
-            <a href="/balance" class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 8 0l-3-6zM19 8l-3 6a4 4 0 0 0 8 0l-3-6zM4 21h16M8 3h8"/></svg>
+
+
+            <a
+                href="/balance"
+                class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 3v18"/>
+                    <path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
+                    <path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
+                    <path d="M4 21h16M8 3h8"/>
+                </svg>
+
                 လက်ကျန်ငွေ (Balance)
+
             </a>
+
+
             {% else %}
-            <a href="/" class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+
+
+            <!-- =================================================
+                 MANAGER
+                 ================================================= -->
+
+
+            <!-- ================= DAILY ================= -->
+
+            <a
+                href="/"
+                class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+
                 每日记录 (Daily)
+
             </a>
-            <a href="/income" class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/></svg>
+
+
+
+            <!-- ================= INCOME ================= -->
+
+            <a
+                href="/income"
+                class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 7v10"/>
+                    <path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/>
+                </svg>
+
                 收入记录 (Income)
+
             </a>
-            <a href="/expenses" class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+
+
+
+            <!-- ================= EXPENSES ================= -->
+
+            <a
+                href="/expenses"
+                class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/>
+                    <path d="M9 8h6M9 12h6M9 16h4"/>
+                </svg>
+
                 支出记录 (Expenses)
+
             </a>
-            <a href="/expense_report" class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/></svg>
+
+
+
+            <!-- ================= EXPENSE REPORT ================= -->
+
+            <a
+                href="/expense_report"
+                class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M21 12A9 9 0 1 1 12 3v9z"/>
+                    <path d="M12 3a9 9 0 0 1 9 9h-9z"/>
+                </svg>
+
                 支出报表 (Report)
+
             </a>
-            <a href="/balance" class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 8 0l-3-6zM19 8l-3 6a4 4 0 0 0 8 0l-3-6zM4 21h16M8 3h8"/></svg>
+
+
+
+            <!-- ================= BALANCE ================= -->
+
+            <a
+                href="/balance"
+                class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M12 3v18"/>
+                    <path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
+                    <path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
+                    <path d="M4 21h16M8 3h8"/>
+                </svg>
+
                 余额核对 (Balance)
+
             </a>
-            <a href="/monthly" class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+
+
+
+            <!-- ================= MONTHLY ================= -->
+
+            <a
+                href="/monthly"
+                class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M3 3v18h18"/>
+                    <path d="M7 15l4-5 3 3 5-7"/>
+                </svg>
+
                 月度报表 (Monthly)
+
             </a>
+
+
             {% endif %}
+
         </div>
+
+
+
+        <!-- =================================================
+             FOOTER
+             ================================================= -->
 
         <div class="nav-drawer-footer">
+
+
+            <!-- ================= STATUS ================= -->
+
             <div class="nav-drawer-status">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                {% if session.get('role') == 'staff' %}ချိတ်ဆက်ပြီး{% else %}System Connected{% endif %}
+
+                {% if session.get('role') == 'staff' %}
+                    ချိတ်ဆက်ပြီး
+                {% else %}
+                    System Connected
+                {% endif %}
+
             </div>
-            <a href="/logout" class="nav-drawer-link logout-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-                {% if session.get('role') == 'staff' %}အကောင့်ထွက်ရန် (Logout){% else %}安全登出 (Logout){% endif %}
+
+
+
+            <!-- ================= LOGOUT ================= -->
+
+            <a
+                href="/logout"
+                class="nav-drawer-link logout-link"
+            >
+
+                <!-- CURRENT ICON — UNCHANGED -->
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <path d="M16 17l5-5-5-5"/>
+                    <path d="M21 12H9"/>
+                </svg>
+
+                {% if session.get('role') == 'staff' %}
+                    အကောင့်ထွက်ရန် (Logout)
+                {% else %}
+                    安全登出 (Logout)
+                {% endif %}
+
             </a>
+
         </div>
+
     </div>
+
 </div>
 
+
+
+<!-- =========================================================
+     NAVIGATION JAVASCRIPT
+     ========================================================= -->
+
 <script>
+
 function openNavDrawer() {
-    document.getElementById('navDrawerOverlay').classList.add('active');
-    wpLockBody();
+
+    const overlay = document.getElementById('navDrawerOverlay');
+    const hamburger = document.getElementById('navHamburgerBtn');
+
+    if (!overlay) return;
+
+    overlay.classList.add('active');
+
+    if (hamburger) {
+        hamburger.classList.add('is-open');
+        hamburger.setAttribute('aria-expanded', 'true');
+        hamburger.setAttribute('aria-label', 'Close navigation');
+    }
+
+    /*
+     * Keep the page from scrolling behind the menu.
+     * Uses your existing helper if available.
+     */
+    if (typeof wpLockBody === 'function') {
+        wpLockBody();
+    } else {
+        document.body.style.overflow = 'hidden';
+    }
 }
+
+
 function closeNavDrawer() {
-    document.getElementById('navDrawerOverlay').classList.remove('active');
-    wpUnlockBody();
+
+    const overlay = document.getElementById('navDrawerOverlay');
+    const hamburger = document.getElementById('navHamburgerBtn');
+
+    if (!overlay) return;
+
+    overlay.classList.remove('active');
+
+    if (hamburger) {
+        hamburger.classList.remove('is-open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        hamburger.setAttribute('aria-label', 'Open navigation');
+    }
+
+    /*
+     * Restore page scrolling.
+     */
+    if (typeof wpUnlockBody === 'function') {
+        wpUnlockBody();
+    } else {
+        document.body.style.overflow = '';
+    }
 }
+
+
+/* =========================================================
+   ESC KEY
+   ========================================================= */
+
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeNavDrawer();
+
+    if (e.key === 'Escape') {
+
+        const overlay =
+            document.getElementById('navDrawerOverlay');
+
+        if (
+            overlay &&
+            overlay.classList.contains('active')
+        ) {
+            closeNavDrawer();
+        }
+
+    }
+
 });
+
+
+/* =========================================================
+   HAMBURGER TOGGLE
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const hamburger =
+        document.getElementById('navHamburgerBtn');
+
+    if (!hamburger) return;
+
+    hamburger.addEventListener('click', function() {
+
+        const overlay =
+            document.getElementById('navDrawerOverlay');
+
+        if (
+            overlay &&
+            overlay.classList.contains('active')
+        ) {
+            closeNavDrawer();
+        } else {
+            openNavDrawer();
+        }
+
+    });
+
+});
+
+
+/* =========================================================
+   CLOSE WHEN CLICKING A NAVIGATION LINK
+   ========================================================= */
+
+document.addEventListener('click', function(e) {
+
+    const link =
+        e.target.closest('.nav-drawer-link');
+
+    if (!link) return;
+
+    /*
+     * Don't interfere with logout/navigation itself.
+     * Just close the visual menu before navigating.
+     */
+    const overlay =
+        document.getElementById('navDrawerOverlay');
+
+    if (
+        overlay &&
+        overlay.classList.contains('active')
+    ) {
+        closeNavDrawer();
+    }
+
+});
+
 </script>
+
 {% endif %}
 
     <main>
