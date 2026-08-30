@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}支出分析报表 — Memory Cake{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans" id="expenseReportRoot">
+
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="space-y-1">
+            <h1 class="text-3xl font-semibold tracking-wide text-stone-900 font-serif">支出分析报表</h1>
+            <p class="text-xs text-stone-400 tracking-wider uppercase">Revenue vs Expenses · Category Breakdown</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <form method="GET" action="{{ filter_action }}" id="erFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
+                <input type="hidden" name="view" id="erViewModeInput" value="{{ view_mode }}">
+                <input type="hidden" name="date_basis" id="erDateBasisInput" value="{{ date_basis }}">
+
+                <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
+                    <button type="button" onclick="erSetViewMode('day')"
+                        class="px-3 py-2 transition-all er-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">日</button>
+                    <button type="button" onclick="erSetViewMode('month')"
+                        class="px-3 py-2 transition-all er-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">月</button>
+                    <button type="button" onclick="erSetViewMode('year')"
+                        class="px-3 py-2 transition-all er-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">年</button>
+                </div>
+
+                <div id="erDayPicker" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[170px]">
+                    <input type="hidden" name="day" id="erDayHidden" value="{{ selected_day }}">
+                    <button type="button" id="erDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openErDayPicker()">
+                        <span>{{ selected_day }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                    </button>
+                </div>
+
+                <div id="erMonthPicker" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[170px]">
+                    <input type="hidden" name="month" id="erMonthHidden" value="{{ selected_month }}">
+                    <button type="button" id="erMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openErMonthPicker()">
+                        <span>{{ selected_month }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                    </button>
+                </div>
+
+                <div id="erYearPicker" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[140px]">
+                    <input type="hidden" name="year" id="erYearHidden" value="{{ selected_year }}">
+                    <button type="button" id="erYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openErYearPicker()">
+                        <span>{{ selected_year }}</span>
+                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </form>
+
+            <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider w-full sm:w-auto">
+                <button type="button" id="erBasisOrderBtn" onclick="erSetDateBasis('order')"
+                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all {% if date_basis != 'paid' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">按订单日期</button>
+                <button type="button" id="erBasisPaidBtn" onclick="erSetDateBasis('paid')"
+                    class="flex-1 sm:flex-none px-3.5 py-2.5 transition-all {% if date_basis == 'paid' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">按付款日期</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== SUMMARY CARDS ==================== -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2">
+            <h3 class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">总营业额 (Revenue)</h3>
+            <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_revenue) }}</span>
+                <span class="text-xs font-semibold text-stone-400">MMK</span>
+            </div>
+            <p class="text-[10px] text-stone-400">蛋糕销售总额，不含车费 · {{ '按付款日期' if date_basis == 'paid' else '按订单日期' }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2">
+            <h3 class="text-[11px] font-bold tracking-wider text-rose-500 uppercase">总支出 (Expenses)</h3>
+            <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_expenses) }}</span>
+                <span class="text-xs font-semibold text-stone-400">MMK</span>
+            </div>
+            <p class="text-[10px] text-stone-400">{{ category_breakdown|length }} 个支出类别</p>
+        </div>
+
+        <div class="p-6 rounded-2xl shadow-xs space-y-2 text-white {% if net_profit >= 0 %}bg-emerald-800{% else %}bg-rose-800{% endif %}">
+            <h3 class="text-[11px] font-bold tracking-wider uppercase opacity-80">净利润 (Net Profit)</h3>
+            <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold tracking-tight font-numeric">{{ "{:,}".format(net_profit) }}</span>
+                <span class="text-xs font-semibold opacity-70">MMK</span>
+            </div>
+            <p class="text-[10px] opacity-70">{{ '盈利中 · Profit' if net_profit >= 0 else '亏损中 · Loss' }} (Revenue − Expenses)</p>
+        </div>
+    </div>
+
+    <!-- ==================== REVENUE VS EXPENSES BAR CHART ==================== -->
+    <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
+        <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">营业额与支出对比 (Revenue vs Expenses)</h2>
+        <div class="relative h-56 w-full">
+            <canvas id="revenueVsExpenseChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ==================== CATEGORY BREAKDOWN (with drill-down) ==================== -->
+    <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif" id="categoryPanelTitle">支出类别分布 (Expense Breakdown)</h2>
+            <button type="button" id="backToCategoriesBtn" onclick="showCategoryView()"
+                class="hidden text-xs font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">
+                ← 返回类别总览 (Back to Categories)
+            </button>
+        </div>
+        <p class="text-xs text-stone-400" id="categoryPanelHint">点击图表中的类别（或右侧列表），可查看该类别的子类别明细。(Click a slice to drill into its sub-categories.)</p>
+
+        {% if category_breakdown %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center" id="categoryView">
+            <div class="relative h-80 w-full flex items-center justify-center">
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+            <div class="space-y-2" id="categoryLegendList"></div>
+        </div>
+
+        <div class="hidden grid-cols-1 lg:grid-cols-2 gap-8 items-center" id="subcategoryView">
+            <div class="relative h-80 w-full flex items-center justify-center">
+                <canvas id="subcategoryPieChart"></canvas>
+            </div>
+            <div class="space-y-2" id="subcategoryLegendList"></div>
+        </div>
+        {% else %}
+        <div class="text-center py-16 text-stone-400 italic text-sm">该周期暂无支出记录，无法生成图表。</div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+const CATEGORY_DATA = {{ category_breakdown | tojson | safe }};
+const TOTAL_REVENUE = {{ total_revenue | tojson | safe }};
+const TOTAL_EXPENSES = {{ total_expenses | tojson | safe }};
+const NET_PROFIT = {{ net_profit | tojson | safe }};
+const ER_PALETTE = ['#059669', '#292524', '#b45309', '#1d4ed8', '#9f1239', '#57534e', '#0d9488', '#a855f7', '#ea580c', '#78716c'];
+
+Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+let categoryChart = null;
+let subcategoryChart = null;
+
+function erColor(i) { return ER_PALETTE[i % ER_PALETTE.length]; }
+
+function renderLegend(containerId, items, colors, onRowClick) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    items.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-3 p-3 rounded-xl border border-stone-100 bg-stone-50/50 transition-colors' + (onRowClick ? ' hover:bg-stone-100 cursor-pointer' : '');
+        row.innerHTML = `
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="w-3 h-3 rounded-full shrink-0" style="background:${colors[i]}"></span>
+                <span class="text-sm font-medium text-stone-800 truncate">${item.name}</span>
+            </div>
+            <div class="text-right shrink-0 font-numeric">
+                <div class="text-sm font-bold text-stone-950">${Number(item.total).toLocaleString()} MMK</div>
+                <div class="text-[10px] text-stone-400">${item.percentage}%</div>
+            </div>
+        `;
+        if (onRowClick) row.addEventListener('click', () => onRowClick(i));
+        el.appendChild(row);
+    });
+}
+
+function buildRevenueVsExpenseChart() {
+    const ctx = document.getElementById('revenueVsExpenseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['营业额 Revenue', '支出 Expenses', '净利润 Net Profit'],
+            datasets: [{
+                data: [TOTAL_REVENUE, TOTAL_EXPENSES, NET_PROFIT],
+                backgroundColor: ['#059669', '#e11d48', NET_PROFIT >= 0 ? '#1d4ed8' : '#9f1239'],
+                borderRadius: 8,
+                barPercentage: 0.55
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => c.parsed.y.toLocaleString() + ' MMK' } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: (v) => v.toLocaleString() }, grid: { color: '#f5f5f4' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function buildCategoryChart() {
+    if (!CATEGORY_DATA.length) return;
+    const ctx = document.getElementById('categoryPieChart').getContext('2d');
+    const labels = CATEGORY_DATA.map(c => c.name);
+    const data = CATEGORY_DATA.map(c => c.total);
+    const colors = CATEGORY_DATA.map((c, i) => erColor(i));
+
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 3, borderColor: '#fff', hoverOffset: 10 }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => `${c.label}: ${Number(c.parsed).toLocaleString()} MMK` } }
+            },
+            onClick: (evt, elements) => {
+                if (!elements.length) return;
+                showSubcategoryView(elements[0].index);
+            },
+            onHover: (evt, elements) => {
+                evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+            }
+        }
+    });
+
+    renderLegend('categoryLegendList', CATEGORY_DATA, colors, (i) => showSubcategoryView(i));
+}
+
+function showSubcategoryView(catIndex) {
+    const cat = CATEGORY_DATA[catIndex];
+    if (!cat) return;
+
+    document.getElementById('categoryView').classList.add('hidden');
+    document.getElementById('subcategoryView').classList.remove('hidden');
+    document.getElementById('subcategoryView').classList.add('grid');
+    document.getElementById('backToCategoriesBtn').classList.remove('hidden');
+    document.getElementById('categoryPanelTitle').textContent = `${cat.name} — 子类别明细 (Sub-categories)`;
+    document.getElementById('categoryPanelHint').textContent = `"${cat.name}" 类别的支出细分`;
+
+    if (subcategoryChart) { subcategoryChart.destroy(); subcategoryChart = null; }
+
+    const subs = cat.subcategories || [];
+    const legendEl = document.getElementById('subcategoryLegendList');
+    const canvas = document.getElementById('subcategoryPieChart');
+
+    if (!subs.length) {
+        canvas.style.display = 'none';
+        legendEl.innerHTML = '<p class="text-xs text-stone-400 italic py-4">此类别暂无子类别明细，仅有一笔或多笔未分子类别的支出。</p>';
+        return;
+    }
+    canvas.style.display = '';
+
+    const labels = subs.map(s => s.name);
+    const data = subs.map(s => s.total);
+    const colors = subs.map((s, i) => erColor(i));
+
+    subcategoryChart = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 3, borderColor: '#fff', hoverOffset: 10 }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => `${c.label}: ${Number(c.parsed).toLocaleString()} MMK` } }
+            }
+        }
+    });
+
+    renderLegend('subcategoryLegendList', subs, colors, null);
+}
+
+function showCategoryView() {
+    document.getElementById('subcategoryView').classList.add('hidden');
+    document.getElementById('subcategoryView').classList.remove('grid');
+    document.getElementById('categoryView').classList.remove('hidden');
+    document.getElementById('backToCategoriesBtn').classList.add('hidden');
+    document.getElementById('categoryPanelTitle').textContent = '支出类别分布 (Expense Breakdown)';
+    document.getElementById('categoryPanelHint').textContent = '点击图表中的类别（或右侧列表），可查看该类别的子类别明细。(Click a slice to drill into its sub-categories.)';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    buildRevenueVsExpenseChart();
+    buildCategoryChart();
+});
+
+/* ===== Filter bar ===== */
+function erSetViewMode(mode) {
+    document.getElementById('erViewModeInput').value = mode;
+    document.getElementById('erDayPicker').classList.toggle('hidden', mode !== 'day');
+    document.getElementById('erMonthPicker').classList.toggle('hidden', mode !== 'month');
+    document.getElementById('erYearPicker').classList.toggle('hidden', mode !== 'year');
+    document.getElementById('erFilterForm').submit();
+}
+
+function erSetDateBasis(basis) {
+    document.getElementById('erDateBasisInput').value = basis;
+    document.getElementById('erFilterForm').submit();
+}
+
+function openErDayPicker() {
+    const btn = document.getElementById('erDayTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('erDayHidden');
+    openDateWheelPicker({
+        title: '按日期筛选 (Filter by Day)',
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('erFilterForm').submit();
+        }
+    });
+}
+
+function openErMonthPicker() {
+    const btn = document.getElementById('erMonthTriggerBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('erMonthHidden');
+    openMonthWheelPicker({
+        initialValue: hidden.value,
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+            document.getElementById('erFilterForm').submit();
+        }
+    });
+}
+
+function openErYearPicker() {
+    const hidden = document.getElementById('erYearHidden');
+    openYearListPicker({
+        years: {{ available_years | tojson | safe }},
+        initialValue: hidden.value,
+        onConfirm: (value) => {
+            hidden.value = value;
+            document.getElementById('erYearTriggerBtn').querySelector('span').textContent = value;
+            document.getElementById('erFilterForm').submit();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dayHidden = document.getElementById('erDayHidden');
+    const dayBtn = document.getElementById('erDayTriggerBtn');
+    if (dayHidden && dayHidden.value && dayBtn) {
+        dayBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dayHidden.value);
+    }
+});
+</script>
+{% endblock %}
