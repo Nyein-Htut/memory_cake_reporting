@@ -148,12 +148,19 @@
         event.preventDefault();
         const form = event.target;
 
-        // Carry the current Daily Records filter (view/day/month/year/source
-        // as reflected in the URL) through the save, so the backend can
-        // redirect back to the same filtered view instead of resetting to
-        // the default period.
+        // Carry the current Daily Records filter through the save, using
+        // the live JS filter state (mcBuildReturnQS, defined in
+        // daily_records.html) so it includes whatever's actually selected
+        // rather than just what's reflected in the URL.
         const returnQsInput = form.querySelector('input[name="return_qs"]');
-        if (returnQsInput) returnQsInput.value = window.location.search;
+        if (returnQsInput) {
+            returnQsInput.value = window.mcBuildReturnQS
+                ? window.mcBuildReturnQS()
+                : window.location.search.replace(/^\?/, '');
+        }
+        // Stash purely-client filters (delivered/search — staff has no paid
+        // filter) so they can be reapplied once the page reloads.
+        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
 
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
