@@ -191,12 +191,20 @@
         }
         const form = event.target;
 
-        // Carry the current Daily Records filter (view/day/month/year/source
-        // as reflected in the URL) through the save, so the backend can
-        // redirect back to the same filtered view instead of resetting to
-        // the default period.
+        // Carry the current Daily Records filter through the save, using
+        // the live JS filter state (mcBuildReturnQS, defined in
+        // daily_records.html) rather than the URL — the source filter is
+        // client-side only on staff pages too, so relying on the URL alone
+        // would drop it.
         const returnQsInput = form.querySelector('input[name="return_qs"]');
-        if (returnQsInput) returnQsInput.value = window.location.search;
+        if (returnQsInput) {
+            returnQsInput.value = window.mcBuildReturnQS
+                ? window.mcBuildReturnQS()
+                : window.location.search.replace(/^\?/, '');
+        }
+        // Stash purely-client filters (delivered/search — staff has no paid
+        // filter) so they can be reapplied once the page reloads.
+        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
 
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
@@ -289,9 +297,10 @@
     function openDeleteModal(orderId, customerName, orderDate) {
         mCust.textContent = customerName;
         mDate.textContent = orderDate;
-        // Carry the current filter query string through to the delete
-        // route so the redirect back lands on the same filtered view.
-        mBtn.setAttribute('href', `/delete_order/${orderId}${window.location.search}`);
+        const _qs = window.mcBuildReturnQS
+            ? window.mcBuildReturnQS()
+            : window.location.search.replace(/^\?/, '');
+        mBtn.setAttribute('href', `/delete_order/${orderId}${_qs ? '?' + _qs : ''}`);
         modalOverlay.classList.remove('hidden');
         modalOverlay.classList.add('flex');
         setTimeout(() => {
@@ -311,9 +320,11 @@
 
     // Deleting a card removes it entirely, so there's no element to scroll
     // back to afterwards — the best we can do is restore the raw scroll
-    // position the staff member was at right before confirming.
+    // position the staff member was at right before confirming. Also stash
+    // client-side-only filters so they survive the reload.
     mBtn.addEventListener('click', function() {
         try { sessionStorage.setItem('mc_restore_scroll_y', String(window.scrollY)); } catch (e) {}
+        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
     });
 
     window.addEventListener('click', function(e) {
