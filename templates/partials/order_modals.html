@@ -17,6 +17,7 @@
         </div>
 
         <form id="editOrderForm" method="POST" enctype="multipart/form-data" class="text-sm font-sans p-6 overflow-y-auto space-y-4">
+            <input type="hidden" name="return_qs" id="editReturnQs" value="">
 
             <div class="ef-field">
                 <label class="ef-label">📅 送达日期时间 <span class="ef-label-en">Delivery Date &amp; Time</span></label>
@@ -185,6 +186,14 @@
             try { sessionStorage.setItem('mc_restore_order_id', String(_mcEditingOrderId)); } catch (e) {}
         }
         const form = event.target;
+
+        // Carry the current Daily Records filter (view/day/month/year/source
+        // as reflected in the URL) through the save, so the backend can
+        // redirect back to the same filtered view instead of resetting to
+        // the default period.
+        const returnQsInput = form.querySelector('input[name="return_qs"]');
+        if (returnQsInput) returnQsInput.value = window.location.search;
+
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -275,7 +284,7 @@
                 <div>
                     <label class="ef-item-label">💐 当前花束图</label>
                     ${_efImageBlock('old_flower_image[]', item.flower_image_url, 'border-rose-200')}
-                    <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded">
+                    <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-xs text-stone-400 file:py-1 file:px-2 file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
                 </div>
             </div>
         `;
@@ -291,7 +300,9 @@
     function openDeleteModal(orderId, customerName, orderDate) {
         mCust.textContent = customerName;
         mDate.textContent = orderDate;
-        mBtn.setAttribute('href', `/delete_order/${orderId}`);
+        // Carry the current filter query string through to the delete
+        // route so the redirect back lands on the same filtered view.
+        mBtn.setAttribute('href', `/delete_order/${orderId}${window.location.search}`);
         modalOverlay.classList.remove('hidden');
         modalOverlay.classList.add('flex');
         setTimeout(() => {
