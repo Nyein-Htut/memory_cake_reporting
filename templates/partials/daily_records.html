@@ -1,63 +1,26 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
-   Filter bar mirrors the Monthly Report page: a day/month/year view-mode
-   toggle plus one wp-trigger picker for whichever mode is active.
-
-   NOTE on the filter panel: it now works exactly like the Add Order modal —
-   a simple centered overlay toggled with hidden/flex classes — instead of
-   the old sliding bottom-sheet. That sheet relied on position:fixed with
-   its own visibility/pointer-events/transition timing, and it lived inside
-   .section-card (daily.html/staff_daily.html), whose :hover{transform:...}
-   turns position:fixed into "fixed relative to that ancestor" instead of
-   the viewport. That's what caused it to only appear scrolled to the
-   bottom of the page. The overlay + FAB are also relocated to
-   document.body on load (belt-and-suspenders), so no future ancestor
-   transform can ever break them again. #}
+   Filter access is now a speed-dial: tapping the FAB fans out small circular
+   shortcut buttons around it (Delivered/Paid cycle instantly on tap; Source
+   opens its picker directly; Period/Search open a small focused panel for
+   the inputs that need real typing/picking). Everything here — fan wrap,
+   backdrop, and the small panel — gets relocated to document.body on load
+   so no ancestor's :hover{transform} (see .section-card in daily.html /
+   staff_daily.html) can ever trap their position:fixed behavior. #}
 
 <style>
-.daily-delivered-pillbar {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    background: #ababa9;
-    border-radius: 9999px;
-    padding: 3px;
-}
-.daily-delivered-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 9999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .02em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.85);
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color .15s ease, color .15s ease;
-    user-select: none;
-    border: none;
-    background: transparent;
-}
-.daily-delivered-pill:hover { color: #fff; }
-.daily-delivered-pill.active {
-    background: #fff;
-    color: #1c1917;
-    box-shadow: 0 1px 3px rgba(0,0,0,.15);
-}
-@media (max-width: 480px) {
-    .daily-delivered-pillbar { justify-content: space-between; }
-    .daily-delivered-pill { flex: 1; padding: 7px 6px; }
-}
-
-/* ===== Floating Filter Access (FAB button) ===== */
-.daily-filter-fab {
+.daily-filter-fanwrap {
     position: fixed;
     left: max(1.1rem, env(safe-area-inset-left));
     bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.5rem));
-    z-index: 140;
+    z-index: 141;
+    width: 56px;
+    height: 56px;
+}
+
+.daily-filter-fab {
+    position: absolute;
+    left: 0; bottom: 0;
+    z-index: 2;
     width: 56px;
     height: 56px;
     border-radius: 9999px;
@@ -69,12 +32,13 @@
     border: none;
     cursor: pointer;
     box-shadow: 0 10px 30px rgba(28,25,23,.35), 0 2px 8px rgba(28,25,23,.2);
-    transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
 }
-.daily-filter-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 34px rgba(28,25,23,.4); }
+.daily-filter-fab:hover { box-shadow: 0 14px 34px rgba(28,25,23,.4); }
 .daily-filter-fab:active { transform: scale(.9); }
-.daily-filter-fab svg { width: 23px; height: 23px; }
-.daily-filter-fab.has-active-filters { background: linear-gradient(135deg, #1c1917, #292524); }
+.daily-filter-fab svg { width: 23px; height: 23px; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.daily-filter-fab.df-open svg { transform: rotate(135deg); }
+.daily-filter-fab.has-active-filters .daily-filter-fab-dot { display: block; }
 .daily-filter-fab-dot {
     position: absolute;
     top: 3px; right: 3px;
@@ -86,16 +50,63 @@
     box-shadow: 0 0 0 0 rgba(251,191,36,.6);
     animation: df-dot-pulse 2s ease-in-out infinite;
 }
-.daily-filter-fab.has-active-filters .daily-filter-fab-dot { display: block; }
 @keyframes df-dot-pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.5); }
     50% { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
 }
 
-/* ===== Filter modal — same pattern as the Add Order modal:
-   a fixed, full-viewport overlay, centered content, toggled with plain
-   hidden/flex classes. No slide animation, no visibility/pointer-events
-   timing tricks — nothing that can silently fail to show up. ===== */
+/* Backdrop is fully transparent — closing tap target only, keeps the
+   "filters float off the button" feel instead of dimming the page. */
+.daily-fan-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 139;
+    background: transparent;
+    display: none;
+}
+.daily-fan-backdrop.active { display: block; }
+
+/* ===== Fan (speed-dial) buttons ===== */
+.daily-fan-btn {
+    position: absolute;
+    left: 4px; bottom: 4px;
+    width: 48px; height: 48px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    background: #fff;
+    color: #1c1917;
+    border: 1.5px solid #e7e5e4;
+    box-shadow: 0 8px 20px rgba(28,25,23,.16);
+    cursor: pointer;
+    transform: translate(0, 0) scale(.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .38s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, background .15s ease, border-color .15s ease, color .15s ease;
+    z-index: 1;
+}
+.daily-filter-fanwrap.df-fan-open .daily-fan-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* Arc positions, quarter-circle radius ~80px sweeping from directly right
+   (0°) to directly above (90°) the FAB — always opens into open screen
+   space since the FAB sits in the bottom-left corner. */
+.daily-filter-fanwrap.df-fan-open .fan-pos-0 { transform: translate(80px, 0px) scale(1); transition-delay: .02s; }
+.daily-filter-fanwrap.df-fan-open .fan-pos-1 { transform: translate(74px, -31px) scale(1); transition-delay: .06s; }
+.daily-filter-fanwrap.df-fan-open .fan-pos-2 { transform: translate(57px, -57px) scale(1); transition-delay: .10s; }
+.daily-filter-fanwrap.df-fan-open .fan-pos-3 { transform: translate(31px, -74px) scale(1); transition-delay: .14s; }
+.daily-filter-fanwrap.df-fan-open .fan-pos-4 { transform: translate(0px, -80px) scale(1); transition-delay: .18s; }
+
+.daily-fan-btn.state-yes { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.daily-fan-btn.state-no { background: #fff7ed; border-color: #fed7aa; color: #b45309; }
+.daily-fan-btn.state-active { border-color: #a8a29e; box-shadow: 0 0 0 3px rgba(28,25,23,.08), 0 8px 20px rgba(28,25,23,.16); }
+.daily-fan-btn:active { transform-origin: center; filter: brightness(.96); }
+
+/* ===== Small focused panel (Period / Search) — same simple pattern as the
+   Add Order modal: hidden/flex toggle, no fancy visibility timing. ===== */
 #dailyFilterModal {
     position: fixed;
     inset: 0;
@@ -110,8 +121,8 @@
 #dailyFilterPanel {
     background: #fdfcfb;
     width: 100%;
-    max-width: 480px;
-    max-height: min(85vh, 720px);
+    max-width: 420px;
+    max-height: min(85vh, 640px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: 22px;
@@ -145,7 +156,7 @@
 </style>
 
 <!-- Always-visible compact summary strip (stays inline in the page — not
-     part of the filter modal — so the counts are visible without opening
+     part of the filter UI — so the counts are visible without opening
      filters). -->
 <div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10" id="dailySummaryBarWrap">
     <div class="flex flex-wrap gap-4 text-xs font-numeric text-stone-600" id="dailySummaryBar">
@@ -160,10 +171,9 @@
     </div>
 </div>
 
-<!-- Filter modal: lives here in markup for Jinja's sake, but gets
-     relocated to document.body once, on load, by the script at the bottom
-     (same as the FAB button below), so nothing can ever trap it inside a
-     transformed ancestor. -->
+<!-- Small focused panel: Period (view mode + day/month/year picker) plus,
+     for managers, the customer search box. Reached via the Period/Search
+     fan buttons below. Relocated to document.body on load. -->
 <div id="dailyFilterModal" class="hidden no-print font-sans">
     <div id="dailyFilterPanel">
 
@@ -176,7 +186,7 @@
             </button>
         </div>
 
-        <!-- Period + delivery-status filter bar (combined into one row) -->
+        <!-- Period filter bar -->
         <div class="space-y-2">
             <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}</span>
             <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2 w-full">
@@ -223,49 +233,11 @@
                         <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                 </div>
-
-                <!-- Delivered / Not Delivered — compact gray pill filter, styled after the
-                     day-separator bar so it reads as part of the same filter row. Full-width
-                     and centered on mobile via .daily-delivered-pillbar's own CSS. -->
-                <div class="daily-delivered-pillbar w-full sm:w-auto sm:ml-auto">
-                    <button type="button" id="deliveredFilterAllBtn" onclick="setDailyDeliveredFilter('all')" class="daily-delivered-pill active">
-                        {% if readonly %}အားလုံး{% else %}全部{% endif %}
-                    </button>
-                    <button type="button" id="deliveredFilterYesBtn" onclick="setDailyDeliveredFilter('delivered')" class="daily-delivered-pill">
-                        <span aria-hidden="true">🚚</span><span class="hidden sm:inline">{% if readonly %}ပို့ပြီး{% else %}已送达{% endif %}</span>
-                    </button>
-                    <button type="button" id="deliveredFilterNoBtn" onclick="setDailyDeliveredFilter('not_delivered')" class="daily-delivered-pill">
-                        <span aria-hidden="true">⏳</span><span class="hidden sm:inline">{% if readonly %}မပို့ရသေး{% else %}未送达{% endif %}</span>
-                    </button>
-                </div>
             </form>
         </div>
 
         {% if not readonly %}
-        <!-- Source filter (client-side, no reload) -->
-        <div class="pt-3">
-            <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 w-full {% if not selected_source %}wp-empty{% endif %}" onclick="openDailySourceFilterPicker()">
-                <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
-                <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-        </div>
-
-        <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider mt-3">
-            <button type="button" id="paidFilterAllBtn" onclick="setDailyPaidFilter('all')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-all bg-stone-900 text-white">
-                All
-            </button>
-            <button type="button" id="paidFilterPaidBtn" onclick="setDailyPaidFilter('paid')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-paid bg-white text-stone-500 hover:bg-stone-50">
-                ✅ Paid
-            </button>
-            <button type="button" id="paidFilterUnpaidBtn" onclick="setDailyPaidFilter('unpaid')"
-                class="flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-unpaid bg-white text-stone-500 hover:bg-stone-50">
-                ⏳ Unpaid
-            </button>
-        </div>
-
-        <!-- Customer search + Paid/Unpaid filter -->
+        <!-- Customer search (Source and Paid/Delivered now live on the fan buttons) -->
         <div class="space-y-3 pt-3 border-t border-stone-200/60 mt-3">
             <div class="relative w-full max-w-full">
 
@@ -308,14 +280,52 @@
 {% include "partials/daily_records_orders.html" %}
 </div>
 
-<button type="button" id="dailyFilterFabBtn" class="daily-filter-fab no-print"
-    onclick="toggleDailyFilterPanel()"
-    aria-label="{% if readonly %}စစ်ထုတ်မှု{% else %}筛选{% endif %}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 6h16M7 12h10M10 18h4"/>
-    </svg>
-    <span class="daily-filter-fab-dot"></span>
-</button>
+<!-- Speed-dial: main FAB + fan of shortcut buttons -->
+<div id="dailyFilterFanWrap" class="daily-filter-fanwrap no-print">
+
+    <!-- fan-pos-0: Delivered — instant cycle, both roles -->
+    <button type="button" id="fanDeliveredBtn" class="daily-fan-btn fan-pos-0" onclick="cycleFanDelivered()"
+        title="{% if readonly %}ပို့ဆောင်မှု{% else %}送达状态{% endif %}" aria-label="Delivered filter">
+        🚚
+    </button>
+
+    {% if not readonly %}
+    <!-- fan-pos-1: Paid — instant cycle, manager only -->
+    <button type="button" id="fanPaidBtn" class="daily-fan-btn fan-pos-1" onclick="cycleFanPaid()"
+        title="付款状态" aria-label="Payment filter">
+        💰
+    </button>
+
+    <!-- fan-pos-2: Search — opens the small panel, focused on search -->
+    <button type="button" id="fanSearchBtn" class="daily-fan-btn fan-pos-2" onclick="onFanSearchClick()"
+        title="搜索客户" aria-label="Search customer">
+        🔍
+    </button>
+
+    <!-- fan-pos-3: Source — opens the source list directly -->
+    <button type="button" id="fanSourceBtn" class="daily-fan-btn fan-pos-3" onclick="onFanSourceClick()"
+        title="按来源筛选" aria-label="Filter by source">
+        🏷️
+    </button>
+    {% endif %}
+
+    <!-- fan-pos-4: Period — opens the small panel for day/month/year -->
+    <button type="button" id="fanPeriodBtn" class="daily-fan-btn fan-pos-4" onclick="onFanPeriodClick()"
+        title="{% if readonly %}ကာလ ရွေးရန်{% else %}选择周期{% endif %}" aria-label="Filter by period">
+        📅
+    </button>
+
+    <button type="button" id="dailyFilterFabBtn" class="daily-filter-fab"
+        onclick="toggleDailyFan()"
+        aria-label="{% if readonly %}စစ်ထုတ်မှု{% else %}筛选{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M7 12h10M10 18h4"/>
+        </svg>
+        <span class="daily-filter-fab-dot"></span>
+    </button>
+</div>
+
+<div class="daily-fan-backdrop no-print" id="dailyFanBackdrop" onclick="closeDailyFan()"></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -354,33 +364,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-/* ===== Filter modal open/close — same simple pattern as the Add Order
-   modal (openOrderModal/closeOrderModal in order_form.html): plain
-   hidden/flex class toggle, no custom visibility/pointer-events timing.
-   The modal + FAB are also moved to document.body once on load so no
-   ancestor (e.g. .section-card:hover{transform}) can ever trap their
-   position:fixed behavior again. ===== */
+/* ===== Speed-dial fan open/close ===== */
 document.addEventListener('DOMContentLoaded', function() {
+    const fanWrap = document.getElementById('dailyFilterFanWrap');
     const modal = document.getElementById('dailyFilterModal');
-    const fab = document.getElementById('dailyFilterFabBtn');
-    if (modal && modal.parentNode !== document.body) {
-        document.body.appendChild(modal);
-    }
-    if (fab && fab.parentNode !== document.body) {
-        document.body.appendChild(fab);
-    }
+    const backdrop = document.getElementById('dailyFanBackdrop');
+    if (fanWrap && fanWrap.parentNode !== document.body) document.body.appendChild(fanWrap);
+    if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
+    if (backdrop && backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
 });
 
-let _dfIsOpen = false;
+let _dfFanOpen = false;
+let _dfModalOpen = false;
 
-function toggleDailyFilterPanel() {
-    _dfIsOpen ? closeDailyFilterPanel() : openDailyFilterPanel();
+function toggleDailyFan() {
+    _dfFanOpen ? closeDailyFan() : openDailyFan();
 }
 
+function openDailyFan() {
+    const fanWrap = document.getElementById('dailyFilterFanWrap');
+    const fab = document.getElementById('dailyFilterFabBtn');
+    const backdrop = document.getElementById('dailyFanBackdrop');
+    if (!fanWrap) return;
+    _dfFanOpen = true;
+    fanWrap.classList.add('df-fan-open');
+    fab.classList.add('df-open');
+    backdrop.classList.add('active');
+    document.addEventListener('keydown', _dfEscHandler);
+}
+
+function closeDailyFan() {
+    const fanWrap = document.getElementById('dailyFilterFanWrap');
+    const fab = document.getElementById('dailyFilterFabBtn');
+    const backdrop = document.getElementById('dailyFanBackdrop');
+    if (!fanWrap || !_dfFanOpen) return;
+    _dfFanOpen = false;
+    fanWrap.classList.remove('df-fan-open');
+    fab.classList.remove('df-open');
+    backdrop.classList.remove('active');
+    document.removeEventListener('keydown', _dfEscHandler);
+}
+
+/* ===== Small focused panel (Period / Search) ===== */
 function openDailyFilterPanel() {
     const modal = document.getElementById('dailyFilterModal');
     if (!modal) return;
-    _dfIsOpen = true;
+    _dfModalOpen = true;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
@@ -390,7 +419,7 @@ function openDailyFilterPanel() {
 function closeDailyFilterPanel() {
     const modal = document.getElementById('dailyFilterModal');
     if (!modal) return;
-    _dfIsOpen = false;
+    _dfModalOpen = false;
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.body.style.overflow = '';
@@ -398,11 +427,11 @@ function closeDailyFilterPanel() {
 }
 
 function _dfEscHandler(e) {
-    if (e.key === 'Escape') closeDailyFilterPanel();
+    if (e.key !== 'Escape') return;
+    if (_dfModalOpen) closeDailyFilterPanel();
+    if (_dfFanOpen) closeDailyFan();
 }
 
-// Click on the dark backdrop (outside the white card) closes the modal,
-// same as the Add Order modal's overlay click handler.
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('dailyFilterModal');
     if (modal) {
@@ -411,6 +440,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+/* ===== Fan button actions ===== */
+function onFanPeriodClick() {
+    closeDailyFan();
+    openDailyFilterPanel();
+}
+
+function onFanSearchClick() {
+    closeDailyFan();
+    openDailyFilterPanel();
+    setTimeout(() => {
+        const input = document.getElementById('dailyCustomerSearch');
+        if (input) input.focus();
+    }, 150);
+}
+
+function onFanSourceClick() {
+    closeDailyFan();
+    if (typeof openDailySourceFilterPicker === 'function') openDailySourceFilterPicker();
+}
+
+function cycleFanDelivered() {
+    const order = ['all', 'delivered', 'not_delivered'];
+    const next = order[(order.indexOf(dailyDeliveredFilter) + 1) % order.length];
+    setDailyDeliveredFilter(next);
+}
+
+{% if not readonly %}
+function cycleFanPaid() {
+    const order = ['all', 'paid', 'unpaid'];
+    const next = order[(order.indexOf(dailyPaidFilter) + 1) % order.length];
+    setDailyPaidFilter(next);
+}
+{% endif %}
 
 function updateDailyFilterFabIndicator() {
     const fab = document.getElementById('dailyFilterFabBtn');
@@ -422,6 +485,12 @@ function updateDailyFilterFabIndicator() {
         (typeof dailyDeliveredFilter !== 'undefined' && dailyDeliveredFilter !== 'all') ||
         (typeof dailySourceFilter !== 'undefined' && !!dailySourceFilter);
     fab.classList.toggle('has-active-filters', !!active);
+
+    const sourceBtn = document.getElementById('fanSourceBtn');
+    if (sourceBtn) sourceBtn.classList.toggle('state-active', !!(typeof dailySourceFilter !== 'undefined' && dailySourceFilter));
+
+    const searchBtn = document.getElementById('fanSearchBtn');
+    if (searchBtn) searchBtn.classList.toggle('state-active', !!(searchInput && searchInput.value.trim() !== ''));
 }
 document.addEventListener('DOMContentLoaded', updateDailyFilterFabIndicator);
 
@@ -549,8 +618,7 @@ function revealImage(btn) {
 let dailySourceFilter = {{ (selected_source or '') | tojson | safe }};
 
 function openDailySourceFilterPicker() {
-    const btn = document.getElementById('filterSourceTriggerBtn');
-    const span = btn.querySelector('span');
+    const btn = document.getElementById('fanSourceBtn');
     const listEl = document.getElementById('wpSourceList');
 
     document.getElementById('wpSourceTitle').textContent = '按来源筛选 (Filter by Source)';
@@ -566,8 +634,7 @@ function openDailySourceFilterPicker() {
         item.innerHTML = `<span>${opt}</span><span class="wp-source-check">✓</span>`;
         item.addEventListener('click', () => {
             dailySourceFilter = val;
-            span.textContent = val || allLabel;
-            btn.classList.toggle('wp-empty', !val);
+            if (btn) btn.classList.toggle('state-active', !!val);
             closeWheelOverlay('wpSourceOverlay');
 
             const hiddenField = document.getElementById('filterSourceHidden');
@@ -586,6 +653,7 @@ function openDailySourceFilterPicker() {
             }
 
             if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+            updateDailyFilterFabIndicator();
         });
         listEl.appendChild(item);
     });
@@ -599,17 +667,15 @@ let dailyPaidFilter = 'all';
 
 function setDailyPaidFilter(mode) {
     dailyPaidFilter = mode;
-    const tabs = {
-        all: document.getElementById('paidFilterAllBtn'),
-        paid: document.getElementById('paidFilterPaidBtn'),
-        unpaid: document.getElementById('paidFilterUnpaidBtn')
-    };
-    Object.keys(tabs).forEach((key) => {
-        const active = key === mode;
-        tabs[key].className = 'flex-1 sm:flex-none text-center px-3 py-1.5 transition-all daily-paid-tab-' + key + ' ' +
-            (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
-    });
+    const btn = document.getElementById('fanPaidBtn');
+    if (btn) {
+        btn.classList.remove('state-yes', 'state-no');
+        if (mode === 'paid') btn.classList.add('state-yes');
+        else if (mode === 'unpaid') btn.classList.add('state-no');
+        btn.title = mode === 'all' ? '付款状态: 全部' : (mode === 'paid' ? '付款状态: 已付款' : '付款状态: 未付款');
+    }
     if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+    updateDailyFilterFabIndicator();
 }
 {% endif %}
 
@@ -664,16 +730,15 @@ window.mcSaveClientFilters = mcSaveClientFilters;
 
 function setDailyDeliveredFilter(mode) {
     dailyDeliveredFilter = mode;
-    const tabs = {
-        all: document.getElementById('deliveredFilterAllBtn'),
-        delivered: document.getElementById('deliveredFilterYesBtn'),
-        not_delivered: document.getElementById('deliveredFilterNoBtn')
-    };
-    Object.keys(tabs).forEach((key) => {
-        if (!tabs[key]) return;
-        tabs[key].classList.toggle('active', key === mode);
-    });
+    const btn = document.getElementById('fanDeliveredBtn');
+    if (btn) {
+        btn.classList.remove('state-yes', 'state-no');
+        if (mode === 'delivered') btn.classList.add('state-yes');
+        else if (mode === 'not_delivered') btn.classList.add('state-no');
+        btn.title = mode === 'all' ? 'Delivered: All' : (mode === 'delivered' ? 'Delivered: Yes' : 'Delivered: No');
+    }
     if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+    updateDailyFilterFabIndicator();
 }
 
 /* ===== Combined client-side filtering (search + paid + source + delivered) =====
