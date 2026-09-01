@@ -160,11 +160,16 @@ def manager_required(f):
 def _is_manager():
     return session.get('role') == 'manager'
 
-def _role_home_redirect():
-    """Send the user back to whichever daily view matches their role."""
-    if session.get('role') == 'staff':
-        return redirect(url_for('staff_view'))
-    return redirect(url_for('index'))
+def _role_home_redirect(return_qs=None):
+    endpoint = 'staff_view' if session.get('role') == 'staff' else 'index'
+    target = url_for(endpoint)
+    if return_qs:
+        return_qs = return_qs.strip()
+        if return_qs.startswith('?'):
+            return_qs = return_qs[1:]
+        if return_qs:
+            target = f"{target}?{return_qs}"
+    return redirect(target)
 
 # ==========================================
 # AUTHENTICATION ROUTES
@@ -656,12 +661,10 @@ def add_order():
         )
         db.session.add(sub_item)
 
-    new_order.total_price = calculated_total
+        new_order.total_price = calculated_total
     db.session.commit()
     db.session.remove()
-    if session.get('role') == 'staff':
-        return redirect(url_for('staff_view'))
-    return redirect(url_for('index'))
+    return _role_home_redirect(request.form.get('return_qs', ''))
 
 @app.route('/delete_order/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -683,7 +686,7 @@ def delete_order(id):
         flash("Failed to delete order. Please try again.")
     finally:
         db.session.remove()
-    return _role_home_redirect()
+    return _role_home_redirect(request.values.get('return_qs', ''))
 
 @app.route('/edit_order/<int:order_id>', methods=['POST'])
 @login_required
@@ -800,7 +803,7 @@ def edit_order(order_id):
     finally:
         db.session.remove()
 
-    return _role_home_redirect()
+    return _role_home_redirect(request.form.get('return_qs', ''))
 
 # ==========================================
 # REPORTING
