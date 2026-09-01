@@ -30,7 +30,7 @@
 
 
 /* =========================================================
-   MAIN FAB — DARK GLOSSY GLASS
+   MAIN FAB — DARK GLOSSY GLASS ORB
    ========================================================= */
 
 .daily-filter-fab {
@@ -51,41 +51,30 @@
     color: white;
     cursor: pointer;
 
-    border: 1px solid rgba(255,255,255,.32);
+    /* Outer rim highlight */
+    border: 1px solid rgba(255, 255, 255, 0.45);
 
-    background:
-        radial-gradient(
-            circle at 30% 18%,
-            rgba(255,255,255,.28) 0%,
-            rgba(255,255,255,.08) 20%,
-            transparent 42%
-        ),
-        radial-gradient(
-            circle at 65% 72%,
-            rgba(255,255,255,.05),
-            transparent 55%
-        ),
-        linear-gradient(
-            145deg,
-            #4a4847 0%,
-            #252321 35%,
-            #11100f 72%,
-            #292725 100%
-        );
+    /* Volumetric dark glass sphere with subtle warm core */
+    background: radial-gradient(
+        circle at 50% 30%,
+        rgba(60, 56, 54, 0.98) 0%,
+        rgba(30, 26, 25, 0.98) 60%,
+        rgba(15, 12, 11, 1) 100%
+    );
 
     box-shadow:
-        /* outer glass rim */
-        0 0 0 1px rgba(255,255,255,.16),
+        /* Crisp top light catch */
+        inset 0 3px 6px rgba(255, 255, 255, 0.75),
 
-        /* upper glass reflection */
-        inset 0 2px 2px rgba(255,255,255,.32),
+        /* Deep lower dark refraction */
+        inset 0 -6px 12px rgba(0, 0, 0, 0.8),
 
-        /* lower internal darkness */
-        inset 0 -5px 9px rgba(0,0,0,.45),
+        /* Warm bottom rim light */
+        inset 0 -2px 8px rgba(255, 248, 240, 0.35),
 
-        /* depth */
-        0 10px 25px rgba(0,0,0,.30),
-        0 2px 5px rgba(0,0,0,.18);
+        /* Volumetric floating shadow */
+        0 12px 28px rgba(35, 28, 24, 0.45),
+        0 4px 10px rgba(0, 0, 0, 0.3);
 
     overflow: hidden;
 
@@ -95,61 +84,67 @@
 }
 
 
-/* large curved reflection */
+/* Spherical top glass reflection */
 .daily-filter-fab::before {
     content: "";
 
     position: absolute;
 
-    width: 70%;
-    height: 45%;
+    width: 80%;
+    height: 44%;
 
-    left: 8%;
-    top: 2%;
+    left: 10%;
+    top: 3%;
 
     border-radius: 50%;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.42),
-            rgba(255,255,255,.12) 45%,
-            transparent 75%
-        );
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.55) 40%,
+        rgba(255, 255, 255, 0) 100%
+    );
 
-    filter: blur(2px);
+    filter: none;
 
-    transform: rotate(-16deg);
+    transform: none;
 
     pointer-events: none;
+    z-index: 3;
 }
 
 
-/* bright glass edge */
+/* Bottom warm refraction glow */
 .daily-filter-fab::after {
     content: "";
 
     position: absolute;
-    inset: 2px;
+    bottom: 2%;
+    left: 15%;
+    width: 70%;
+    height: 30%;
 
     border-radius: 50%;
 
-    border-top: 1px solid rgba(255,255,255,.48);
-    border-left: 1px solid rgba(255,255,255,.25);
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 243, 224, 0.35) 0%,
+        transparent 70%
+    );
 
-    border-right: 1px solid rgba(255,255,255,.08);
-    border-bottom: 1px solid rgba(0,0,0,.30);
+    filter: blur(2px);
 
     pointer-events: none;
+    z-index: 2;
 }
 
 
 .daily-filter-fab:hover {
     box-shadow:
-        0 0 0 1px rgba(255,255,255,.2),
-        inset 0 2px 3px rgba(255,255,255,.38),
-        inset 0 -5px 10px rgba(0,0,0,.42),
-        0 14px 32px rgba(0,0,0,.34);
+        inset 0 4px 8px rgba(255, 255, 255, 0.85),
+        inset 0 -6px 14px rgba(0, 0, 0, 0.85),
+        inset 0 -2px 8px rgba(255, 248, 240, 0.45),
+        0 16px 36px rgba(35, 28, 24, 0.5);
 }
 
 
@@ -157,15 +152,15 @@
     transform: scale(.90);
 
     box-shadow:
-        inset 0 3px 7px rgba(0,0,0,.42),
-        inset 0 -1px 2px rgba(255,255,255,.25),
-        0 4px 10px rgba(0,0,0,.22);
+        inset 0 2px 5px rgba(0,0,0,.6),
+        inset 0 -1px 4px rgba(255,255,255,.5),
+        0 6px 14px rgba(28,25,23,.3);
 }
 
 
 .daily-filter-fab svg {
     position: relative;
-    z-index: 3;
+    z-index: 4;
 
     width: 23px;
     height: 23px;
@@ -259,7 +254,7 @@
 
 
 /* =========================================================
-   FAN BUTTONS — REAL GLASS BUBBLES
+   FAN BUTTONS — WARM REAL GLASS BUBBLES
    ========================================================= */
 
 .daily-fan-btn {
@@ -279,64 +274,40 @@
 
     font-size: 19px;
 
-    color: #292524;
+    color: #1c1917;
 
     cursor: pointer;
 
-    /*
-     * TRANSPARENT GLASS BODY
-     */
-    background:
-        radial-gradient(
-            circle at 30% 20%,
-            rgba(255,255,255,.72) 0%,
-            rgba(255,255,255,.38) 25%,
-            rgba(255,255,255,.18) 52%,
-            rgba(255,255,255,.10) 75%,
-            rgba(255,255,255,.20) 100%
-        );
+    /* Warm-tinted spherical glass gradient */
+    background: radial-gradient(
+        circle at 50% 35%,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(253, 250, 246, 0.75) 50%,
+        rgba(242, 237, 230, 0.85) 100%
+    );
 
-    /*
-     * MULTIPLE GLASS EDGES + DEPTH
-     */
-    border: 1px solid rgba(255,255,255,.72);
+    /* Ultra-clear top glass rim */
+    border: 1px solid rgba(255, 255, 255, 0.9);
 
+    /* Layered volume & ambient drop shadows */
     box-shadow:
+        inset 0 3px 5px rgba(255, 255, 255, 1),
+        inset 0 -5px 10px rgba(195, 185, 175, 0.5),
+        inset 0 -1px 3px rgba(140, 125, 110, 0.35),
+        0 10px 24px rgba(50, 40, 30, 0.18),
+        0 3px 8px rgba(0, 0, 0, 0.08);
 
-        /* bright outer halo */
-        0 0 0 1px rgba(255,255,255,.28),
-
-        /* glass catches light at top */
-        inset 0 2px 2px rgba(255,255,255,.90),
-
-        /* glass catches light at left */
-        inset 2px 0 2px rgba(255,255,255,.38),
-
-        /* darker bottom edge */
-        inset 0 -3px 5px rgba(120,120,120,.12),
-
-        /* floating shadow */
-        0 10px 20px rgba(0,0,0,.13),
-
-        /* contact shadow */
-        0 2px 4px rgba(0,0,0,.08);
-
-    /*
-     * THIS creates the glass distortion
-     */
     backdrop-filter:
-        blur(7px)
-        saturate(145%);
+        blur(12px)
+        saturate(180%);
 
     -webkit-backdrop-filter:
-        blur(7px)
-        saturate(145%);
+        blur(12px)
+        saturate(180%);
 
     overflow: hidden;
 
-    /*
-     * Start from FAB
-     */
+    /* Start from FAB */
     transform:
         translate(0,0)
         scale(.25)
@@ -350,15 +321,17 @@
     transition:
         transform .48s cubic-bezier(.22,1.35,.36,1),
         opacity .22s ease,
-        box-shadow .22s ease,
-        filter .2s ease;
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease,
+        box-shadow .2s ease;
 
     z-index: 1;
 }
 
 
 /* =========================================================
-   LARGE CURVED GLASS REFLECTION
+   CURVED GLASS SPECULAR HIGHLIGHT
    ========================================================= */
 
 .daily-fan-btn::before {
@@ -367,34 +340,32 @@
     position: absolute;
 
     width: 76%;
-    height: 45%;
+    height: 42%;
 
-    left: 8%;
-    top: 2%;
+    left: 12%;
+    top: 4%;
 
     border-radius: 50%;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.75) 0%,
-            rgba(255,255,255,.40) 32%,
-            rgba(255,255,255,.10) 65%,
-            transparent 100%
-        );
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(255, 255, 255, 0.6) 45%,
+        rgba(255, 255, 255, 0) 100%
+    );
 
-    filter: blur(1.5px);
+    filter: none;
 
-    transform: rotate(-15deg);
+    transform: none;
 
     pointer-events: none;
 
-    z-index: 1;
+    z-index: 2;
 }
 
 
 /* =========================================================
-   INNER GLASS RIM
+   INTERNAL WARM REFRACTION BASE GLOW
    ========================================================= */
 
 .daily-fan-btn::after {
@@ -402,28 +373,28 @@
 
     position: absolute;
 
-    inset: 2px;
+    width: 70%;
+    height: 30%;
+
+    left: 15%;
+    bottom: 3%;
 
     border-radius: 50%;
 
-    border-top:
-        1px solid rgba(255,255,255,.92);
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 245, 230, 0.8) 0%,
+        transparent 75%
+    );
 
-    border-left:
-        1px solid rgba(255,255,255,.55);
+    border: none;
+    box-shadow: none;
 
-    border-right:
-        1px solid rgba(255,255,255,.20);
-
-    border-bottom:
-        1px solid rgba(180,180,180,.20);
-
-    box-shadow:
-        inset 0 0 4px rgba(255,255,255,.25);
+    filter: blur(1px);
 
     pointer-events: none;
 
-    z-index: 2;
+    z-index: 1;
 }
 
 
@@ -433,7 +404,7 @@
 
 .daily-fan-btn > * {
     position: relative;
-    z-index: 4;
+    z-index: 3;
 }
 
 
@@ -490,19 +461,19 @@
    ========================================================= */
 
 .daily-fan-btn:hover {
-    filter: brightness(1.04);
+    background: radial-gradient(
+        circle at 50% 30%,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 252, 248, 0.85) 60%,
+        rgba(245, 238, 230, 0.9) 100%
+    );
+
+    border-color: rgba(255, 255, 255, 1);
 
     box-shadow:
-
-        0 0 0 1px rgba(255,255,255,.36),
-
-        inset 0 2px 3px rgba(255,255,255,1),
-
-        inset 2px 0 3px rgba(255,255,255,.45),
-
-        inset 0 -3px 5px rgba(120,120,120,.10),
-
-        0 14px 27px rgba(0,0,0,.16);
+        inset 0 4px 6px rgba(255, 255, 255, 1),
+        inset 0 -5px 12px rgba(180, 165, 150, 0.45),
+        0 14px 28px rgba(50, 40, 30, 0.24);
 }
 
 
@@ -513,69 +484,58 @@
 .daily-fan-btn:active {
     transform:
         translate(var(--fan-tx,0px), var(--fan-ty,0px))
-        scale(.88)
+        scale(.90)
         rotate(0deg);
 
-    filter: brightness(.98);
+    filter: brightness(.97);
 
     box-shadow:
-
-        inset 0 3px 6px rgba(80,80,80,.16),
-
-        inset 0 -1px 2px rgba(255,255,255,.7),
-
-        0 3px 8px rgba(0,0,0,.10);
+        inset 0 3px 6px rgba(140, 125, 110, 0.4),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.9),
+        0 4px 10px rgba(50, 40, 30, 0.15);
 }
 
 
 /* =========================================================
-   ACTIVE STATES — KEEP THE GLASS MATERIAL
+   ACTIVE STATES — WARM GLASS TINTS
    ========================================================= */
 
 .daily-fan-btn.state-yes {
-    background:
-        radial-gradient(
-            circle at 30% 20%,
-            rgba(255,255,255,.78),
-            rgba(236,253,245,.40) 45%,
-            rgba(209,250,229,.20) 100%
-        );
+    background: radial-gradient(
+        circle at 50% 35%,
+        rgba(236, 253, 245, 0.95) 0%,
+        rgba(209, 250, 229, 0.75) 60%,
+        rgba(167, 243, 208, 0.85) 100%
+    );
 
-    border-color: rgba(167,243,208,.78);
+    border-color: rgba(209, 250, 229, 0.95);
 
     color: #047857;
 }
 
 
 .daily-fan-btn.state-no {
-    background:
-        radial-gradient(
-            circle at 30% 20%,
-            rgba(255,255,255,.78),
-            rgba(255,247,237,.42) 45%,
-            rgba(254,215,170,.22) 100%
-        );
+    background: radial-gradient(
+        circle at 50% 35%,
+        rgba(255, 247, 237, 0.95) 0%,
+        rgba(254, 215, 170, 0.75) 60%,
+        rgba(253, 186, 116, 0.85) 100%
+    );
 
-    border-color: rgba(254,215,170,.82);
+    border-color: rgba(254, 215, 170, 0.95);
 
     color: #b45309;
 }
 
 
 .daily-fan-btn.state-active {
-    border-color: rgba(255,255,255,.95);
+    border-color: rgba(255, 255, 255, 1);
 
     box-shadow:
-
-        0 0 0 2px rgba(255,255,255,.30),
-
-        inset 0 2px 3px rgba(255,255,255,1),
-
-        inset 2px 0 3px rgba(255,255,255,.45),
-
-        inset 0 -3px 5px rgba(120,120,120,.12),
-
-        0 10px 22px rgba(0,0,0,.15);
+        inset 0 3px 6px rgba(255, 255, 255, 1),
+        inset 0 -5px 10px rgba(180, 165, 150, 0.6),
+        0 0 0 3px rgba(217, 119, 6, 0.25),
+        0 10px 24px rgba(50, 40, 30, 0.22);
 }
 
 
