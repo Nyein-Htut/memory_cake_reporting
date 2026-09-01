@@ -15,6 +15,18 @@
     z-index: 141;
     width: 56px;
     height: 56px;
+    /* ===== Fan layout tuning knobs =====
+       These can be changed freely — layoutDailyFan() (see script below)
+       reads them and always computes a radius that keeps at least
+       --fan-gap of clear space between adjacent buttons, no matter how
+       big --fan-btn-size is or how many buttons end up in the fan (2 for
+       staff, 5 for manager). Bumping --fan-btn-size or shrinking
+       --fan-gap can never cause overlap again — the radius grows to
+       compensate automatically. */
+    --fan-radius: 80px;   /* baseline/minimum radius — grows automatically if needed */
+    --fan-btn-size: 48px; /* should match .daily-fan-btn's width/height below */
+    --fan-gap: 12px;      /* minimum clear space between adjacent button edges */
+    --fan-sweep: 90deg;   /* total arc swept from directly right (0°) to directly above (90°) */
 }
 
 .daily-filter-fab {
@@ -66,7 +78,13 @@
 }
 .daily-fan-backdrop.active { display: block; }
 
-/* ===== Fan (speed-dial) buttons ===== */
+/* ===== Fan (speed-dial) buttons =====
+   Position is driven entirely by the --fan-tx/--fan-ty custom properties,
+   which layoutDailyFan() (in the script below) computes and sets on each
+   button individually at open-time. This guarantees a fixed minimum gap
+   between buttons regardless of --fan-radius, --fan-btn-size, or how many
+   buttons are actually present (see the wrapper's tuning knobs above) —
+   nothing here is a hardcoded per-button translate value anymore. */
 .daily-fan-btn {
     position: absolute;
     left: 4px; bottom: 4px;
@@ -81,7 +99,7 @@
     border: 1.5px solid #e7e5e4;
     box-shadow: 0 8px 20px rgba(28,25,23,.16);
     cursor: pointer;
-    transform: translate(0, 0) scale(.25);
+    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(.25);
     opacity: 0;
     pointer-events: none;
     transition: transform .38s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, background .15s ease, border-color .15s ease, color .15s ease;
@@ -90,15 +108,15 @@
 .daily-filter-fanwrap.df-fan-open .daily-fan-btn {
     opacity: 1;
     pointer-events: auto;
+    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(1);
 }
-/* Arc positions, quarter-circle radius ~80px sweeping from directly right
-   (0°) to directly above (90°) the FAB — always opens into open screen
-   space since the FAB sits in the bottom-left corner. */
-.daily-filter-fanwrap.df-fan-open .fan-pos-0 { transform: translate(80px, 0px) scale(1); transition-delay: .02s; }
-.daily-filter-fanwrap.df-fan-open .fan-pos-1 { transform: translate(74px, -31px) scale(1); transition-delay: .06s; }
-.daily-filter-fanwrap.df-fan-open .fan-pos-2 { transform: translate(57px, -57px) scale(1); transition-delay: .10s; }
-.daily-filter-fanwrap.df-fan-open .fan-pos-3 { transform: translate(31px, -74px) scale(1); transition-delay: .14s; }
-.daily-filter-fanwrap.df-fan-open .fan-pos-4 { transform: translate(0px, -80px) scale(1); transition-delay: .18s; }
+/* Stagger only — actual placement comes from --fan-tx/--fan-ty, which
+   layoutDailyFan() sets in JS, not from these classes. */
+.daily-fan-btn.fan-pos-0 { transition-delay: .02s; }
+.daily-fan-btn.fan-pos-1 { transition-delay: .06s; }
+.daily-fan-btn.fan-pos-2 { transition-delay: .10s; }
+.daily-fan-btn.fan-pos-3 { transition-delay: .14s; }
+.daily-fan-btn.fan-pos-4 { transition-delay: .18s; }
 
 .daily-fan-btn.state-yes { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
 .daily-fan-btn.state-no { background: #fff7ed; border-color: #fed7aa; color: #b45309; }
@@ -364,6 +382,67 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+/* ===== Speed-dial fan layout =====
+   Computes each fan button's --fan-tx/--fan-ty (see CSS above) from the
+   wrapper's --fan-radius / --fan-btn-size / --fan-gap / --fan-sweep custom
+   properties. This guarantees the gap between adjacent buttons never
+   shrinks below --fan-gap no matter the configured radius, the button
+   size, or how many buttons end up in the fan (2 for staff, 5 for
+   manager) — if the configured radius is too small to fit that many
+   buttons with the requested gap, the radius is grown just enough to make
+   it work. Nothing is a hardcoded per-button translate value anymore. */
+function layoutDailyFan() {
+    const wrap = document.getElementById('dailyFilterFanWrap');
+    if (!wrap) return;
+    const buttons = Array.from(wrap.querySelectorAll('.daily-fan-btn'));
+    const n = buttons.length;
+    if (!n) return;
+
+    const cs = getComputedStyle(wrap);
+    const readPx = (name, fallback) => {
+        const v = parseFloat(cs.getPropertyValue(name));
+        return Number.isFinite(v) ? v : fallback;
+    };
+    const readDeg = (name, fallback) => {
+        const v = parseFloat(cs.getPropertyValue(name));
+        return Number.isFinite(v) ? v : fallback;
+    };
+
+    const gap = readPx('--fan-gap', 12);
+    const sweepDeg = readDeg('--fan-sweep', 90);
+    let radius = readPx('--fan-radius', 80);
+
+    // Measure the actual rendered button size (covers any future CSS/
+    // breakpoint change to --fan-btn-size without needing a matching JS edit).
+    const measured = buttons[0].getBoundingClientRect().width;
+    const btnSize = measured > 0 ? measured : readPx('--fan-btn-size', 48);
+
+    if (n > 1) {
+        const stepDeg = sweepDeg / (n - 1);
+        const stepRad = stepDeg * Math.PI / 180;
+        // Chord distance between two adjacent points on the arc must be at
+        // least btnSize + gap for their circles to never overlap.
+        const minRadius = (btnSize + gap) / (2 * Math.sin(stepRad / 2));
+        radius = Math.max(radius, minRadius);
+    }
+
+    buttons.forEach((btn, i) => {
+        const thetaDeg = n > 1 ? (i * sweepDeg / (n - 1)) : (sweepDeg / 2);
+        const thetaRad = thetaDeg * Math.PI / 180;
+        const x = radius * Math.cos(thetaRad);
+        const y = -radius * Math.sin(thetaRad);
+        btn.style.setProperty('--fan-tx', x.toFixed(1) + 'px');
+        btn.style.setProperty('--fan-ty', y.toFixed(1) + 'px');
+    });
+}
+window.layoutDailyFan = layoutDailyFan;
+
+let _dfResizeTimer = null;
+window.addEventListener('resize', function() {
+    clearTimeout(_dfResizeTimer);
+    _dfResizeTimer = setTimeout(layoutDailyFan, 150);
+});
+
 /* ===== Speed-dial fan open/close ===== */
 document.addEventListener('DOMContentLoaded', function() {
     const fanWrap = document.getElementById('dailyFilterFanWrap');
@@ -372,6 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fanWrap && fanWrap.parentNode !== document.body) document.body.appendChild(fanWrap);
     if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
     if (backdrop && backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
+    layoutDailyFan();
 });
 
 let _dfFanOpen = false;
@@ -386,6 +466,7 @@ function openDailyFan() {
     const fab = document.getElementById('dailyFilterFabBtn');
     const backdrop = document.getElementById('dailyFanBackdrop');
     if (!fanWrap) return;
+    layoutDailyFan(); // re-measure every time, in case of resize/rotation since last open
     _dfFanOpen = true;
     fanWrap.classList.add('df-fan-open');
     fab.classList.add('df-open');
