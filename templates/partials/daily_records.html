@@ -646,6 +646,52 @@ function setDailyPaidFilter(mode) {
 /* ===== Delivered / Not Delivered / All filter (both roles) ===== */
 let dailyDeliveredFilter = 'all';
 
+/* ===== Capture true current filter state for edit/delete/add redirects =====
+   Source/paid/delivered/search are pure client-side state (never reflected
+   in window.location.search), so a redirect built from the URL alone loses
+   them. These helpers read the live JS state instead. */
+function mcCaptureFilterState() {
+    return {
+        view: document.getElementById('dailyViewModeInput') ? document.getElementById('dailyViewModeInput').value : '',
+        day: document.getElementById('filterDayHidden') ? document.getElementById('filterDayHidden').value : '',
+        month: document.getElementById('filterMonthHidden') ? document.getElementById('filterMonthHidden').value : '',
+        year: document.getElementById('filterYearHidden') ? document.getElementById('filterYearHidden').value : '',
+        source: (typeof dailySourceFilter !== 'undefined') ? dailySourceFilter : '',
+        paid: (typeof dailyPaidFilter !== 'undefined') ? dailyPaidFilter : 'all',
+        delivered: (typeof dailyDeliveredFilter !== 'undefined') ? dailyDeliveredFilter : 'all',
+        search: document.getElementById('dailyCustomerSearch') ? document.getElementById('dailyCustomerSearch').value : ''
+    };
+}
+window.mcCaptureFilterState = mcCaptureFilterState;
+
+// Builds the query string (view/day/month/year/source) that the server
+// actually understands, from the live JS filter state rather than the URL.
+function mcBuildReturnQS() {
+    const s = mcCaptureFilterState();
+    const params = new URLSearchParams();
+    if (s.view) params.set('view', s.view);
+    if (s.view === 'day' && s.day) params.set('day', s.day);
+    if (s.view === 'month' && s.month) params.set('month', s.month);
+    if (s.view === 'year' && s.year) params.set('year', s.year);
+    if (s.source) params.set('source', s.source);
+    return params.toString();
+}
+window.mcBuildReturnQS = mcBuildReturnQS;
+
+// Stashes the purely-client filters (paid/delivered/search — never sent to
+// the server) so they can be reapplied after the redirect reloads the page.
+function mcSaveClientFilters() {
+    const s = mcCaptureFilterState();
+    try {
+        sessionStorage.setItem('mc_restore_client_filters', JSON.stringify({
+            paid: s.paid,
+            delivered: s.delivered,
+            search: s.search
+        }));
+    } catch (e) {}
+}
+window.mcSaveClientFilters = mcSaveClientFilters;
+
 function setDailyDeliveredFilter(mode) {
     dailyDeliveredFilter = mode;
     const tabs = {
@@ -1043,4 +1089,14 @@ async function toggleDayFold(btn) {
     }
 }
 window.toggleDayFold = toggleDayFold;
-</script>
+
+/* ===== Restore purely-client-side filters (paid/delivered/search) after an
+   edit/delete/add redirect reloads the page. See mcSaveClientFilters()
+   above — these were stashed in sessionStorage right before the redirect
+   because they never round-trip through the URL/server. ===== */
+document.addEventListener('DOMContentLoaded', function() {
+    let saved = null;
+    try {
+        const raw = sessionStorage.getItem('mc_restore_client_filters');
+        if (raw) saved = JSON.parse(raw);
+        sessionStorage.removeItem('mc_restore_client
