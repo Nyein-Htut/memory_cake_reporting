@@ -23,6 +23,11 @@
     --fan-sweep: 90deg;
 }
 
+
+/* =========================================================
+   MAIN FILTER FAB — LIQUID GLASS
+   ========================================================= */
+
 .daily-filter-fab {
     position: absolute;
     left: 0;
@@ -37,42 +42,121 @@
     align-items: center;
     justify-content: center;
 
-    background: linear-gradient(135deg, #1c1917, #292524);
+    /* Glossy dark glass */
+    background:
+        linear-gradient(
+            145deg,
+            rgba(65, 62, 59, 0.96) 0%,
+            rgba(35, 32, 30, 0.94) 48%,
+            rgba(20, 18, 17, 0.98) 100%
+        );
+
     color: #fff;
-    border: none;
+
+    border: 1px solid rgba(255, 255, 255, 0.28);
+
     cursor: pointer;
 
+    position: absolute;
+
     box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.38),
+        inset 0 -2px 3px rgba(0,0,0,.35),
         0 10px 30px rgba(28,25,23,.35),
         0 2px 8px rgba(28,25,23,.2);
 
+    overflow: hidden;
+
     transition:
         transform .3s cubic-bezier(.34,1.56,.64,1),
-        box-shadow .25s ease;
+        box-shadow .25s ease,
+        background .25s ease;
 }
+
+
+/* Glass reflection */
+.daily-filter-fab::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.28) 0%,
+            rgba(255,255,255,.08) 25%,
+            transparent 55%
+        );
+
+    pointer-events: none;
+}
+
+
+/* Subtle shine */
+.daily-filter-fab::after {
+    content: "";
+    position: absolute;
+
+    width: 65%;
+    height: 35%;
+
+    top: -10%;
+    left: 8%;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.16);
+
+    filter: blur(8px);
+
+    transform: rotate(-15deg);
+
+    pointer-events: none;
+}
+
 
 .daily-filter-fab:hover {
-    box-shadow: 0 14px 34px rgba(28,25,23,.4);
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,.48),
+        inset 0 -2px 3px rgba(0,0,0,.3),
+        0 14px 34px rgba(28,25,23,.4);
 }
 
+
 .daily-filter-fab:active {
-    transform: scale(.9);
+    transform: scale(.90);
+
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,.4),
+        inset 0 -1px 2px rgba(255,255,255,.35),
+        0 5px 12px rgba(28,25,23,.25);
 }
+
 
 .daily-filter-fab svg {
     width: 23px;
     height: 23px;
+
+    position: relative;
+    z-index: 2;
+
     transition:
         transform .42s cubic-bezier(.34,1.56,.64,1);
 }
+
 
 .daily-filter-fab.df-open svg {
     transform: rotate(135deg);
 }
 
+
+/* Active filter indicator */
 .daily-filter-fab.has-active-filters .daily-filter-fab-dot {
     display: block;
 }
+
 
 .daily-filter-fab-dot {
     position: absolute;
@@ -81,16 +165,23 @@
 
     width: 11px;
     height: 11px;
+
     border-radius: 50%;
 
     background: #fbbf24;
-    border: 2px solid #fff;
+
+    border: 2px solid rgba(255,255,255,.9);
 
     display: none;
 
-    box-shadow: 0 0 0 0 rgba(251,191,36,.6);
+    z-index: 3;
+
+    box-shadow:
+        0 0 0 0 rgba(251,191,36,.6);
+
     animation: df-dot-pulse 2s ease-in-out infinite;
 }
+
 
 @keyframes df-dot-pulse {
     0%, 100% {
@@ -102,32 +193,42 @@
     }
 }
 
-/* Transparent closing backdrop */
+
+/* =========================================================
+   BACKDROP
+   ========================================================= */
+
 .daily-fan-backdrop {
     position: fixed;
     inset: 0;
     z-index: 139;
+
     background: rgba(255, 255, 255, 0.18);
+
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+
     display: none;
 }
+
 
 .daily-fan-backdrop.active {
     display: block;
 }
 
+
 /* =========================================================
-   FAN BUTTONS
+   FAN BUTTONS — LIQUID GLASS
    ========================================================= */
 
-/* ===== Fan buttons ===== */
 .daily-fan-btn {
     position: absolute;
     left: 4px;
     bottom: 4px;
+
     width: 48px;
     height: 48px;
+
     border-radius: 9999px;
 
     display: flex;
@@ -135,25 +236,48 @@
     justify-content: center;
 
     font-size: 19px;
-    background: #fff;
+
+    /*
+     * Frosted translucent glass material
+     */
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.78) 0%,
+            rgba(255,255,255,.52) 45%,
+            rgba(245,245,244,.38) 100%
+        );
+
     color: #1c1917;
-    border: 1.5px solid #e7e5e4;
-    box-shadow: 0 8px 20px rgba(28,25,23,.16);
+
+    border: 1px solid rgba(255,255,255,.78);
 
     cursor: pointer;
 
     /*
-     * IMPORTANT:
-     * --fan-tx / --fan-ty are STILL calculated by layoutDailyFan().
-     * So the positions/gaps don't change.
-     *
-     * The animation now starts from the FAB center and
-     * gently "pops" outward with a little overshoot.
+     * Inner highlights + soft depth
+     */
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.95),
+        inset 0 -1px 2px rgba(255,255,255,.35),
+        0 8px 20px rgba(28,25,23,.16),
+        0 2px 5px rgba(28,25,23,.08);
+
+    /*
+     * Slight background glass effect
+     */
+    backdrop-filter: blur(12px) saturate(170%);
+    -webkit-backdrop-filter: blur(12px) saturate(170%);
+
+    overflow: hidden;
+
+    /*
+     * Start from the FAB itself
      */
     transform:
-    translate(0, 0)
-    scale(.25)
-    rotate(-18deg);
+        translate(0, 0)
+        scale(.25)
+        rotate(-18deg);
 
     opacity: 0;
     pointer-events: none;
@@ -161,21 +285,70 @@
     transform-origin: center center;
 
     transition:
-        transform .48s cubic-bezier(.22, 1.35, .36, 1),
+        transform .48s cubic-bezier(.22,1.35,.36,1),
         opacity .22s ease,
-        background .15s ease,
-        border-color .15s ease,
-        color .15s ease,
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease,
         box-shadow .2s ease;
 
     z-index: 1;
 }
 
-/*
- * OPEN:
- * Each button travels to its already-calculated position,
- * scales up with a spring, and straightens itself.
- */
+
+/* =========================================================
+   GLASS REFLECTION
+   ========================================================= */
+
+.daily-fan-btn::before {
+    content: "";
+
+    position: absolute;
+    inset: 1px;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.65) 0%,
+            rgba(255,255,255,.20) 28%,
+            rgba(255,255,255,.04) 55%,
+            transparent 75%
+        );
+
+    pointer-events: none;
+}
+
+
+/* Small glossy highlight across the top */
+.daily-fan-btn::after {
+    content: "";
+
+    position: absolute;
+
+    width: 70%;
+    height: 30%;
+
+    top: -7%;
+    left: 12%;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.32);
+
+    filter: blur(6px);
+
+    transform: rotate(-12deg);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   OPEN FAN
+   ========================================================= */
+
 .daily-filter-fanwrap.df-fan-open .daily-fan-btn {
     opacity: 1;
     pointer-events: auto;
@@ -186,83 +359,11 @@
         rotate(0deg);
 }
 
-/*
- * Staggered "cascade" animation.
- *
- * The first button starts almost immediately,
- * then the others follow quickly.
- *
- * This keeps the animation feeling snappy rather than slow.
- */
-.daily-fan-btn.fan-pos-0 {
-    transition-delay: .00s;
-}
 
-.daily-fan-btn.fan-pos-1 {
-    transition-delay: .045s;
-}
+/* =========================================================
+   STAGGERED FAN ANIMATION
+   ========================================================= */
 
-.daily-fan-btn.fan-pos-2 {
-    transition-delay: .09s;
-}
-
-.daily-fan-btn.fan-pos-3 {
-    transition-delay: .135s;
-}
-
-.daily-fan-btn.fan-pos-4 {
-    transition-delay: .18s;
-}
-
-/*
- * When closing, remove the delay so everything collapses
- * naturally back toward the FAB together.
- */
-.daily-filter-fanwrap:not(.df-fan-open) .daily-fan-btn {
-    transition-delay: 0s;
-}
-
-.daily-fan-btn.state-yes {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #047857;
-}
-
-.daily-fan-btn.state-no {
-    background: #fff7ed;
-    border-color: #fed7aa;
-    color: #b45309;
-}
-
-.daily-fan-btn.state-active {
-    border-color: #a8a29e;
-    box-shadow:
-        0 0 0 3px rgba(28,25,23,.08),
-        0 8px 20px rgba(28,25,23,.16);
-}
-
-.daily-fan-btn:hover {
-    box-shadow:
-        0 12px 26px rgba(28,25,23,.20);
-}
-
-.daily-fan-btn:active {
-    transform:
-        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
-        scale(.92)
-        rotate(0deg);
-}
-
-.daily-filter-fanwrap.df-fan-open .daily-fan-btn {
-    opacity: 1;
-    pointer-events: auto;
-
-    transform:
-        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
-        scale(1);
-}
-
-/* Stagger only */
 .daily-fan-btn.fan-pos-0 {
     transition-delay: .02s;
 }
@@ -283,29 +384,96 @@
     transition-delay: .18s;
 }
 
+
+/* Closing happens together */
+.daily-filter-fanwrap:not(.df-fan-open) .daily-fan-btn {
+    transition-delay: 0s;
+}
+
+
+/* =========================================================
+   FILTER STATES — STILL GLASSY
+   ========================================================= */
+
 .daily-fan-btn.state-yes {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(236,253,245,.86),
+            rgba(209,250,229,.48)
+        );
+
+    border-color: rgba(167,243,208,.85);
+
     color: #047857;
 }
 
+
 .daily-fan-btn.state-no {
-    background: #fff7ed;
-    border-color: #fed7aa;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,247,237,.88),
+            rgba(254,215,170,.48)
+        );
+
+    border-color: rgba(254,215,170,.9);
+
     color: #b45309;
 }
 
+
+/* Active filter */
 .daily-fan-btn.state-active {
-    border-color: #a8a29e;
+    border-color: rgba(168,162,158,.95);
+
     box-shadow:
+        inset 0 1px 2px rgba(255,255,255,.95),
+        inset 0 -1px 2px rgba(255,255,255,.3),
         0 0 0 3px rgba(28,25,23,.08),
         0 8px 20px rgba(28,25,23,.16);
 }
 
-.daily-fan-btn:active {
-    transform-origin: center;
-    filter: brightness(.96);
+
+/* =========================================================
+   HOVER — MORE GLOSS
+   ========================================================= */
+
+.daily-fan-btn:hover {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.92),
+            rgba(255,255,255,.56)
+        );
+
+    border-color: rgba(255,255,255,.95);
+
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,1),
+        inset 0 -1px 2px rgba(255,255,255,.4),
+        0 12px 26px rgba(28,25,23,.20);
 }
+
+
+/* =========================================================
+   PRESSED — GLASS COMPRESSES
+   ========================================================= */
+
+.daily-fan-btn:active {
+    transform:
+        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
+        scale(.90)
+        rotate(0deg);
+
+    filter: brightness(.97);
+
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,.10),
+        inset 0 -1px 2px rgba(255,255,255,.8),
+        0 3px 8px rgba(28,25,23,.12);
+}
+
 
 /* =========================================================
    FILTER PANEL
@@ -327,6 +495,7 @@
     padding: 16px;
 }
 
+
 #dailyFilterPanel {
     background: #fdfcfb;
 
@@ -340,10 +509,12 @@
 
     border-radius: 22px;
 
-    box-shadow: 0 25px 60px rgba(28,25,23,.28);
+    box-shadow:
+        0 25px 60px rgba(28,25,23,.28);
 
     padding: 20px;
 }
+
 
 .df-panel-header {
     display: flex;
@@ -353,6 +524,7 @@
     margin-bottom: 6px;
 }
 
+
 .df-panel-title {
     font-family: 'Playfair Display', 'Noto Serif SC', serif;
 
@@ -361,6 +533,7 @@
 
     color: #1c1917;
 }
+
 
 .df-close-btn {
     width: 32px;
@@ -376,6 +549,7 @@
     color: #57534e;
 
     border: none;
+
     cursor: pointer;
 
     transition:
@@ -383,12 +557,13 @@
         transform .3s cubic-bezier(.34,1.56,.64,1);
 }
 
+
 .df-close-btn:hover {
     background: #e7e5e4;
+
     transform: rotate(90deg);
 }
 </style>
-
 
 <!-- =========================================================
      SUMMARY BAR
