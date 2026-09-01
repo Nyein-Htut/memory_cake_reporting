@@ -23,6 +23,7 @@
 
         <!-- Form Body -->
         <form action="/add_order" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)" class="p-6 space-y-6 text-sm font-sans">
+            <input type="hidden" name="return_qs" id="addOrderReturnQs" value="">
 
             <div class="space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -146,6 +147,14 @@
         function handleFormSubmit(event) {
         event.preventDefault();
         const form = event.target;
+
+        // Carry the current Daily Records filter (view/day/month/year/source
+        // as reflected in the URL) through the save, so the backend can
+        // redirect back to the same filtered view instead of resetting to
+        // the default period.
+        const returnQsInput = form.querySelector('input[name="return_qs"]');
+        if (returnQsInput) returnQsInput.value = window.location.search;
+
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
