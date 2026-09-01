@@ -1,6 +1,15 @@
 {# Shared daily records: filter bar + orders grouped by day (newest first), card-grid layout.
    Filter bar mirrors the Monthly Report page: a day/month/year view-mode
-   toggle plus one wp-trigger picker for whichever mode is active. #}
+   toggle plus one wp-trigger picker for whichever mode is active.
+
+   NOTE on the floating filter panel: #dailyFilterPanel is moved to
+   document.body ONCE on page load (see script at the bottom) so it is
+   never a descendant of any ancestor that could apply a CSS transform
+   (e.g. .section-card:hover { transform: ... } in daily.html/staff_daily.html).
+   A transformed ancestor creates a new containing block for `position: fixed`
+   children, which is what made the panel appear anchored near the bottom of
+   that section instead of the viewport. Keeping it permanently at body level
+   avoids that class of bug entirely. #}
 
 <style>
 .daily-delivered-pillbar {
@@ -97,7 +106,10 @@
     backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
 
-#dailyFilterPanel.df-floating {
+/* #dailyFilterPanel is permanently position:fixed (moved to document.body
+   at load time — see script below). It is never inline in the page flow,
+   so there's no ancestor to worry about breaking its containing block. */
+#dailyFilterPanel {
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 149;
@@ -105,44 +117,50 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: 26px 26px 0 0;
+    background: #fdfcfb;
     box-shadow: 0 -25px 60px rgba(28,25,23,.28);
-    transform: translateY(100%);
+    transform: translateY(110%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .4s cubic-bezier(.16,1,.3,1), visibility 0s linear .4s;
+}
+#dailyFilterPanel.df-open {
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
     transition: transform .4s cubic-bezier(.16,1,.3,1);
 }
-#dailyFilterPanel.df-floating.df-open { transform: translateY(0); }
 
 @media (min-width: 640px) {
-    #dailyFilterPanel.df-floating {
+    #dailyFilterPanel {
         left: 50%; right: auto; bottom: auto; top: 50%;
         width: 100%; max-width: 480px;
         border-radius: 24px;
         transform: translate(-50%, -46%) scale(.94);
         opacity: 0;
-        transition: transform .4s cubic-bezier(.16,1,.3,1), opacity .25s ease;
+        transition: transform .4s cubic-bezier(.16,1,.3,1), opacity .25s ease, visibility 0s linear .4s;
     }
-    #dailyFilterPanel.df-floating.df-open {
+    #dailyFilterPanel.df-open {
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
+        transition: transform .4s cubic-bezier(.16,1,.3,1), opacity .25s ease;
     }
+    .df-drag-handle { display: none !important; }
 }
 
 .df-drag-handle {
-    display: none;
     width: 40px; height: 4px;
     border-radius: 9999px;
     background: #e7e5e4;
     margin: 0 auto 12px;
 }
-#dailyFilterPanel.df-floating .df-drag-handle { display: block; }
 
 .df-panel-header {
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 6px;
 }
-#dailyFilterPanel.df-floating .df-panel-header { display: flex; }
-
 .df-panel-title {
     font-family: 'Playfair Display', 'Noto Serif SC', serif;
     font-weight: 700;
@@ -162,7 +180,25 @@
 .df-close-btn:hover { background: #e7e5e4; transform: rotate(90deg); }
 </style>
 
-<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10 space-y-4" id="dailyFilterPanel">
+<!-- Always-visible compact summary strip (stays inline in the page — not
+     part of the floating panel — so the counts are visible without opening
+     filters). -->
+<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10" id="dailySummaryBarWrap">
+    <div class="flex flex-wrap gap-4 text-xs font-numeric text-stone-600" id="dailySummaryBar">
+        <span><strong class="text-stone-900" id="summaryOrderCount">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
+        {% if show_payment %}
+        <span><strong class="text-stone-900" id="summaryRevenue">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
+        {% endif %}
+        <span><strong class="text-stone-900" id="summaryDayCount">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
+        {% if not readonly %}
+        <span id="summarySourceWrap" class="{% if not selected_source %}hidden{% endif %}">来源筛选: <strong class="text-stone-900" id="summarySourceValue">{{ selected_source or '' }}</strong></span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Floating filter panel: lives here in markup for Jinja's sake, but gets
+     relocated to document.body once, on load, by the script at the bottom. -->
+<div class="p-4 sm:p-5 no-print font-sans" id="dailyFilterPanel">
 
     <div class="df-drag-handle"></div>
     <div class="df-panel-header">
@@ -241,12 +277,10 @@
 
     {% if not readonly %}
     <!-- Source filter (client-side, no reload) -->
-   <!-- <div class="space-y-2 pt-3 border-t border-stone-200/60"> -->
         <button type="button" id="filterSourceTriggerBtn" class="wp-trigger text-xs p-3 w-full {% if not selected_source %}wp-empty{% endif %}" onclick="openDailySourceFilterPicker()">
             <span>{{ selected_source if selected_source else '全部来源 (All Sources)' }}</span>
             <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
-    <!--</div>-->
 
             <div class="flex w-full sm:w-auto rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                 <button type="button" id="paidFilterAllBtn" onclick="setDailyPaidFilter('all')"
@@ -293,22 +327,12 @@
                     <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path>
                 </svg>
             </button>
-        </div> 
-       
+        </div>
+
         <div id="dailySearchStatus" class="hidden text-xs text-stone-500"></div>
     </div>
     {% endif %}
 
-    <div class="flex flex-wrap gap-4 pt-3 border-t border-stone-200/60 text-xs font-numeric text-stone-600" id="dailySummaryBar">
-        <span><strong class="text-stone-900" id="summaryOrderCount">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
-        {% if show_payment %}
-        <span><strong class="text-stone-900" id="summaryRevenue">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
-        {% endif %}
-        <span><strong class="text-stone-900" id="summaryDayCount">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
-        {% if not readonly %}
-        <span id="summarySourceWrap" class="{% if not selected_source %}hidden{% endif %}">来源筛选: <strong class="text-stone-900" id="summarySourceValue">{{ selected_source or '' }}</strong></span>
-        {% endif %}
-    </div>
 </div>
 
 <div id="ordersRoot" class="p-3 sm:p-5">
@@ -363,11 +387,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-/* ===== Floating filter access: lift the panel into an overlay, then
-   drop it back exactly where it came from on close, so it never leaves
-   the DOM structure permanently altered and scroll position is untouched. ===== */
+/* ===== Floating filter access =====
+   The panel is relocated to document.body exactly ONCE, on load — before
+   any hover/scroll interaction can happen — so its only ancestors are ever
+   <html>/<body>. Neither has a transform, so nothing can ever hijack its
+   `position: fixed` containing block (unlike leaving it nested inside
+   .section-card, whose :hover { transform } rule in daily.html/
+   staff_daily.html was pulling it out of viewport-relative positioning).
+   After that one-time move, open/close is a pure class toggle — no further
+   DOM re-parenting, no timing races. */
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('dailyFilterPanel');
+    if (panel && panel.parentNode !== document.body) {
+        document.body.appendChild(panel);
+    }
+});
+
 let _dfIsOpen = false;
-let _dfParent = null, _dfNextSibling = null;
 
 function toggleDailyFilterPanel() {
     _dfIsOpen ? closeDailyFilterPanel() : openDailyFilterPanel();
@@ -380,20 +416,10 @@ function openDailyFilterPanel() {
     if (!panel || !backdrop || _dfIsOpen) return;
     _dfIsOpen = true;
 
-    // Remember exactly where the panel lives so we can put it right back.
-    _dfParent = panel.parentNode;
-    _dfNextSibling = panel.nextSibling;
-    document.body.appendChild(panel);
-
-    panel.classList.add('df-floating');
+    panel.classList.add('df-open');
     backdrop.classList.add('active');
     fab.classList.add('df-open');
     wpLockBody();
-
-    // Force layout so the fixed position is committed before the
-    // transform transitions in — otherwise it'd snap open with no slide.
-    void panel.offsetHeight;
-    requestAnimationFrame(() => panel.classList.add('df-open'));
 
     document.addEventListener('keydown', _dfEscHandler);
 }
@@ -410,12 +436,6 @@ function closeDailyFilterPanel() {
     fab.classList.remove('df-open');
     wpUnlockBody();
     document.removeEventListener('keydown', _dfEscHandler);
-
-    setTimeout(() => {
-        if (_dfIsOpen) return; // reopened mid-animation — leave it alone
-        panel.classList.remove('df-floating');
-        if (_dfParent) _dfParent.insertBefore(panel, _dfNextSibling);
-    }, 400);
 }
 
 function _dfEscHandler(e) {
