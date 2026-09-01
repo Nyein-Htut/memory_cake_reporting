@@ -62,7 +62,8 @@
 .daily-filter-fab svg {
     width: 23px;
     height: 23px;
-    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    transition:
+        transform .42s cubic-bezier(.34,1.56,.64,1);
 }
 
 .daily-filter-fab.df-open svg {
@@ -119,22 +120,13 @@
    FAN BUTTONS
    ========================================================= */
 
+/* ===== Fan buttons ===== */
 .daily-fan-btn {
     position: absolute;
-
-    /*
-       Keep this aligned with the FAB center.
-
-       The wrapper is 56x56 and this is 48x48.
-       4px offset means the button center is exactly
-       at the wrapper/FAB center.
-    */
     left: 4px;
     bottom: 4px;
-
     width: 48px;
     height: 48px;
-
     border-radius: 9999px;
 
     display: flex;
@@ -142,42 +134,122 @@
     justify-content: center;
 
     font-size: 19px;
-
     background: #fff;
     color: #1c1917;
-
     border: 1.5px solid #e7e5e4;
-
     box-shadow: 0 8px 20px rgba(28,25,23,.16);
 
     cursor: pointer;
 
     /*
-       Position is calculated by JS.
-
-       IMPORTANT:
-       Do NOT use fixed translate values here.
-       layoutDailyFan() calculates them based on:
-       - actual button size
-       - requested gap
-       - number of buttons
-       - fan sweep
-    */
+     * IMPORTANT:
+     * --fan-tx / --fan-ty are STILL calculated by layoutDailyFan().
+     * So the positions/gaps don't change.
+     *
+     * The animation now starts from the FAB center and
+     * gently "pops" outward with a little overshoot.
+     */
     transform:
         translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
-        scale(.25);
+        scale(.15)
+        rotate(-18deg);
 
     opacity: 0;
     pointer-events: none;
 
+    transform-origin: center center;
+
     transition:
-        transform .38s cubic-bezier(.34,1.56,.64,1),
-        opacity .2s ease,
+        transform .48s cubic-bezier(.22, 1.35, .36, 1),
+        opacity .22s ease,
         background .15s ease,
         border-color .15s ease,
-        color .15s ease;
+        color .15s ease,
+        box-shadow .2s ease;
 
     z-index: 1;
+}
+
+/*
+ * OPEN:
+ * Each button travels to its already-calculated position,
+ * scales up with a spring, and straightens itself.
+ */
+.daily-filter-fanwrap.df-fan-open .daily-fan-btn {
+    opacity: 1;
+    pointer-events: auto;
+
+    transform:
+        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
+        scale(1)
+        rotate(0deg);
+}
+
+/*
+ * Staggered "cascade" animation.
+ *
+ * The first button starts almost immediately,
+ * then the others follow quickly.
+ *
+ * This keeps the animation feeling snappy rather than slow.
+ */
+.daily-fan-btn.fan-pos-0 {
+    transition-delay: .00s;
+}
+
+.daily-fan-btn.fan-pos-1 {
+    transition-delay: .045s;
+}
+
+.daily-fan-btn.fan-pos-2 {
+    transition-delay: .09s;
+}
+
+.daily-fan-btn.fan-pos-3 {
+    transition-delay: .135s;
+}
+
+.daily-fan-btn.fan-pos-4 {
+    transition-delay: .18s;
+}
+
+/*
+ * When closing, remove the delay so everything collapses
+ * naturally back toward the FAB together.
+ */
+.daily-filter-fanwrap:not(.df-fan-open) .daily-fan-btn {
+    transition-delay: 0s;
+}
+
+.daily-fan-btn.state-yes {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.daily-fan-btn.state-no {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #b45309;
+}
+
+.daily-fan-btn.state-active {
+    border-color: #a8a29e;
+    box-shadow:
+        0 0 0 3px rgba(28,25,23,.08),
+        0 8px 20px rgba(28,25,23,.16);
+}
+
+.daily-fan-btn:hover {
+    box-shadow:
+        0 12px 26px rgba(28,25,23,.20);
+}
+
+.daily-fan-btn:active {
+    transform:
+        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
+        scale(.92)
+        rotate(0deg);
 }
 
 .daily-filter-fanwrap.df-fan-open .daily-fan-btn {
