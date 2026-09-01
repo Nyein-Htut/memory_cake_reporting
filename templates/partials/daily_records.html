@@ -15,136 +15,260 @@
     z-index: 141;
     width: 56px;
     height: 56px;
-    /* ===== Fan layout tuning knobs =====
-       These can be changed freely — layoutDailyFan() (see script below)
-       reads them and always computes a radius that keeps at least
-       --fan-gap of clear space between adjacent buttons, no matter how
-       big --fan-btn-size is or how many buttons end up in the fan (2 for
-       staff, 5 for manager). Bumping --fan-btn-size or shrinking
-       --fan-gap can never cause overlap again — the radius grows to
-       compensate automatically. */
-    --fan-radius: 80px;   /* baseline/minimum radius — grows automatically if needed */
-    --fan-btn-size: 48px; /* should match .daily-fan-btn's width/height below */
-    --fan-gap: 12px;      /* minimum clear space between adjacent button edges */
-    --fan-sweep: 90deg;   /* total arc swept from directly right (0°) to directly above (90°) */
+
+    /* ===== Fan layout tuning knobs ===== */
+    --fan-radius: 80px;
+    --fan-btn-size: 48px;
+    --fan-gap: 12px;
+    --fan-sweep: 90deg;
 }
 
 .daily-filter-fab {
     position: absolute;
-    left: 0; bottom: 0;
+    left: 0;
+    bottom: 0;
     z-index: 2;
+
     width: 56px;
     height: 56px;
     border-radius: 9999px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     background: linear-gradient(135deg, #1c1917, #292524);
     color: #fff;
     border: none;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(28,25,23,.35), 0 2px 8px rgba(28,25,23,.2);
-    transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+
+    box-shadow:
+        0 10px 30px rgba(28,25,23,.35),
+        0 2px 8px rgba(28,25,23,.2);
+
+    transition:
+        transform .3s cubic-bezier(.34,1.56,.64,1),
+        box-shadow .25s ease;
 }
-.daily-filter-fab:hover { box-shadow: 0 14px 34px rgba(28,25,23,.4); }
-.daily-filter-fab:active { transform: scale(.9); }
-.daily-filter-fab svg { width: 23px; height: 23px; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
-.daily-filter-fab.df-open svg { transform: rotate(135deg); }
-.daily-filter-fab.has-active-filters .daily-filter-fab-dot { display: block; }
+
+.daily-filter-fab:hover {
+    box-shadow: 0 14px 34px rgba(28,25,23,.4);
+}
+
+.daily-filter-fab:active {
+    transform: scale(.9);
+}
+
+.daily-filter-fab svg {
+    width: 23px;
+    height: 23px;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+.daily-filter-fab.df-open svg {
+    transform: rotate(135deg);
+}
+
+.daily-filter-fab.has-active-filters .daily-filter-fab-dot {
+    display: block;
+}
+
 .daily-filter-fab-dot {
     position: absolute;
-    top: 3px; right: 3px;
-    width: 11px; height: 11px;
+    top: 3px;
+    right: 3px;
+
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
+
     background: #fbbf24;
     border: 2px solid #fff;
+
     display: none;
+
     box-shadow: 0 0 0 0 rgba(251,191,36,.6);
     animation: df-dot-pulse 2s ease-in-out infinite;
 }
+
 @keyframes df-dot-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.5); }
-    50% { box-shadow: 0 0 0 5px rgba(251,191,36,0); }
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(251,191,36,.5);
+    }
+
+    50% {
+        box-shadow: 0 0 0 5px rgba(251,191,36,0);
+    }
 }
 
-/* Backdrop is fully transparent — closing tap target only, keeps the
-   "filters float off the button" feel instead of dimming the page. */
+/* Transparent closing backdrop */
 .daily-fan-backdrop {
     position: fixed;
     inset: 0;
     z-index: 139;
+
     background: transparent;
     display: none;
 }
-.daily-fan-backdrop.active { display: block; }
 
-/* ===== Fan (speed-dial) buttons =====
-   Position is driven entirely by the --fan-tx/--fan-ty custom properties,
-   which layoutDailyFan() (in the script below) computes and sets on each
-   button individually at open-time. This guarantees a fixed minimum gap
-   between buttons regardless of --fan-radius, --fan-btn-size, or how many
-   buttons are actually present (see the wrapper's tuning knobs above) —
-   nothing here is a hardcoded per-button translate value anymore. */
+.daily-fan-backdrop.active {
+    display: block;
+}
+
+/* =========================================================
+   FAN BUTTONS
+   ========================================================= */
+
 .daily-fan-btn {
     position: absolute;
-    left: 4px; bottom: 4px;
-    width: 48px; height: 48px;
+
+    /*
+       Keep this aligned with the FAB center.
+
+       The wrapper is 56x56 and this is 48x48.
+       4px offset means the button center is exactly
+       at the wrapper/FAB center.
+    */
+    left: 4px;
+    bottom: 4px;
+
+    width: 48px;
+    height: 48px;
+
     border-radius: 9999px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     font-size: 19px;
+
     background: #fff;
     color: #1c1917;
+
     border: 1.5px solid #e7e5e4;
+
     box-shadow: 0 8px 20px rgba(28,25,23,.16);
+
     cursor: pointer;
-    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(.25);
+
+    /*
+       Position is calculated by JS.
+
+       IMPORTANT:
+       Do NOT use fixed translate values here.
+       layoutDailyFan() calculates them based on:
+       - actual button size
+       - requested gap
+       - number of buttons
+       - fan sweep
+    */
+    transform:
+        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
+        scale(.25);
+
     opacity: 0;
     pointer-events: none;
-    transition: transform .38s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, background .15s ease, border-color .15s ease, color .15s ease;
+
+    transition:
+        transform .38s cubic-bezier(.34,1.56,.64,1),
+        opacity .2s ease,
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease;
+
     z-index: 1;
 }
+
 .daily-filter-fanwrap.df-fan-open .daily-fan-btn {
     opacity: 1;
     pointer-events: auto;
-    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(1);
+
+    transform:
+        translate(var(--fan-tx, 0px), var(--fan-ty, 0px))
+        scale(1);
 }
-/* Stagger only — actual placement comes from --fan-tx/--fan-ty, which
-   layoutDailyFan() sets in JS, not from these classes. */
-.daily-fan-btn.fan-pos-0 { transition-delay: .02s; }
-.daily-fan-btn.fan-pos-1 { transition-delay: .06s; }
-.daily-fan-btn.fan-pos-2 { transition-delay: .10s; }
-.daily-fan-btn.fan-pos-3 { transition-delay: .14s; }
-.daily-fan-btn.fan-pos-4 { transition-delay: .18s; }
 
-.daily-fan-btn.state-yes { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
-.daily-fan-btn.state-no { background: #fff7ed; border-color: #fed7aa; color: #b45309; }
-.daily-fan-btn.state-active { border-color: #a8a29e; box-shadow: 0 0 0 3px rgba(28,25,23,.08), 0 8px 20px rgba(28,25,23,.16); }
-.daily-fan-btn:active { transform-origin: center; filter: brightness(.96); }
+/* Stagger only */
+.daily-fan-btn.fan-pos-0 {
+    transition-delay: .02s;
+}
 
-/* ===== Small focused panel (Period / Search) — same simple pattern as the
-   Add Order modal: hidden/flex toggle, no fancy visibility timing. ===== */
+.daily-fan-btn.fan-pos-1 {
+    transition-delay: .06s;
+}
+
+.daily-fan-btn.fan-pos-2 {
+    transition-delay: .10s;
+}
+
+.daily-fan-btn.fan-pos-3 {
+    transition-delay: .14s;
+}
+
+.daily-fan-btn.fan-pos-4 {
+    transition-delay: .18s;
+}
+
+.daily-fan-btn.state-yes {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.daily-fan-btn.state-no {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #b45309;
+}
+
+.daily-fan-btn.state-active {
+    border-color: #a8a29e;
+    box-shadow:
+        0 0 0 3px rgba(28,25,23,.08),
+        0 8px 20px rgba(28,25,23,.16);
+}
+
+.daily-fan-btn:active {
+    transform-origin: center;
+    filter: brightness(.96);
+}
+
+/* =========================================================
+   FILTER PANEL
+   ========================================================= */
+
 #dailyFilterModal {
     position: fixed;
     inset: 0;
     z-index: 150;
+
     background: rgba(28, 25, 23, 0.45);
+
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
+
     align-items: center;
     justify-content: center;
+
     padding: 16px;
 }
+
 #dailyFilterPanel {
     background: #fdfcfb;
+
     width: 100%;
     max-width: 420px;
+
     max-height: min(85vh, 640px);
+
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+
     border-radius: 22px;
+
     box-shadow: 0 25px 60px rgba(28,25,23,.28);
+
     padding: 20px;
 }
 
@@ -152,117 +276,370 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     margin-bottom: 6px;
 }
+
 .df-panel-title {
     font-family: 'Playfair Display', 'Noto Serif SC', serif;
+
     font-weight: 700;
     font-size: 17px;
+
     color: #1c1917;
 }
+
 .df-close-btn {
-    width: 32px; height: 32px;
+    width: 32px;
+    height: 32px;
+
     border-radius: 9999px;
-    display: flex; align-items: center; justify-content: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     background: #f5f5f4;
     color: #57534e;
+
     border: none;
     cursor: pointer;
-    transition: background-color .15s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+
+    transition:
+        background-color .15s ease,
+        transform .3s cubic-bezier(.34,1.56,.64,1);
 }
-.df-close-btn:hover { background: #e7e5e4; transform: rotate(90deg); }
+
+.df-close-btn:hover {
+    background: #e7e5e4;
+    transform: rotate(90deg);
+}
 </style>
 
-<!-- Always-visible compact summary strip (stays inline in the page — not
-     part of the filter UI — so the counts are visible without opening
-     filters). -->
-<div class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10" id="dailySummaryBarWrap">
-    <div class="flex flex-wrap gap-4 text-xs font-numeric text-stone-600" id="dailySummaryBar">
-        <span><strong class="text-stone-900" id="summaryOrderCount">{{ total_orders }}</strong> {% if readonly %}အော်ဒါ{% else %}笔订单{% endif %}</span>
+
+<!-- =========================================================
+     SUMMARY BAR
+     ========================================================= -->
+
+<div
+    class="p-4 sm:p-5 bg-stone-50/80 border-b border-stone-200/60 no-print font-sans relative z-10"
+    id="dailySummaryBarWrap"
+>
+    <div
+        class="flex flex-wrap gap-4 text-xs font-numeric text-stone-600"
+        id="dailySummaryBar"
+    >
+        <span>
+            <strong class="text-stone-900" id="summaryOrderCount">
+                {{ total_orders }}
+            </strong>
+
+            {% if readonly %}
+                အော်ဒါ
+            {% else %}
+                笔订单
+            {% endif %}
+        </span>
+
         {% if show_payment %}
-        <span><strong class="text-stone-900" id="summaryRevenue">{{ "{:,}".format(total_revenue) }}</strong> {% if readonly %}MMK စုစုပေါင်း{% else %}MMK 合计{% endif %}</span>
+        <span>
+            <strong class="text-stone-900" id="summaryRevenue">
+                {{ "{:,}".format(total_revenue) }}
+            </strong>
+
+            {% if readonly %}
+                MMK စုစုပေါင်း
+            {% else %}
+                MMK 合计
+            {% endif %}
+        </span>
         {% endif %}
-        <span><strong class="text-stone-900" id="summaryDayCount">{{ orders_by_day|length }}</strong> {% if readonly %}ရက်{% else %}天{% endif %}</span>
+
+        <span>
+            <strong class="text-stone-900" id="summaryDayCount">
+                {{ orders_by_day|length }}
+            </strong>
+
+            {% if readonly %}
+                ရက်
+            {% else %}
+                天
+            {% endif %}
+        </span>
+
         {% if not readonly %}
-        <span id="summarySourceWrap" class="{% if not selected_source %}hidden{% endif %}">来源筛选: <strong class="text-stone-900" id="summarySourceValue">{{ selected_source or '' }}</strong></span>
+        <span
+            id="summarySourceWrap"
+            class="{% if not selected_source %}hidden{% endif %}"
+        >
+            来源筛选:
+            <strong class="text-stone-900" id="summarySourceValue">
+                {{ selected_source or '' }}
+            </strong>
+        </span>
         {% endif %}
     </div>
 </div>
 
-<!-- Small focused panel: Period (view mode + day/month/year picker) plus,
-     for managers, the customer search box. Reached via the Period/Search
-     fan buttons below. Relocated to document.body on load. -->
+
+<!-- =========================================================
+     FILTER MODAL
+     ========================================================= -->
+
 <div id="dailyFilterModal" class="hidden no-print font-sans">
+
     <div id="dailyFilterPanel">
 
         <div class="df-panel-header">
-            <span class="df-panel-title">{% if readonly %}စစ်ထုတ်မှုများ{% else %}筛选条件{% endif %}</span>
-            <button type="button" class="df-close-btn" onclick="closeDailyFilterPanel()" aria-label="Close filters">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18"/>
+
+            <span class="df-panel-title">
+                {% if readonly %}
+                    စစ်ထုတ်မှုများ
+                {% else %}
+                    筛选条件
+                {% endif %}
+            </span>
+
+            <button
+                type="button"
+                class="df-close-btn"
+                onclick="closeDailyFilterPanel()"
+                aria-label="Close filters"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    width="15"
+                    height="15"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6 6l12 12M18 6 6 18"
+                    />
                 </svg>
             </button>
+
         </div>
 
-        <!-- Period filter bar -->
+
+        <!-- Period filter -->
+
         <div class="space-y-2">
-            <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">{% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}</span>
-            <form method="GET" action="{{ filter_action }}" id="dailyFilterForm" class="flex flex-wrap items-center gap-2 w-full">
-                <input type="hidden" name="view" id="dailyViewModeInput" value="{{ view_mode }}">
+
+            <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
+                {% if readonly %}
+                    ကာလ ရွေးရန်
+                {% else %}
+                    筛选周期
+                {% endif %}
+            </span>
+
+            <form
+                method="GET"
+                action="{{ filter_action }}"
+                id="dailyFilterForm"
+                class="flex flex-wrap items-center gap-2 w-full"
+            >
+
+                <input
+                    type="hidden"
+                    name="view"
+                    id="dailyViewModeInput"
+                    value="{{ view_mode }}"
+                >
+
                 {% if not readonly %}
-                <input type="hidden" name="source" id="filterSourceHidden" value="{{ selected_source or '' }}">
+                <input
+                    type="hidden"
+                    name="source"
+                    id="filterSourceHidden"
+                    value="{{ selected_source or '' }}"
+                >
                 {% endif %}
 
+
+                <!-- Day / Month / Year -->
+
                 <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
-                    <button type="button" onclick="setDailyViewMode('day')"
-                        class="px-3.5 py-2.5 transition-all daily-view-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+
+                    <button
+                        type="button"
+                        onclick="setDailyViewMode('day')"
+                        class="px-3.5 py-2.5 transition-all daily-view-tab-day {% if view_mode == 'day' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}"
+                    >
                         {% if readonly %}ရက်{% else %}日{% endif %}
                     </button>
-                    <button type="button" onclick="setDailyViewMode('month')"
-                        class="px-3.5 py-2.5 transition-all daily-view-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+
+                    <button
+                        type="button"
+                        onclick="setDailyViewMode('month')"
+                        class="px-3.5 py-2.5 transition-all daily-view-tab-month {% if view_mode == 'month' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}"
+                    >
                         {% if readonly %}လ{% else %}月{% endif %}
                     </button>
-                    <button type="button" onclick="setDailyViewMode('year')"
-                        class="px-3.5 py-2.5 transition-all daily-view-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+
+                    <button
+                        type="button"
+                        onclick="setDailyViewMode('year')"
+                        class="px-3.5 py-2.5 transition-all daily-view-tab-year {% if view_mode == 'year' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}"
+                    >
                         {% if readonly %}နှစ်{% else %}年{% endif %}
                     </button>
+
                 </div>
 
-                <div id="dailyDayPickerWrap" class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
-                    <input type="hidden" name="day" id="filterDayHidden" value="{{ selected_day or '' }}">
-                    <button type="button" id="filterDayTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterDayPicker()">
+
+                <!-- Day picker -->
+
+                <div
+                    id="dailyDayPickerWrap"
+                    class="{% if view_mode != 'day' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]"
+                >
+
+                    <input
+                        type="hidden"
+                        name="day"
+                        id="filterDayHidden"
+                        value="{{ selected_day or '' }}"
+                    >
+
+                    <button
+                        type="button"
+                        id="filterDayTriggerBtn"
+                        class="wp-trigger text-xs p-3 w-full"
+                        onclick="openFilterDayPicker()"
+                    >
                         <span>{{ selected_day }}</span>
-                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+
+                        <svg
+                            class="w-4 h-4 wp-trigger-icon shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <rect
+                                x="3"
+                                y="5"
+                                width="18"
+                                height="16"
+                                rx="2"
+                            />
+                            <path d="M3 10h18M8 3v4M16 3v4"/>
+                        </svg>
                     </button>
+
                 </div>
 
-                <div id="dailyMonthPickerWrap" class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
-                    <input type="hidden" name="month" id="filterMonthHidden" value="{{ selected_month }}">
-                    <button type="button" id="filterMonthTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterMonthPicker()">
+
+                <!-- Month picker -->
+
+                <div
+                    id="dailyMonthPickerWrap"
+                    class="{% if view_mode != 'month' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]"
+                >
+
+                    <input
+                        type="hidden"
+                        name="month"
+                        id="filterMonthHidden"
+                        value="{{ selected_month }}"
+                    >
+
+                    <button
+                        type="button"
+                        id="filterMonthTriggerBtn"
+                        class="wp-trigger text-xs p-3 w-full"
+                        onclick="openFilterMonthPicker()"
+                    >
                         <span>{{ selected_month }}</span>
-                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+
+                        <svg
+                            class="w-4 h-4 wp-trigger-icon shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <rect
+                                x="3"
+                                y="5"
+                                width="18"
+                                height="16"
+                                rx="2"
+                            />
+                            <path d="M3 10h18M8 3v4M16 3v4"/>
+                        </svg>
                     </button>
+
                 </div>
 
-                <div id="dailyYearPickerWrap" class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]">
-                    <input type="hidden" name="year" id="filterYearHidden" value="{{ selected_year }}">
-                    <button type="button" id="filterYearTriggerBtn" class="wp-trigger text-xs p-3 w-full" onclick="openFilterYearPicker()">
+
+                <!-- Year picker -->
+
+                <div
+                    id="dailyYearPickerWrap"
+                    class="{% if view_mode != 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[150px]"
+                >
+
+                    <input
+                        type="hidden"
+                        name="year"
+                        id="filterYearHidden"
+                        value="{{ selected_year }}"
+                    >
+
+                    <button
+                        type="button"
+                        id="filterYearTriggerBtn"
+                        class="wp-trigger text-xs p-3 w-full"
+                        onclick="openFilterYearPicker()"
+                    >
                         <span>{{ selected_year }}</span>
-                        <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+
+                        <svg
+                            class="w-4 h-4 wp-trigger-icon shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M19 9l-7 7-7-7"/>
+                        </svg>
                     </button>
+
                 </div>
+
             </form>
+
         </div>
 
+
         {% if not readonly %}
-        <!-- Customer search (Source and Paid/Delivered now live on the fan buttons) -->
+
+        <!-- Customer search -->
+
         <div class="space-y-3 pt-3 border-t border-stone-200/60 mt-3">
+
             <div class="relative w-full max-w-full">
 
-                <label for="dailyCustomerSearch" class="sr-only">Search customer name</label>
+                <label
+                    for="dailyCustomerSearch"
+                    class="sr-only"
+                >
+                    Search customer name
+                </label>
 
-                <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg
+                    class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
                     <circle cx="11" cy="11" r="7"></circle>
                     <path stroke-linecap="round" d="m20 20-4-4"></path>
                 </svg>
@@ -281,954 +658,3244 @@
                     aria-label="Clear customer search"
                     class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
                 >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path>
+                    <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            d="M6 6l12 12M18 6 6 18"
+                        />
                     </svg>
                 </button>
+
             </div>
 
-            <div id="dailySearchStatus" class="hidden text-xs text-stone-500"></div>
+            <div
+                id="dailySearchStatus"
+                class="hidden text-xs text-stone-500"
+            ></div>
+
         </div>
+
         {% endif %}
 
     </div>
 </div>
 
+
+<!-- =========================================================
+     ORDERS
+     ========================================================= -->
+
 <div id="ordersRoot" class="p-3 sm:p-5">
-{% include "partials/daily_records_orders.html" %}
+    {% include "partials/daily_records_orders.html" %}
 </div>
 
-<!-- Speed-dial: main FAB + fan of shortcut buttons -->
-<div id="dailyFilterFanWrap" class="daily-filter-fanwrap no-print">
 
-    <!-- fan-pos-0: Delivered — instant cycle, both roles -->
-    <button type="button" id="fanDeliveredBtn" class="daily-fan-btn fan-pos-0" onclick="cycleFanDelivered()"
-        title="{% if readonly %}ပို့ဆောင်မှု{% else %}送达状态{% endif %}" aria-label="Delivered filter">
+<!-- =========================================================
+     SPEED DIAL
+     ========================================================= -->
+
+<div
+    id="dailyFilterFanWrap"
+    class="daily-filter-fanwrap no-print"
+>
+
+    <!-- Delivered -->
+
+    <button
+        type="button"
+        id="fanDeliveredBtn"
+        class="daily-fan-btn fan-pos-0"
+        onclick="cycleFanDelivered()"
+        title="{% if readonly %}ပို့ဆောင်မှု{% else %}送达状态{% endif %}"
+        aria-label="Delivered filter"
+    >
         🚚
     </button>
 
+
     {% if not readonly %}
-    <!-- fan-pos-1: Paid — instant cycle, manager only -->
-    <button type="button" id="fanPaidBtn" class="daily-fan-btn fan-pos-1" onclick="cycleFanPaid()"
-        title="付款状态" aria-label="Payment filter">
+
+    <!-- Paid -->
+
+    <button
+        type="button"
+        id="fanPaidBtn"
+        class="daily-fan-btn fan-pos-1"
+        onclick="cycleFanPaid()"
+        title="付款状态"
+        aria-label="Payment filter"
+    >
         💰
     </button>
 
-    <!-- fan-pos-2: Search — opens the small panel, focused on search -->
-    <button type="button" id="fanSearchBtn" class="daily-fan-btn fan-pos-2" onclick="onFanSearchClick()"
-        title="搜索客户" aria-label="Search customer">
+
+    <!-- Search -->
+
+    <button
+        type="button"
+        id="fanSearchBtn"
+        class="daily-fan-btn fan-pos-2"
+        onclick="onFanSearchClick()"
+        title="搜索客户"
+        aria-label="Search customer"
+    >
         🔍
     </button>
 
-    <!-- fan-pos-3: Source — opens the source list directly -->
-    <button type="button" id="fanSourceBtn" class="daily-fan-btn fan-pos-3" onclick="onFanSourceClick()"
-        title="按来源筛选" aria-label="Filter by source">
+
+    <!-- Source -->
+
+    <button
+        type="button"
+        id="fanSourceBtn"
+        class="daily-fan-btn fan-pos-3"
+        onclick="onFanSourceClick()"
+        title="按来源筛选"
+        aria-label="Filter by source"
+    >
         🏷️
     </button>
+
     {% endif %}
 
-    <!-- fan-pos-4: Period — opens the small panel for day/month/year -->
-    <button type="button" id="fanPeriodBtn" class="daily-fan-btn fan-pos-4" onclick="onFanPeriodClick()"
-        title="{% if readonly %}ကာလ ရွေးရန်{% else %}选择周期{% endif %}" aria-label="Filter by period">
+
+    <!-- Period -->
+
+    <button
+        type="button"
+        id="fanPeriodBtn"
+        class="daily-fan-btn fan-pos-4"
+        onclick="onFanPeriodClick()"
+        title="{% if readonly %}ကာလ ရွေးရန်{% else %}选择周期{% endif %}"
+        aria-label="Filter by period"
+    >
         📅
     </button>
 
-    <button type="button" id="dailyFilterFabBtn" class="daily-filter-fab"
+
+    <!-- Main FAB -->
+
+    <button
+        type="button"
+        id="dailyFilterFabBtn"
+        class="daily-filter-fab"
         onclick="toggleDailyFan()"
-        aria-label="{% if readonly %}စစ်ထုတ်မှု{% else %}筛选{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        aria-label="{% if readonly %}စစ်ထုတ်မှု{% else %}筛选{% endif %}"
+    >
+
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
             <path d="M4 6h16M7 12h10M10 18h4"/>
         </svg>
+
         <span class="daily-filter-fab-dot"></span>
+
     </button>
+
 </div>
 
-<div class="daily-fan-backdrop no-print" id="dailyFanBackdrop" onclick="closeDailyFan()"></div>
+
+<div
+    class="daily-fan-backdrop no-print"
+    id="dailyFanBackdrop"
+    onclick="closeDailyFan()"
+></div>
+
 
 <script>
+
+/* =========================================================
+   INITIAL DAY DISPLAY
+   ========================================================= */
+
 document.addEventListener('DOMContentLoaded', function() {
+
     const hidden = document.getElementById('filterDayHidden');
     const btn = document.getElementById('filterDayTriggerBtn');
+
     if (hidden && hidden.value && btn) {
+
         const span = btn.querySelector('span');
+
         span.textContent = wpFormatDisplayFromISO(hidden.value);
+
         btn.classList.remove('wp-empty');
     }
 });
 
+
+/* =========================================================
+   RESTORE SCROLL POSITION
+   ========================================================= */
+
 document.addEventListener('DOMContentLoaded', function() {
-    let anchorId = null, scrollYRaw = null;
+
+    let anchorId = null;
+    let scrollYRaw = null;
+
     try {
+
         anchorId = sessionStorage.getItem('mc_restore_order_id');
         scrollYRaw = sessionStorage.getItem('mc_restore_scroll_y');
+
         sessionStorage.removeItem('mc_restore_order_id');
         sessionStorage.removeItem('mc_restore_scroll_y');
-    } catch (e) { /* sessionStorage unavailable — just skip restoring */ }
+
+    } catch (e) {}
 
     if (anchorId) {
+
         const el = document.getElementById('order-card-' + anchorId);
+
         if (el) {
+
             requestAnimationFrame(() => {
-                el.scrollIntoView({ block: 'center' });
+
+                el.scrollIntoView({
+                    block: 'center'
+                });
+
                 el.style.transition = 'box-shadow .4s ease';
-                el.style.boxShadow = '0 0 0 3px rgba(5,150,105,.45)';
-                setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+
+                el.style.boxShadow =
+                    '0 0 0 3px rgba(5,150,105,.45)';
+
+                setTimeout(() => {
+                    el.style.boxShadow = '';
+                }, 1200);
+
             });
+
             return;
         }
     }
+
     if (scrollYRaw) {
-        window.scrollTo(0, parseInt(scrollYRaw, 10) || 0);
+
+        window.scrollTo(
+            0,
+            parseInt(scrollYRaw, 10) || 0
+        );
+
     }
 });
 
-/* ===== Speed-dial fan layout =====
-   Computes each fan button's --fan-tx/--fan-ty (see CSS above) from the
-   wrapper's --fan-radius / --fan-btn-size / --fan-gap / --fan-sweep custom
-   properties. This guarantees the gap between adjacent buttons never
-   shrinks below --fan-gap no matter the configured radius, the button
-   size, or how many buttons end up in the fan (2 for staff, 5 for
-   manager) — if the configured radius is too small to fit that many
-   buttons with the requested gap, the radius is grown just enough to make
-   it work. Nothing is a hardcoded per-button translate value anymore. */
+
+/* =========================================================
+   SPEED-DIAL FAN LAYOUT
+   =========================================================
+
+   IMPORTANT FIX:
+
+   Previously this used:
+
+       getBoundingClientRect().width
+
+   But the buttons are initially:
+
+       scale(.25)
+
+   Therefore getBoundingClientRect() returned roughly:
+
+       48px × .25 = 12px
+
+   JavaScript consequently thought the buttons were 12px wide
+   and calculated a radius that was much too small.
+
+   We now use offsetWidth / offsetHeight, which gives the
+   actual unscaled CSS size.
+
+   The radius is calculated so that:
+
+       distance between adjacent centers
+           >=
+       button diameter + requested gap
+
+   Therefore the circles will never touch/overlap.
+   ========================================================= */
+
 function layoutDailyFan() {
-    const wrap = document.getElementById('dailyFilterFanWrap');
+
+    const wrap =
+        document.getElementById('dailyFilterFanWrap');
+
     if (!wrap) return;
-    const buttons = Array.from(wrap.querySelectorAll('.daily-fan-btn'));
+
+    const buttons = Array.from(
+        wrap.querySelectorAll('.daily-fan-btn')
+    );
+
     const n = buttons.length;
+
     if (!n) return;
 
+
     const cs = getComputedStyle(wrap);
+
+
+    /* Read CSS pixel value */
+
     const readPx = (name, fallback) => {
-        const v = parseFloat(cs.getPropertyValue(name));
-        return Number.isFinite(v) ? v : fallback;
+
+        const v = parseFloat(
+            cs.getPropertyValue(name)
+        );
+
+        return Number.isFinite(v)
+            ? v
+            : fallback;
     };
+
+
+    /* Read degree value */
+
     const readDeg = (name, fallback) => {
-        const v = parseFloat(cs.getPropertyValue(name));
-        return Number.isFinite(v) ? v : fallback;
+
+        const v = parseFloat(
+            cs.getPropertyValue(name)
+        );
+
+        return Number.isFinite(v)
+            ? v
+            : fallback;
     };
 
-    const gap = readPx('--fan-gap', 12);
-    const sweepDeg = readDeg('--fan-sweep', 90);
-    let radius = readPx('--fan-radius', 80);
 
-    // Measure the actual rendered button size (covers any future CSS/
-    // breakpoint change to --fan-btn-size without needing a matching JS edit).
-    const measured = buttons[0].getBoundingClientRect().width;
-    const btnSize = measured > 0 ? measured : readPx('--fan-btn-size', 48);
+    const gap =
+        Math.max(
+            0,
+            readPx('--fan-gap', 12)
+        );
 
-    if (n > 1) {
-        const stepDeg = sweepDeg / (n - 1);
-        const stepRad = stepDeg * Math.PI / 180;
-        // Chord distance between two adjacent points on the arc must be at
-        // least btnSize + gap for their circles to never overlap.
-        const minRadius = (btnSize + gap) / (2 * Math.sin(stepRad / 2));
-        radius = Math.max(radius, minRadius);
+
+    const sweepDeg =
+        Math.max(
+            0,
+            readDeg('--fan-sweep', 90)
+        );
+
+
+    let radius =
+        Math.max(
+            0,
+            readPx('--fan-radius', 80)
+        );
+
+
+    /* =====================================================
+       MEASURE REAL BUTTON SIZE
+
+       DO NOT use getBoundingClientRect() here because
+       transform: scale(.25) changes its reported size.
+
+       offsetWidth/offsetHeight remain the actual layout size.
+       ===================================================== */
+
+    let btnWidth =
+        buttons[0].offsetWidth;
+
+    let btnHeight =
+        buttons[0].offsetHeight;
+
+
+    /*
+       Fallback for unusual situations where offsetWidth
+       hasn't been calculated yet.
+    */
+
+    if (!btnWidth || !btnHeight) {
+
+        const fallback =
+            readPx('--fan-btn-size', 48);
+
+        btnWidth = fallback;
+        btnHeight = fallback;
     }
 
+
+    /*
+       Use the larger dimension.
+
+       This keeps the guarantee valid even if someone later
+       makes the buttons rectangular instead of perfectly
+       circular.
+    */
+
+    const btnDiameter =
+        Math.max(btnWidth, btnHeight);
+
+
+    /* =====================================================
+       CALCULATE MINIMUM RADIUS
+       ===================================================== */
+
+    if (n > 1 && sweepDeg > 0) {
+
+        const stepDeg =
+            sweepDeg / (n - 1);
+
+        const stepRad =
+            stepDeg * Math.PI / 180;
+
+
+        /*
+           Chord length:
+
+               chord = 2R sin(angle / 2)
+
+           We require:
+
+               chord >= diameter + gap
+
+           Therefore:
+
+               R >=
+               (diameter + gap)
+               -----------------
+               2 sin(angle / 2)
+        */
+
+        const sinHalfStep =
+            Math.sin(stepRad / 2);
+
+
+        if (sinHalfStep > 0.000001) {
+
+            const minRadius =
+                (btnDiameter + gap) /
+                (2 * sinHalfStep);
+
+            radius =
+                Math.max(
+                    radius,
+                    minRadius
+                );
+        }
+    }
+
+
+    /* =====================================================
+       APPLY POSITIONS
+       ===================================================== */
+
     buttons.forEach((btn, i) => {
-        const thetaDeg = n > 1 ? (i * sweepDeg / (n - 1)) : (sweepDeg / 2);
-        const thetaRad = thetaDeg * Math.PI / 180;
-        const x = radius * Math.cos(thetaRad);
-        const y = -radius * Math.sin(thetaRad);
-        btn.style.setProperty('--fan-tx', x.toFixed(1) + 'px');
-        btn.style.setProperty('--fan-ty', y.toFixed(1) + 'px');
+
+        const thetaDeg =
+            n > 1
+                ? (i * sweepDeg / (n - 1))
+                : (sweepDeg / 2);
+
+
+        const thetaRad =
+            thetaDeg * Math.PI / 180;
+
+
+        /*
+           0 degrees = directly right
+           90 degrees = directly above
+        */
+
+        const x =
+            radius * Math.cos(thetaRad);
+
+
+        const y =
+            -radius * Math.sin(thetaRad);
+
+
+        btn.style.setProperty(
+            '--fan-tx',
+            x.toFixed(2) + 'px'
+        );
+
+
+        btn.style.setProperty(
+            '--fan-ty',
+            y.toFixed(2) + 'px'
+        );
+
     });
 }
+
+
 window.layoutDailyFan = layoutDailyFan;
 
+
+/* Recalculate after resize */
+
 let _dfResizeTimer = null;
+
 window.addEventListener('resize', function() {
+
     clearTimeout(_dfResizeTimer);
-    _dfResizeTimer = setTimeout(layoutDailyFan, 150);
+
+    _dfResizeTimer =
+        setTimeout(
+            layoutDailyFan,
+            150
+        );
 });
 
-/* ===== Speed-dial fan open/close ===== */
+
+/* =========================================================
+   MOVE FIXED ELEMENTS TO BODY
+   ========================================================= */
+
 document.addEventListener('DOMContentLoaded', function() {
-    const fanWrap = document.getElementById('dailyFilterFanWrap');
-    const modal = document.getElementById('dailyFilterModal');
-    const backdrop = document.getElementById('dailyFanBackdrop');
-    if (fanWrap && fanWrap.parentNode !== document.body) document.body.appendChild(fanWrap);
-    if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
-    if (backdrop && backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
-    layoutDailyFan();
+
+    const fanWrap =
+        document.getElementById(
+            'dailyFilterFanWrap'
+        );
+
+    const modal =
+        document.getElementById(
+            'dailyFilterModal'
+        );
+
+    const backdrop =
+        document.getElementById(
+            'dailyFanBackdrop'
+        );
+
+
+    if (
+        fanWrap &&
+        fanWrap.parentNode !== document.body
+    ) {
+        document.body.appendChild(fanWrap);
+    }
+
+
+    if (
+        modal &&
+        modal.parentNode !== document.body
+    ) {
+        document.body.appendChild(modal);
+    }
+
+
+    if (
+        backdrop &&
+        backdrop.parentNode !== document.body
+    ) {
+        document.body.appendChild(backdrop);
+    }
+
+
+    /*
+       Run after moving to body so measurements are final.
+    */
+
+    requestAnimationFrame(() => {
+        layoutDailyFan();
+    });
+
 });
+
+
+/* =========================================================
+   FAN OPEN / CLOSE
+   ========================================================= */
 
 let _dfFanOpen = false;
 let _dfModalOpen = false;
 
+
 function toggleDailyFan() {
-    _dfFanOpen ? closeDailyFan() : openDailyFan();
+
+    _dfFanOpen
+        ? closeDailyFan()
+        : openDailyFan();
 }
+
 
 function openDailyFan() {
-    const fanWrap = document.getElementById('dailyFilterFanWrap');
-    const fab = document.getElementById('dailyFilterFabBtn');
-    const backdrop = document.getElementById('dailyFanBackdrop');
+
+    const fanWrap =
+        document.getElementById(
+            'dailyFilterFanWrap'
+        );
+
+    const fab =
+        document.getElementById(
+            'dailyFilterFabBtn'
+        );
+
+    const backdrop =
+        document.getElementById(
+            'dailyFanBackdrop'
+        );
+
+
     if (!fanWrap) return;
-    layoutDailyFan(); // re-measure every time, in case of resize/rotation since last open
+
+
+    /*
+       Recalculate every time.
+
+       This handles:
+       - screen resize
+       - orientation changes
+       - CSS size changes
+       - different number of buttons
+    */
+
+    layoutDailyFan();
+
+
     _dfFanOpen = true;
-    fanWrap.classList.add('df-fan-open');
-    fab.classList.add('df-open');
-    backdrop.classList.add('active');
-    document.addEventListener('keydown', _dfEscHandler);
+
+
+    fanWrap.classList.add(
+        'df-fan-open'
+    );
+
+
+    fab.classList.add(
+        'df-open'
+    );
+
+
+    backdrop.classList.add(
+        'active'
+    );
+
+
+    document.addEventListener(
+        'keydown',
+        _dfEscHandler
+    );
 }
+
 
 function closeDailyFan() {
-    const fanWrap = document.getElementById('dailyFilterFanWrap');
-    const fab = document.getElementById('dailyFilterFabBtn');
-    const backdrop = document.getElementById('dailyFanBackdrop');
-    if (!fanWrap || !_dfFanOpen) return;
+
+    const fanWrap =
+        document.getElementById(
+            'dailyFilterFanWrap'
+        );
+
+    const fab =
+        document.getElementById(
+            'dailyFilterFabBtn'
+        );
+
+    const backdrop =
+        document.getElementById(
+            'dailyFanBackdrop'
+        );
+
+
+    if (
+        !fanWrap ||
+        !_dfFanOpen
+    ) {
+        return;
+    }
+
+
     _dfFanOpen = false;
-    fanWrap.classList.remove('df-fan-open');
-    fab.classList.remove('df-open');
-    backdrop.classList.remove('active');
-    document.removeEventListener('keydown', _dfEscHandler);
+
+
+    fanWrap.classList.remove(
+        'df-fan-open'
+    );
+
+
+    fab.classList.remove(
+        'df-open'
+    );
+
+
+    backdrop.classList.remove(
+        'active'
+    );
+
+
+    document.removeEventListener(
+        'keydown',
+        _dfEscHandler
+    );
 }
 
-/* ===== Small focused panel (Period / Search) ===== */
+
+/* =========================================================
+   FILTER PANEL
+   ========================================================= */
+
 function openDailyFilterPanel() {
-    const modal = document.getElementById('dailyFilterModal');
+
+    const modal =
+        document.getElementById(
+            'dailyFilterModal'
+        );
+
     if (!modal) return;
+
+
     _dfModalOpen = true;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', _dfEscHandler);
+
+
+    modal.classList.remove(
+        'hidden'
+    );
+
+
+    modal.classList.add(
+        'flex'
+    );
+
+
+    document.body.style.overflow =
+        'hidden';
+
+
+    document.addEventListener(
+        'keydown',
+        _dfEscHandler
+    );
 }
+
 
 function closeDailyFilterPanel() {
-    const modal = document.getElementById('dailyFilterModal');
+
+    const modal =
+        document.getElementById(
+            'dailyFilterModal'
+        );
+
     if (!modal) return;
+
+
     _dfModalOpen = false;
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    document.body.style.overflow = '';
-    document.removeEventListener('keydown', _dfEscHandler);
+
+
+    modal.classList.add(
+        'hidden'
+    );
+
+
+    modal.classList.remove(
+        'flex'
+    );
+
+
+    document.body.style.overflow =
+        '';
+
+
+    document.removeEventListener(
+        'keydown',
+        _dfEscHandler
+    );
 }
+
 
 function _dfEscHandler(e) {
+
     if (e.key !== 'Escape') return;
-    if (_dfModalOpen) closeDailyFilterPanel();
-    if (_dfFanOpen) closeDailyFan();
+
+
+    if (_dfModalOpen) {
+        closeDailyFilterPanel();
+    }
+
+
+    if (_dfFanOpen) {
+        closeDailyFan();
+    }
 }
 
+
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('dailyFilterModal');
+
+    const modal =
+        document.getElementById(
+            'dailyFilterModal'
+        );
+
+
     if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeDailyFilterPanel();
-        });
+
+        modal.addEventListener(
+            'click',
+            function(e) {
+
+                if (e.target === modal) {
+                    closeDailyFilterPanel();
+                }
+
+            }
+        );
+
     }
 });
 
-/* ===== Fan button actions ===== */
+
+/* =========================================================
+   FAN BUTTON ACTIONS
+   ========================================================= */
+
 function onFanPeriodClick() {
+
     closeDailyFan();
+
     openDailyFilterPanel();
 }
 
+
 function onFanSearchClick() {
+
     closeDailyFan();
+
     openDailyFilterPanel();
+
+
     setTimeout(() => {
-        const input = document.getElementById('dailyCustomerSearch');
-        if (input) input.focus();
+
+        const input =
+            document.getElementById(
+                'dailyCustomerSearch'
+            );
+
+
+        if (input) {
+            input.focus();
+        }
+
     }, 150);
 }
 
+
 function onFanSourceClick() {
+
     closeDailyFan();
-    if (typeof openDailySourceFilterPicker === 'function') openDailySourceFilterPicker();
+
+
+    if (
+        typeof openDailySourceFilterPicker ===
+        'function'
+    ) {
+        openDailySourceFilterPicker();
+    }
 }
 
+
 function cycleFanDelivered() {
-    const order = ['all', 'delivered', 'not_delivered'];
-    const next = order[(order.indexOf(dailyDeliveredFilter) + 1) % order.length];
+
+    const order = [
+        'all',
+        'delivered',
+        'not_delivered'
+    ];
+
+
+    const next =
+        order[
+            (order.indexOf(
+                dailyDeliveredFilter
+            ) + 1) % order.length
+        ];
+
+
     setDailyDeliveredFilter(next);
 }
 
+
 {% if not readonly %}
+
 function cycleFanPaid() {
-    const order = ['all', 'paid', 'unpaid'];
-    const next = order[(order.indexOf(dailyPaidFilter) + 1) % order.length];
+
+    const order = [
+        'all',
+        'paid',
+        'unpaid'
+    ];
+
+
+    const next =
+        order[
+            (order.indexOf(
+                dailyPaidFilter
+            ) + 1) % order.length
+        ];
+
+
     setDailyPaidFilter(next);
 }
+
 {% endif %}
 
+
+/* =========================================================
+   FAB ACTIVE INDICATOR
+   ========================================================= */
+
 function updateDailyFilterFabIndicator() {
-    const fab = document.getElementById('dailyFilterFabBtn');
+
+    const fab =
+        document.getElementById(
+            'dailyFilterFabBtn'
+        );
+
+
     if (!fab) return;
-    const searchInput = document.getElementById('dailyCustomerSearch');
+
+
+    const searchInput =
+        document.getElementById(
+            'dailyCustomerSearch'
+        );
+
+
     const active =
-        (searchInput && searchInput.value.trim() !== '') ||
-        (typeof dailyPaidFilter !== 'undefined' && dailyPaidFilter !== 'all') ||
-        (typeof dailyDeliveredFilter !== 'undefined' && dailyDeliveredFilter !== 'all') ||
-        (typeof dailySourceFilter !== 'undefined' && !!dailySourceFilter);
-    fab.classList.toggle('has-active-filters', !!active);
 
-    const sourceBtn = document.getElementById('fanSourceBtn');
-    if (sourceBtn) sourceBtn.classList.toggle('state-active', !!(typeof dailySourceFilter !== 'undefined' && dailySourceFilter));
+        (
+            searchInput &&
+            searchInput.value.trim() !== ''
+        )
 
-    const searchBtn = document.getElementById('fanSearchBtn');
-    if (searchBtn) searchBtn.classList.toggle('state-active', !!(searchInput && searchInput.value.trim() !== ''));
+        ||
+
+        (
+            typeof dailyPaidFilter !== 'undefined' &&
+            dailyPaidFilter !== 'all'
+        )
+
+        ||
+
+        (
+            typeof dailyDeliveredFilter !== 'undefined' &&
+            dailyDeliveredFilter !== 'all'
+        )
+
+        ||
+
+        (
+            typeof dailySourceFilter !== 'undefined' &&
+            !!dailySourceFilter
+        );
+
+
+    fab.classList.toggle(
+        'has-active-filters',
+        !!active
+    );
+
+
+    const sourceBtn =
+        document.getElementById(
+            'fanSourceBtn'
+        );
+
+
+    if (sourceBtn) {
+
+        sourceBtn.classList.toggle(
+            'state-active',
+            !!(
+                typeof dailySourceFilter !== 'undefined' &&
+                dailySourceFilter
+            )
+        );
+    }
+
+
+    const searchBtn =
+        document.getElementById(
+            'fanSearchBtn'
+        );
+
+
+    if (searchBtn) {
+
+        searchBtn.classList.toggle(
+            'state-active',
+            !!(
+                searchInput &&
+                searchInput.value.trim() !== ''
+            )
+        );
+    }
 }
-document.addEventListener('DOMContentLoaded', updateDailyFilterFabIndicator);
 
-/* ===== AJAX period refresh (day/month/year) =====
-   Swaps in fresh order-card markup + summary numbers from
-   /api/daily_records_html instead of a full page reload. Keeps the URL in
-   sync via history.pushState so refresh/share still lands on the right
-   filtered view. */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    updateDailyFilterFabIndicator
+);
+
+
+/* =========================================================
+   AJAX PERIOD REFRESH
+   ========================================================= */
+
 async function refreshDailyRecords() {
-    const form = document.getElementById('dailyFilterForm');
-    const params = new URLSearchParams(new FormData(form));
-    const root = document.getElementById('ordersRoot');
+
+    const form =
+        document.getElementById(
+            'dailyFilterForm'
+        );
+
+
+    const params =
+        new URLSearchParams(
+            new FormData(form)
+        );
+
+
+    const root =
+        document.getElementById(
+            'ordersRoot'
+        );
+
 
     root.style.opacity = '0.5';
     root.style.pointerEvents = 'none';
 
+
     try {
-        const res = await fetch(`/api/daily_records_html?${params.toString()}`, { credentials: 'same-origin' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
 
-        root.innerHTML = data.html;
-        // NOTE: no client-side "apply state" pass needed here — the
-        // server-rendered partial (daily_records_orders.html) already bakes
-        // the delivered/folded state straight into the markup via Jinja
-        // (order.is_delivered -> 'is-delivered' class, order.is_folded ->
-        // 'oc-folded' class), so a fresh AJAX render is correct as-is.
+        const res =
+            await fetch(
+                `/api/daily_records_html?${params.toString()}`,
+                {
+                    credentials: 'same-origin'
+                }
+            );
 
-        const orderCountEl = document.getElementById('summaryOrderCount');
-        if (orderCountEl) orderCountEl.textContent = data.total_orders;
-        const revenueEl = document.getElementById('summaryRevenue');
-        if (revenueEl) revenueEl.textContent = data.total_revenue.toLocaleString();
-        const dayCountEl = document.getElementById('summaryDayCount');
-        if (dayCountEl) dayCountEl.textContent = data.day_count;
 
-        // Keep the Daily page's PDF export (daily.html) targeting whatever
-        // period is now on screen.
-        if (typeof dailyExportParams !== 'undefined') {
-            Object.keys(dailyExportParams).forEach(k => delete dailyExportParams[k]);
-            Object.assign(dailyExportParams, data.export_params);
-        }
-        if (typeof dailyExportLabel !== 'undefined') {
-            dailyExportLabel = data.period_value;
+        if (!res.ok) {
+            throw new Error(
+                'HTTP ' + res.status
+            );
         }
 
-        // Shareable/refresh-safe URL without a real navigation.
-        const url = new URL(window.location.href);
-        url.search = params.toString();
-        history.pushState({}, '', url);
 
-        // Re-apply customer/paid/source/delivered filters onto the freshly loaded cards.
-        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+        const data =
+            await res.json();
+
+
+        root.innerHTML =
+            data.html;
+
+
+        const orderCountEl =
+            document.getElementById(
+                'summaryOrderCount'
+            );
+
+
+        if (orderCountEl) {
+            orderCountEl.textContent =
+                data.total_orders;
+        }
+
+
+        const revenueEl =
+            document.getElementById(
+                'summaryRevenue'
+            );
+
+
+        if (revenueEl) {
+            revenueEl.textContent =
+                data.total_revenue.toLocaleString();
+        }
+
+
+        const dayCountEl =
+            document.getElementById(
+                'summaryDayCount'
+            );
+
+
+        if (dayCountEl) {
+            dayCountEl.textContent =
+                data.day_count;
+        }
+
+
+        if (
+            typeof dailyExportParams !==
+            'undefined'
+        ) {
+
+            Object.keys(
+                dailyExportParams
+            ).forEach(
+                k => delete dailyExportParams[k]
+            );
+
+
+            Object.assign(
+                dailyExportParams,
+                data.export_params
+            );
+        }
+
+
+        if (
+            typeof dailyExportLabel !==
+            'undefined'
+        ) {
+            dailyExportLabel =
+                data.period_value;
+        }
+
+
+        const url =
+            new URL(
+                window.location.href
+            );
+
+
+        url.search =
+            params.toString();
+
+
+        history.pushState(
+            {},
+            '',
+            url
+        );
+
+
+        if (
+            window.updateDailyOrderFilters
+        ) {
+            window.updateDailyOrderFilters();
+        }
+
+
     } catch (err) {
-        console.error('Failed to refresh daily records:', err);
-        alert('筛选加载失败，请重试。\n(Failed to load filtered results — please try again.)');
+
+        console.error(
+            'Failed to refresh daily records:',
+            err
+        );
+
+
+        alert(
+            '筛选加载失败，请重试。\n' +
+            '(Failed to load filtered results — please try again.)'
+        );
+
+
     } finally {
+
         root.style.opacity = '';
         root.style.pointerEvents = '';
+
     }
 }
-window.refreshDailyRecords = refreshDailyRecords;
+
+
+window.refreshDailyRecords =
+    refreshDailyRecords;
+
+
+/* =========================================================
+   VIEW MODE
+   ========================================================= */
 
 function setDailyViewMode(mode) {
-    document.getElementById('dailyViewModeInput').value = mode;
-    document.getElementById('dailyDayPickerWrap').classList.toggle('hidden', mode !== 'day');
-    document.getElementById('dailyMonthPickerWrap').classList.toggle('hidden', mode !== 'month');
-    document.getElementById('dailyYearPickerWrap').classList.toggle('hidden', mode !== 'year');
+
+    document.getElementById(
+        'dailyViewModeInput'
+    ).value = mode;
+
+
+    document.getElementById(
+        'dailyDayPickerWrap'
+    ).classList.toggle(
+        'hidden',
+        mode !== 'day'
+    );
+
+
+    document.getElementById(
+        'dailyMonthPickerWrap'
+    ).classList.toggle(
+        'hidden',
+        mode !== 'month'
+    );
+
+
+    document.getElementById(
+        'dailyYearPickerWrap'
+    ).classList.toggle(
+        'hidden',
+        mode !== 'year'
+    );
+
 
     const tabs = {
-        day: document.querySelector('.daily-view-tab-day'),
-        month: document.querySelector('.daily-view-tab-month'),
-        year: document.querySelector('.daily-view-tab-year')
+
+        day:
+            document.querySelector(
+                '.daily-view-tab-day'
+            ),
+
+        month:
+            document.querySelector(
+                '.daily-view-tab-month'
+            ),
+
+        year:
+            document.querySelector(
+                '.daily-view-tab-year'
+            )
+
     };
-    Object.keys(tabs).forEach((key) => {
-        const active = key === mode;
-        tabs[key].className = 'flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-' + key + ' ' +
-            (active ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50');
-    });
+
+
+    Object.keys(tabs).forEach(
+        (key) => {
+
+            const active =
+                key === mode;
+
+
+            tabs[key].className =
+                'flex-1 sm:flex-none px-3.5 py-2.5 transition-all daily-view-tab-' +
+                key +
+                ' ' +
+                (
+                    active
+                        ? 'bg-stone-900 text-white'
+                        : 'bg-white text-stone-500 hover:bg-stone-50'
+                );
+        }
+    );
+
 
     refreshDailyRecords();
 }
 
+
+/* =========================================================
+   MONTH PICKER
+   ========================================================= */
+
 function openFilterMonthPicker() {
-    const btn = document.getElementById('filterMonthTriggerBtn');
-    const span = btn.querySelector('span');
-    const hidden = document.getElementById('filterMonthHidden');
+
+    const btn =
+        document.getElementById(
+            'filterMonthTriggerBtn'
+        );
+
+
+    const span =
+        btn.querySelector('span');
+
+
+    const hidden =
+        document.getElementById(
+            'filterMonthHidden'
+        );
+
+
     openMonthWheelPicker({
-        initialValue: hidden.value,
-        onConfirm: (value, label) => {
-            hidden.value = value;
-            span.textContent = label;
-            btn.classList.remove('wp-empty');
-            refreshDailyRecords();
-        }
+
+        initialValue:
+            hidden.value,
+
+        onConfirm:
+            (value, label) => {
+
+                hidden.value =
+                    value;
+
+                span.textContent =
+                    label;
+
+                btn.classList.remove(
+                    'wp-empty'
+                );
+
+                refreshDailyRecords();
+            }
+
     });
 }
+
+
+/* =========================================================
+   YEAR PICKER
+   ========================================================= */
 
 function openFilterYearPicker() {
-    const btn = document.getElementById('filterYearTriggerBtn');
-    const span = btn.querySelector('span');
-    const hidden = document.getElementById('filterYearHidden');
+
+    const btn =
+        document.getElementById(
+            'filterYearTriggerBtn'
+        );
+
+
+    const span =
+        btn.querySelector('span');
+
+
+    const hidden =
+        document.getElementById(
+            'filterYearHidden'
+        );
+
+
     openYearListPicker({
-        years: {{ available_years | tojson | safe }},
-        initialValue: hidden.value,
-        onConfirm: (value) => {
-            hidden.value = value;
-            span.textContent = value;
-            btn.classList.remove('wp-empty');
-            refreshDailyRecords();
-        }
+
+        years:
+            {{ available_years | tojson | safe }},
+
+        initialValue:
+            hidden.value,
+
+        onConfirm:
+            (value) => {
+
+                hidden.value =
+                    value;
+
+                span.textContent =
+                    value;
+
+                btn.classList.remove(
+                    'wp-empty'
+                );
+
+                refreshDailyRecords();
+            }
+
     });
 }
 
+
+/* =========================================================
+   IMAGE REVEAL
+   ========================================================= */
+
 function revealImage(btn) {
-    const wrap = btn.parentElement;
-    const url = wrap.getAttribute('data-url');
-    const img = document.createElement('img');
-    img.src = url;
-    img.crossOrigin = 'anonymous';
-    img.alt = 'Reference Image';
+
+    const wrap =
+        btn.parentElement;
+
+
+    const url =
+        wrap.getAttribute(
+            'data-url'
+        );
+
+
+    const img =
+        document.createElement('img');
+
+
+    img.src =
+        url;
+
+
+    img.crossOrigin =
+        'anonymous';
+
+
+    img.alt =
+        'Reference Image';
+
+
     wrap.replaceWith(img);
 }
 
+
 {% if not readonly %}
-let dailySourceFilter = {{ (selected_source or '') | tojson | safe }};
+
+
+/* =========================================================
+   SOURCE FILTER
+   ========================================================= */
+
+let dailySourceFilter =
+    {{ (selected_source or '') | tojson | safe }};
+
 
 function openDailySourceFilterPicker() {
-    const btn = document.getElementById('fanSourceBtn');
-    const listEl = document.getElementById('wpSourceList');
 
-    document.getElementById('wpSourceTitle').textContent = '按来源筛选 (Filter by Source)';
+    const btn =
+        document.getElementById(
+            'fanSourceBtn'
+        );
 
-    const allLabel = '全部来源 (All Sources)';
-    const options = [allLabel, ...WP_SOURCE_OPTIONS];
+
+    const listEl =
+        document.getElementById(
+            'wpSourceList'
+        );
+
+
+    document.getElementById(
+        'wpSourceTitle'
+    ).textContent =
+        '按来源筛选 (Filter by Source)';
+
+
+    const allLabel =
+        '全部来源 (All Sources)';
+
+
+    const options = [
+        allLabel,
+        ...WP_SOURCE_OPTIONS
+    ];
+
 
     listEl.innerHTML = '';
+
+
     options.forEach((opt) => {
-        const val = opt === allLabel ? '' : opt;
-        const item = document.createElement('div');
-        item.className = 'wp-source-item' + (dailySourceFilter === val ? ' wp-source-selected' : '');
-        item.innerHTML = `<span>${opt}</span><span class="wp-source-check">✓</span>`;
-        item.addEventListener('click', () => {
-            dailySourceFilter = val;
-            if (btn) btn.classList.toggle('state-active', !!val);
-            closeWheelOverlay('wpSourceOverlay');
 
-            const hiddenField = document.getElementById('filterSourceHidden');
-            if (hiddenField) hiddenField.value = val;
+        const val =
+            opt === allLabel
+                ? ''
+                : opt;
 
-            if (typeof dailyExportParams !== 'undefined') {
-                if (val) dailyExportParams.source = val;
-                else delete dailyExportParams.source;
-            }
 
-            const sourceWrap = document.getElementById('summarySourceWrap');
-            const sourceValueEl = document.getElementById('summarySourceValue');
-            if (sourceWrap && sourceValueEl) {
-                sourceValueEl.textContent = val;
-                sourceWrap.classList.toggle('hidden', !val);
-            }
+        const item =
+            document.createElement(
+                'div'
+            );
 
-            if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-            updateDailyFilterFabIndicator();
-        });
-        listEl.appendChild(item);
-    });
 
-    document.getElementById('wpSourceOverlay').classList.add('active');
-    wpLockBody();
-    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
-}
+        item.className =
+            'wp-source-item' +
+            (
+                dailySourceFilter === val
+                    ? ' wp-source-selected'
+                    : ''
+            );
 
-let dailyPaidFilter = 'all';
 
-function setDailyPaidFilter(mode) {
-    dailyPaidFilter = mode;
-    const btn = document.getElementById('fanPaidBtn');
-    if (btn) {
-        btn.classList.remove('state-yes', 'state-no');
-        if (mode === 'paid') btn.classList.add('state-yes');
-        else if (mode === 'unpaid') btn.classList.add('state-no');
-        btn.title = mode === 'all' ? '付款状态: 全部' : (mode === 'paid' ? '付款状态: 已付款' : '付款状态: 未付款');
-    }
-    if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-    updateDailyFilterFabIndicator();
-}
-{% endif %}
+        item.innerHTML =
+            `<span>${opt}</span><span class="wp-source-check">✓</span>`;
 
-/* ===== Delivered / Not Delivered / All filter (both roles) ===== */
-let dailyDeliveredFilter = 'all';
 
-/* ===== Capture true current filter state for edit/delete/add redirects =====
-   Source/paid/delivered/search are pure client-side state (never reflected
-   in window.location.search), so a redirect built from the URL alone loses
-   them. These helpers read the live JS state instead. */
-function mcCaptureFilterState() {
-    return {
-        view: document.getElementById('dailyViewModeInput') ? document.getElementById('dailyViewModeInput').value : '',
-        day: document.getElementById('filterDayHidden') ? document.getElementById('filterDayHidden').value : '',
-        month: document.getElementById('filterMonthHidden') ? document.getElementById('filterMonthHidden').value : '',
-        year: document.getElementById('filterYearHidden') ? document.getElementById('filterYearHidden').value : '',
-        source: (typeof dailySourceFilter !== 'undefined') ? dailySourceFilter : '',
-        paid: (typeof dailyPaidFilter !== 'undefined') ? dailyPaidFilter : 'all',
-        delivered: (typeof dailyDeliveredFilter !== 'undefined') ? dailyDeliveredFilter : 'all',
-        search: document.getElementById('dailyCustomerSearch') ? document.getElementById('dailyCustomerSearch').value : ''
-    };
-}
-window.mcCaptureFilterState = mcCaptureFilterState;
+        item.addEventListener(
+            'click',
+            () => {
 
-// Builds the query string (view/day/month/year/source) that the server
-// actually understands, from the live JS filter state rather than the URL.
-function mcBuildReturnQS() {
-    const s = mcCaptureFilterState();
-    const params = new URLSearchParams();
-    if (s.view) params.set('view', s.view);
-    if (s.view === 'day' && s.day) params.set('day', s.day);
-    if (s.view === 'month' && s.month) params.set('month', s.month);
-    if (s.view === 'year' && s.year) params.set('year', s.year);
-    if (s.source) params.set('source', s.source);
-    return params.toString();
-}
-window.mcBuildReturnQS = mcBuildReturnQS;
+                dailySourceFilter =
+                    val;
 
-// Stashes the purely-client filters (paid/delivered/search — never sent to
-// the server) so they can be reapplied after the redirect reloads the page.
-function mcSaveClientFilters() {
-    const s = mcCaptureFilterState();
-    try {
-        sessionStorage.setItem('mc_restore_client_filters', JSON.stringify({
-            paid: s.paid,
-            delivered: s.delivered,
-            search: s.search
-        }));
-    } catch (e) {}
-}
-window.mcSaveClientFilters = mcSaveClientFilters;
 
-function setDailyDeliveredFilter(mode) {
-    dailyDeliveredFilter = mode;
-    const btn = document.getElementById('fanDeliveredBtn');
-    if (btn) {
-        btn.classList.remove('state-yes', 'state-no');
-        if (mode === 'delivered') btn.classList.add('state-yes');
-        else if (mode === 'not_delivered') btn.classList.add('state-no');
-        btn.title = mode === 'all' ? 'Delivered: All' : (mode === 'delivered' ? 'Delivered: Yes' : 'Delivered: No');
-    }
-    if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-    updateDailyFilterFabIndicator();
-}
+                if (btn) {
 
-/* ===== Combined client-side filtering (search + paid + source + delivered) =====
-   Defined unconditionally so the Delivered filter works on both the
-   manager and staff Daily pages. Search/paid/source inputs only exist on
-   the manager page, so every lookup below is guarded — on staff, this
-   still runs and only the delivered filter has any effect. */
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('dailyCustomerSearch');
-    const clearButton = document.getElementById('clearDailyCustomerSearch');
-    const searchStatus = document.getElementById('dailySearchStatus');
-
-    function updateDailyOrderFilters() {
-        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        const dayGroups = document.querySelectorAll('#ordersRoot .day-group');
-        let matchedOrders = 0;
-        let matchedRevenue = 0;
-        let matchedDays = 0;
-        let totalOrders = 0;
-
-        dayGroups.forEach(function(dayGroup) {
-            const cards = dayGroup.querySelectorAll('.order-card');
-            let visibleInGroup = 0;
-
-            cards.forEach(function(card) {
-                const customerName = (card.getAttribute('data-customer') || '').trim().toLowerCase();
-                const nameMatches = !query || customerName.includes(query);
-
-                const isPaid = card.getAttribute('data-paid') === 'true';
-                const paidMatches = (typeof dailyPaidFilter === 'undefined' || dailyPaidFilter === 'all')
-                    || (dailyPaidFilter === 'paid' && isPaid)
-                    || (dailyPaidFilter === 'unpaid' && !isPaid);
-
-                const isDelivered = card.getAttribute('data-delivered') === 'true';
-                const deliveredMatches = dailyDeliveredFilter === 'all'
-                    || (dailyDeliveredFilter === 'delivered' && isDelivered)
-                    || (dailyDeliveredFilter === 'not_delivered' && !isDelivered);
-
-                const cardSource = (card.getAttribute('data-source') || '').trim();
-                const sourceMatches = (typeof dailySourceFilter === 'undefined' || !dailySourceFilter) || cardSource === dailySourceFilter;
-
-                const matches = nameMatches && paidMatches && deliveredMatches && sourceMatches;
-
-                card.classList.toggle('hidden', !matches);
-
-                if (matches) {
-                    visibleInGroup++;
-                    matchedOrders++;
-                    matchedRevenue += parseInt(card.getAttribute('data-total'), 10) || 0;
+                    btn.classList.toggle(
+                        'state-active',
+                        !!val
+                    );
                 }
 
-                totalOrders++;
-            });
 
-            // Hide an entire day section when none of its orders match.
-            dayGroup.classList.toggle('hidden', visibleInGroup === 0);
-            if (visibleInGroup > 0) matchedDays++;
-        });
+                closeWheelOverlay(
+                    'wpSourceOverlay'
+                );
 
-        // Keep the clear button state polished on mobile and desktop.
-        if (clearButton) {
-            clearButton.classList.toggle('hidden', !query);
-            clearButton.classList.toggle('flex', !!query);
-        }
 
-        const filtersActive = !!query
-            || (typeof dailyPaidFilter !== 'undefined' && dailyPaidFilter !== 'all')
-            || dailyDeliveredFilter !== 'all'
-            || (typeof dailySourceFilter !== 'undefined' && !!dailySourceFilter);
+                const hiddenField =
+                    document.getElementById(
+                        'filterSourceHidden'
+                    );
 
-        if (searchStatus) {
-            if (filtersActive) {
-                searchStatus.classList.remove('hidden');
-                searchStatus.textContent = matchedOrders === 1
-                    ? '1 order found'
-                    : `${matchedOrders} orders found`;
-            } else {
-                searchStatus.classList.add('hidden');
-                searchStatus.textContent = '';
+
+                if (hiddenField) {
+                    hiddenField.value =
+                        val;
+                }
+
+
+                if (
+                    typeof dailyExportParams !==
+                    'undefined'
+                ) {
+
+                    if (val) {
+                        dailyExportParams.source =
+                            val;
+                    } else {
+                        delete dailyExportParams.source;
+                    }
+                }
+
+
+                const sourceWrap =
+                    document.getElementById(
+                        'summarySourceWrap'
+                    );
+
+
+                const sourceValueEl =
+                    document.getElementById(
+                        'summarySourceValue'
+                    );
+
+
+                if (
+                    sourceWrap &&
+                    sourceValueEl
+                ) {
+
+                    sourceValueEl.textContent =
+                        val;
+
+
+                    sourceWrap.classList.toggle(
+                        'hidden',
+                        !val
+                    );
+                }
+
+
+                if (
+                    window.updateDailyOrderFilters
+                ) {
+                    window.updateDailyOrderFilters();
+                }
+
+
+                updateDailyFilterFabIndicator();
+
             }
+        );
+
+
+        listEl.appendChild(item);
+
+    });
+
+
+    document.getElementById(
+        'wpSourceOverlay'
+    ).classList.add(
+        'active'
+    );
+
+
+    wpLockBody();
+
+
+    document.getElementById(
+        'wpSourceCancelBtn'
+    ).onclick =
+        () => closeWheelOverlay(
+            'wpSourceOverlay'
+        );
+}
+
+
+/* =========================================================
+   PAID FILTER
+   ========================================================= */
+
+let dailyPaidFilter =
+    'all';
+
+
+function setDailyPaidFilter(mode) {
+
+    dailyPaidFilter =
+        mode;
+
+
+    const btn =
+        document.getElementById(
+            'fanPaidBtn'
+        );
+
+
+    if (btn) {
+
+        btn.classList.remove(
+            'state-yes',
+            'state-no'
+        );
+
+
+        if (mode === 'paid') {
+
+            btn.classList.add(
+                'state-yes'
+            );
+
+        } else if (
+            mode === 'unpaid'
+        ) {
+
+            btn.classList.add(
+                'state-no'
+            );
         }
 
-        // Keep the top summary badges (order count / revenue / day count)
-        // in sync with whatever's actually visible right now.
-        const orderCountEl = document.getElementById('summaryOrderCount');
-        if (orderCountEl) orderCountEl.textContent = matchedOrders;
-        const revenueEl = document.getElementById('summaryRevenue');
-        if (revenueEl) revenueEl.textContent = matchedRevenue.toLocaleString();
-        const dayCountEl = document.getElementById('summaryDayCount');
-        if (dayCountEl) dayCountEl.textContent = matchedDays;
 
-        // Reuse the existing empty-state area when a filter combo has no matches.
-        let noResults = document.getElementById('dailyCustomerSearchNoResults');
-
-        if (filtersActive && matchedOrders === 0 && totalOrders > 0) {
-            if (!noResults) {
-                noResults = document.createElement('div');
-                noResults.id = 'dailyCustomerSearchNoResults';
-                noResults.className = 'text-center py-16 text-stone-400 italic text-sm';
-                noResults.innerHTML = `
-                    <div class="flex justify-center mb-3">
-                        <svg class="w-8 h-8 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="11" cy="11" r="7"></circle>
-                            <path stroke-linecap="round" d="m20 20-4-4"></path>
-                        </svg>
-                    </div>
-                    No orders match the current filters.
-                `;
-                document.getElementById('ordersRoot').appendChild(noResults);
-            }
-            noResults.classList.remove('hidden');
-        } else if (noResults) {
-            noResults.classList.add('hidden');
-        }
-
-        updateDailyFilterFabIndicator();
+        btn.title =
+            mode === 'all'
+                ? '付款状态: 全部'
+                : (
+                    mode === 'paid'
+                        ? '付款状态: 已付款'
+                        : '付款状态: 未付款'
+                );
     }
 
-    window.updateDailyOrderFilters = updateDailyOrderFilters;
 
-    if (searchInput) {
-        searchInput.addEventListener('input', updateDailyOrderFilters);
+    if (
+        window.updateDailyOrderFilters
+    ) {
+        window.updateDailyOrderFilters();
     }
 
-    if (clearButton && searchInput) {
-        clearButton.addEventListener('click', function() {
-            searchInput.value = '';
-            searchInput.focus();
+
+    updateDailyFilterFabIndicator();
+}
+
+{% endif %}
+
+
+/* =========================================================
+   DELIVERED FILTER
+   ========================================================= */
+
+let dailyDeliveredFilter =
+    'all';
+
+
+/* =========================================================
+   CAPTURE FILTER STATE
+   ========================================================= */
+
+function mcCaptureFilterState() {
+
+    return {
+
+        view:
+            document.getElementById(
+                'dailyViewModeInput'
+            )
+            ? document.getElementById(
+                'dailyViewModeInput'
+            ).value
+            : '',
+
+
+        day:
+            document.getElementById(
+                'filterDayHidden'
+            )
+            ? document.getElementById(
+                'filterDayHidden'
+            ).value
+            : '',
+
+
+        month:
+            document.getElementById(
+                'filterMonthHidden'
+            )
+            ? document.getElementById(
+                'filterMonthHidden'
+            ).value
+            : '',
+
+
+        year:
+            document.getElementById(
+                'filterYearHidden'
+            )
+            ? document.getElementById(
+                'filterYearHidden'
+            ).value
+            : '',
+
+
+        source:
+            (
+                typeof dailySourceFilter !==
+                'undefined'
+            )
+                ? dailySourceFilter
+                : '',
+
+
+        paid:
+            (
+                typeof dailyPaidFilter !==
+                'undefined'
+            )
+                ? dailyPaidFilter
+                : 'all',
+
+
+        delivered:
+            (
+                typeof dailyDeliveredFilter !==
+                'undefined'
+            )
+                ? dailyDeliveredFilter
+                : 'all',
+
+
+        search:
+            document.getElementById(
+                'dailyCustomerSearch'
+            )
+                ? document.getElementById(
+                    'dailyCustomerSearch'
+                ).value
+                : ''
+
+    };
+}
+
+
+window.mcCaptureFilterState =
+    mcCaptureFilterState;
+
+
+/* =========================================================
+   BUILD RETURN QUERY STRING
+   ========================================================= */
+
+function mcBuildReturnQS() {
+
+    const s =
+        mcCaptureFilterState();
+
+
+    const params =
+        new URLSearchParams();
+
+
+    if (s.view) {
+        params.set(
+            'view',
+            s.view
+        );
+    }
+
+
+    if (
+        s.view === 'day' &&
+        s.day
+    ) {
+        params.set(
+            'day',
+            s.day
+        );
+    }
+
+
+    if (
+        s.view === 'month' &&
+        s.month
+    ) {
+        params.set(
+            'month',
+            s.month
+        );
+    }
+
+
+    if (
+        s.view === 'year' &&
+        s.year
+    ) {
+        params.set(
+            'year',
+            s.year
+        );
+    }
+
+
+    if (s.source) {
+
+        params.set(
+            'source',
+            s.source
+        );
+    }
+
+
+    return params.toString();
+}
+
+
+window.mcBuildReturnQS =
+    mcBuildReturnQS;
+
+
+/* =========================================================
+   SAVE CLIENT FILTERS
+   ========================================================= */
+
+function mcSaveClientFilters() {
+
+    const s =
+        mcCaptureFilterState();
+
+
+    try {
+
+        sessionStorage.setItem(
+            'mc_restore_client_filters',
+            JSON.stringify({
+                paid: s.paid,
+                delivered: s.delivered,
+                search: s.search
+            })
+        );
+
+    } catch (e) {}
+}
+
+
+window.mcSaveClientFilters =
+    mcSaveClientFilters;
+
+
+/* =========================================================
+   SET DELIVERED FILTER
+   ========================================================= */
+
+function setDailyDeliveredFilter(mode) {
+
+    dailyDeliveredFilter =
+        mode;
+
+
+    const btn =
+        document.getElementById(
+            'fanDeliveredBtn'
+        );
+
+
+    if (btn) {
+
+        btn.classList.remove(
+            'state-yes',
+            'state-no'
+        );
+
+
+        if (
+            mode === 'delivered'
+        ) {
+
+            btn.classList.add(
+                'state-yes'
+            );
+
+        } else if (
+            mode === 'not_delivered'
+        ) {
+
+            btn.classList.add(
+                'state-no'
+            );
+        }
+
+
+        btn.title =
+            mode === 'all'
+                ? 'Delivered: All'
+                : (
+                    mode === 'delivered'
+                        ? 'Delivered: Yes'
+                        : 'Delivered: No'
+                );
+    }
+
+
+    if (
+        window.updateDailyOrderFilters
+    ) {
+        window.updateDailyOrderFilters();
+    }
+
+
+    updateDailyFilterFabIndicator();
+}
+
+
+/* =========================================================
+   COMBINED CLIENT-SIDE FILTERING
+   ========================================================= */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        const searchInput =
+            document.getElementById(
+                'dailyCustomerSearch'
+            );
+
+
+        const clearButton =
+            document.getElementById(
+                'clearDailyCustomerSearch'
+            );
+
+
+        const searchStatus =
+            document.getElementById(
+                'dailySearchStatus'
+            );
+
+
+        function updateDailyOrderFilters() {
+
+            const query =
+                searchInput
+                    ? searchInput.value
+                        .trim()
+                        .toLowerCase()
+                    : '';
+
+
+            const dayGroups =
+                document.querySelectorAll(
+                    '#ordersRoot .day-group'
+                );
+
+
+            let matchedOrders = 0;
+            let matchedRevenue = 0;
+            let matchedDays = 0;
+            let totalOrders = 0;
+
+
+            dayGroups.forEach(
+                function(dayGroup) {
+
+                    const cards =
+                        dayGroup.querySelectorAll(
+                            '.order-card'
+                        );
+
+
+                    let visibleInGroup = 0;
+
+
+                    cards.forEach(
+                        function(card) {
+
+                            const customerName =
+                                (
+                                    card.getAttribute(
+                                        'data-customer'
+                                    ) || ''
+                                )
+                                .trim()
+                                .toLowerCase();
+
+
+                            const nameMatches =
+                                !query ||
+                                customerName.includes(
+                                    query
+                                );
+
+
+                            const isPaid =
+                                card.getAttribute(
+                                    'data-paid'
+                                ) === 'true';
+
+
+                            const paidMatches =
+                                (
+                                    typeof dailyPaidFilter ===
+                                    'undefined' ||
+                                    dailyPaidFilter ===
+                                    'all'
+                                )
+
+                                ||
+
+                                (
+                                    dailyPaidFilter ===
+                                    'paid' &&
+                                    isPaid
+                                )
+
+                                ||
+
+                                (
+                                    dailyPaidFilter ===
+                                    'unpaid' &&
+                                    !isPaid
+                                );
+
+
+                            const isDelivered =
+                                card.getAttribute(
+                                    'data-delivered'
+                                ) === 'true';
+
+
+                            const deliveredMatches =
+                                dailyDeliveredFilter ===
+                                    'all'
+
+                                ||
+
+                                (
+                                    dailyDeliveredFilter ===
+                                    'delivered' &&
+                                    isDelivered
+                                )
+
+                                ||
+
+                                (
+                                    dailyDeliveredFilter ===
+                                    'not_delivered' &&
+                                    !isDelivered
+                                );
+
+
+                            const cardSource =
+                                (
+                                    card.getAttribute(
+                                        'data-source'
+                                    ) || ''
+                                )
+                                .trim();
+
+
+                            const sourceMatches =
+                                (
+                                    typeof dailySourceFilter ===
+                                    'undefined' ||
+                                    !dailySourceFilter
+                                )
+
+                                ||
+
+                                cardSource ===
+                                dailySourceFilter;
+
+
+                            const matches =
+                                nameMatches &&
+                                paidMatches &&
+                                deliveredMatches &&
+                                sourceMatches;
+
+
+                            card.classList.toggle(
+                                'hidden',
+                                !matches
+                            );
+
+
+                            if (matches) {
+
+                                visibleInGroup++;
+
+                                matchedOrders++;
+
+                                matchedRevenue +=
+                                    parseInt(
+                                        card.getAttribute(
+                                            'data-total'
+                                        ),
+                                        10
+                                    ) || 0;
+                            }
+
+
+                            totalOrders++;
+
+                        }
+                    );
+
+
+                    dayGroup.classList.toggle(
+                        'hidden',
+                        visibleInGroup === 0
+                    );
+
+
+                    if (
+                        visibleInGroup > 0
+                    ) {
+                        matchedDays++;
+                    }
+
+                }
+            );
+
+
+            /* Clear search button */
+
+            if (clearButton) {
+
+                clearButton.classList.toggle(
+                    'hidden',
+                    !query
+                );
+
+
+                clearButton.classList.toggle(
+                    'flex',
+                    !!query
+                );
+            }
+
+
+            const filtersActive =
+                !!query
+
+                ||
+
+                (
+                    typeof dailyPaidFilter !==
+                    'undefined' &&
+                    dailyPaidFilter !==
+                    'all'
+                )
+
+                ||
+
+                dailyDeliveredFilter !==
+                'all'
+
+                ||
+
+                (
+                    typeof dailySourceFilter !==
+                    'undefined' &&
+                    !!dailySourceFilter
+                );
+
+
+            /* Search status */
+
+            if (searchStatus) {
+
+                if (filtersActive) {
+
+                    searchStatus.classList.remove(
+                        'hidden'
+                    );
+
+
+                    searchStatus.textContent =
+                        matchedOrders === 1
+                            ? '1 order found'
+                            : `${matchedOrders} orders found`;
+
+                } else {
+
+                    searchStatus.classList.add(
+                        'hidden'
+                    );
+
+
+                    searchStatus.textContent =
+                        '';
+                }
+            }
+
+
+            /* Summary */
+
+            const orderCountEl =
+                document.getElementById(
+                    'summaryOrderCount'
+                );
+
+
+            if (orderCountEl) {
+                orderCountEl.textContent =
+                    matchedOrders;
+            }
+
+
+            const revenueEl =
+                document.getElementById(
+                    'summaryRevenue'
+                );
+
+
+            if (revenueEl) {
+
+                revenueEl.textContent =
+                    matchedRevenue.toLocaleString();
+            }
+
+
+            const dayCountEl =
+                document.getElementById(
+                    'summaryDayCount'
+                );
+
+
+            if (dayCountEl) {
+
+                dayCountEl.textContent =
+                    matchedDays;
+            }
+
+
+            /* Empty state */
+
+            let noResults =
+                document.getElementById(
+                    'dailyCustomerSearchNoResults'
+                );
+
+
+            if (
+                filtersActive &&
+                matchedOrders === 0 &&
+                totalOrders > 0
+            ) {
+
+                if (!noResults) {
+
+                    noResults =
+                        document.createElement(
+                            'div'
+                        );
+
+
+                    noResults.id =
+                        'dailyCustomerSearchNoResults';
+
+
+                    noResults.className =
+                        'text-center py-16 text-stone-400 italic text-sm';
+
+
+                    noResults.innerHTML = `
+                        <div class="flex justify-center mb-3">
+                            <svg
+                                class="w-8 h-8 text-stone-300"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                            >
+                                <circle
+                                    cx="11"
+                                    cy="11"
+                                    r="7"
+                                ></circle>
+
+                                <path
+                                    stroke-linecap="round"
+                                    d="m20 20-4-4"
+                                ></path>
+                            </svg>
+                        </div>
+
+                        No orders match the current filters.
+                    `;
+
+
+                    document
+                        .getElementById(
+                            'ordersRoot'
+                        )
+                        .appendChild(
+                            noResults
+                        );
+                }
+
+
+                noResults.classList.remove(
+                    'hidden'
+                );
+
+            } else if (noResults) {
+
+                noResults.classList.add(
+                    'hidden'
+                );
+            }
+
+
+            updateDailyFilterFabIndicator();
+
+        }
+
+
+        window.updateDailyOrderFilters =
+            updateDailyOrderFilters;
+
+
+        /* Search input */
+
+        if (searchInput) {
+
+            searchInput.addEventListener(
+                'input',
+                updateDailyOrderFilters
+            );
+        }
+
+
+        /* Clear search */
+
+        if (
+            clearButton &&
+            searchInput
+        ) {
+
+            clearButton.addEventListener(
+                'click',
+                function() {
+
+                    searchInput.value =
+                        '';
+
+                    searchInput.focus();
+
+                    updateDailyOrderFilters();
+                }
+            );
+        }
+
+
+        /* Escape search */
+
+        if (searchInput) {
+
+            searchInput.addEventListener(
+                'keydown',
+                function(event) {
+
+                    if (
+                        event.key === 'Escape' &&
+                        searchInput.value
+                    ) {
+
+                        searchInput.value =
+                            '';
+
+                        updateDailyOrderFilters();
+                    }
+
+                }
+            );
+        }
+
+
+        /* Initial filtering */
+
+        if (
+
+            (
+                typeof dailySourceFilter !==
+                'undefined' &&
+                dailySourceFilter
+            )
+
+            ||
+
+            dailyDeliveredFilter !==
+            'all'
+
+        ) {
+
             updateDailyOrderFilters();
-        });
-    }
+        }
 
-    if (searchInput) {
-        searchInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && searchInput.value) {
-                searchInput.value = '';
-                updateDailyOrderFilters();
-            }
-        });
     }
+);
 
-    if ((typeof dailySourceFilter !== 'undefined' && dailySourceFilter) || dailyDeliveredFilter !== 'all') {
-        updateDailyOrderFilters();
-    }
-});
+
+/* =========================================================
+   PAYMENT CHECKBOX
+   ========================================================= */
 
 function handlePaymentCheckboxChange(checkbox) {
-    const orderId = checkbox.getAttribute('data-order-id');
-    const wrapper = checkbox.closest('.oc-payment-toggle');
-    const label = wrapper.querySelector('.oc-payment-toggle-label');
+
+    const orderId =
+        checkbox.getAttribute(
+            'data-order-id'
+        );
+
+
+    const wrapper =
+        checkbox.closest(
+            '.oc-payment-toggle'
+        );
+
+
+    const label =
+        wrapper.querySelector(
+            '.oc-payment-toggle-label'
+        );
+
 
     if (checkbox.checked) {
-        openDateWheelPicker({
-            title: '付款日期选择 (Set Payment Date)',
-            initialValue: checkbox.getAttribute('data-payment-date') || wpIsoForOffset(0),
-            onConfirm: (dateValue) => {
-                const card = checkbox.closest('.order-card');
-                const currentFee = card ? (card.getAttribute('data-delivery-fee') || '') : '';
-                const currentMethod = checkbox.getAttribute('data-payment-method') || '';
 
-                openDeliveryFeePrompt({
-                    initialValue: currentFee,
-                    onSkip: () => {
-                        openPaymentMethodPrompt({
-                            initialValue: currentMethod,
-                            onSelect: (method) => submitPaymentUpdate(orderId, true, dateValue, checkbox, wrapper, label, undefined, method),
-                            onSkip: () => submitPaymentUpdate(orderId, true, dateValue, checkbox, wrapper, label, undefined, '')
-                        });
-                    },
-                    onSave: (feeValue) => {
-                        openPaymentMethodPrompt({
-                            initialValue: currentMethod,
-                            onSelect: (method) => submitPaymentUpdate(orderId, true, dateValue, checkbox, wrapper, label, feeValue, method),
-                            onSkip: () => submitPaymentUpdate(orderId, true, dateValue, checkbox, wrapper, label, feeValue, '')
-                        });
-                    }
-                });
-            },
+        openDateWheelPicker({
+
+            title:
+                '付款日期选择 (Set Payment Date)',
+
+
+            initialValue:
+                checkbox.getAttribute(
+                    'data-payment-date'
+                ) || wpIsoForOffset(0),
+
+
+            onConfirm:
+                (dateValue) => {
+
+                    const card =
+                        checkbox.closest(
+                            '.order-card'
+                        );
+
+
+                    const currentFee =
+                        card
+                            ? (
+                                card.getAttribute(
+                                    'data-delivery-fee'
+                                ) || ''
+                            )
+                            : '';
+
+
+                    const currentMethod =
+                        checkbox.getAttribute(
+                            'data-payment-method'
+                        ) || '';
+
+
+                    openDeliveryFeePrompt({
+
+                        initialValue:
+                            currentFee,
+
+
+                        onSkip: () => {
+
+                            openPaymentMethodPrompt({
+
+                                initialValue:
+                                    currentMethod,
+
+
+                                onSelect:
+                                    (method) =>
+
+                                        submitPaymentUpdate(
+                                            orderId,
+                                            true,
+                                            dateValue,
+                                            checkbox,
+                                            wrapper,
+                                            label,
+                                            undefined,
+                                            method
+                                        ),
+
+
+                                onSkip: () =>
+
+                                    submitPaymentUpdate(
+                                        orderId,
+                                        true,
+                                        dateValue,
+                                        checkbox,
+                                        wrapper,
+                                        label,
+                                        undefined,
+                                        ''
+                                    )
+
+                            });
+
+                        },
+
+
+                        onSave:
+                            (feeValue) => {
+
+                                openPaymentMethodPrompt({
+
+                                    initialValue:
+                                        currentMethod,
+
+
+                                    onSelect:
+                                        (method) =>
+
+                                            submitPaymentUpdate(
+                                                orderId,
+                                                true,
+                                                dateValue,
+                                                checkbox,
+                                                wrapper,
+                                                label,
+                                                feeValue,
+                                                method
+                                            ),
+
+
+                                    onSkip: () =>
+
+                                        submitPaymentUpdate(
+                                            orderId,
+                                            true,
+                                            dateValue,
+                                            checkbox,
+                                            wrapper,
+                                            label,
+                                            feeValue,
+                                            ''
+                                        )
+
+                                });
+
+                            }
+
+                    });
+
+                },
+
+
             onCancel: () => {
-                checkbox.checked = false; // manager backed out — don't mark it paid
+
+                checkbox.checked =
+                    false;
+
             }
+
         });
+
+
     } else {
-        submitPaymentUpdate(orderId, false, '', checkbox, wrapper, label, undefined, '');
+
+        submitPaymentUpdate(
+            orderId,
+            false,
+            '',
+            checkbox,
+            wrapper,
+            label,
+            undefined,
+            ''
+        );
     }
 }
 
-async function submitPaymentUpdate(orderId, isPaid, paymentDate, checkbox, wrapper, label, deliveryFee, paymentMethod) {
-    checkbox.disabled = true;
+
+/* =========================================================
+   PAYMENT UPDATE
+   ========================================================= */
+
+async function submitPaymentUpdate(
+    orderId,
+    isPaid,
+    paymentDate,
+    checkbox,
+    wrapper,
+    label,
+    deliveryFee,
+    paymentMethod
+) {
+
+    checkbox.disabled =
+        true;
+
 
     try {
+
         const body = {
-            is_paid: isPaid,
-            payment_date: paymentDate
+
+            is_paid:
+                isPaid,
+
+            payment_date:
+                paymentDate
+
         };
 
-        if (deliveryFee !== undefined) {
-            body.delivery_fee = deliveryFee;
+
+        if (
+            deliveryFee !==
+            undefined
+        ) {
+
+            body.delivery_fee =
+                deliveryFee;
         }
 
-        if (paymentMethod !== undefined) {
-            body.payment_method = paymentMethod;
+
+        if (
+            paymentMethod !==
+            undefined
+        ) {
+
+            body.payment_method =
+                paymentMethod;
         }
 
-        const res = await fetch(`/toggle_payment/${orderId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
 
-        const data = await res.json();
+        const res =
+            await fetch(
+                `/toggle_payment/${orderId}`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body:
+                        JSON.stringify(body)
+                }
+            );
+
+
+        const data =
+            await res.json();
+
 
         if (!data.success) {
-            throw new Error(data.error || 'Update failed');
+
+            throw new Error(
+                data.error ||
+                'Update failed'
+            );
         }
 
-        checkbox.checked = data.is_paid;
+
+        checkbox.checked =
+            data.is_paid;
+
 
         checkbox.setAttribute(
             'data-payment-date',
             data.payment_date || ''
         );
 
+
         checkbox.setAttribute(
             'data-payment-method',
             data.payment_method || ''
         );
+
 
         wrapper.classList.toggle(
             'is-paid',
             data.is_paid
         );
 
-        label.textContent = data.is_paid
-            ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
-            : '标记已付款';
+
+        label.textContent =
+            data.is_paid
+                ? `已付款${data.payment_date ? ' · ' + data.payment_date : ''}`
+                : '标记已付款';
+
 
         const priceLine =
-            wrapper.parentElement.querySelector('.oc-price-line');
+            wrapper.parentElement.querySelector(
+                '.oc-price-line'
+            );
+
 
         if (priceLine) {
+
             priceLine.style.color =
-                data.is_paid ? '#047857' : '#b45309';
+                data.is_paid
+                    ? '#047857'
+                    : '#b45309';
         }
 
-        const card = checkbox.closest('.order-card');
+
+        const card =
+            checkbox.closest(
+                '.order-card'
+            );
+
 
         if (card) {
+
             card.setAttribute(
                 'data-paid',
-                data.is_paid ? 'true' : 'false'
+                data.is_paid
+                    ? 'true'
+                    : 'false'
             );
         }
 
+
         if (
-            (deliveryFee !== undefined ||
-             paymentMethod !== undefined) &&
+
+            (
+                deliveryFee !==
+                undefined ||
+
+                paymentMethod !==
+                undefined
+            )
+
+            &&
+
             window.refreshDailyRecords
+
         ) {
+
             await window.refreshDailyRecords();
+
             return;
         }
 
-        if (window.updateDailyOrderFilters) {
+
+        if (
+            window.updateDailyOrderFilters
+        ) {
+
             window.updateDailyOrderFilters();
         }
 
+
     } catch (err) {
 
-        checkbox.checked = !isPaid;
+        checkbox.checked =
+            !isPaid;
+
 
         alert(
             '更新付款状态失败，请重试。\n' +
             (err.message || '')
         );
 
+
     } finally {
-        checkbox.disabled = false;
-    }
-}
-   
-function _mcSetDeliveredUI(card, isDelivered) {
-    const btn = card.querySelector('.oc-delivered-toggle');
-    if (!btn) return;
-    btn.classList.toggle('is-delivered', isDelivered);
-    const label = btn.querySelector('.oc-delivered-label');
-    if (label) {
-        label.textContent = isDelivered
-            ? (btn.dataset.labelDone || label.textContent)
-            : (btn.dataset.labelDefault || label.textContent);
+
+        checkbox.disabled =
+            false;
     }
 }
 
-function _mcSetFoldUI(card, isFolded) {
-    card.classList.toggle('oc-folded', isFolded);
+
+/* =========================================================
+   DELIVERED UI
+   ========================================================= */
+
+function _mcSetDeliveredUI(
+    card,
+    isDelivered
+) {
+
+    const btn =
+        card.querySelector(
+            '.oc-delivered-toggle'
+        );
+
+
+    if (!btn) return;
+
+
+    btn.classList.toggle(
+        'is-delivered',
+        isDelivered
+    );
+
+
+    const label =
+        btn.querySelector(
+            '.oc-delivered-label'
+        );
+
+
+    if (label) {
+
+        label.textContent =
+            isDelivered
+
+                ? (
+                    btn.dataset.labelDone ||
+                    label.textContent
+                )
+
+                : (
+                    btn.dataset.labelDefault ||
+                    label.textContent
+                );
+    }
 }
+
+
+/* =========================================================
+   FOLD UI
+   ========================================================= */
+
+function _mcSetFoldUI(
+    card,
+    isFolded
+) {
+
+    card.classList.toggle(
+        'oc-folded',
+        isFolded
+    );
+}
+
+
+/* =========================================================
+   TOGGLE DELIVERED
+   ========================================================= */
 
 async function toggleDeliveredCard(btn) {
-    const card = btn.closest('.order-card');
-    const orderId = card.id.replace('order-card-', '');
-    const nowDelivered = !btn.classList.contains('is-delivered');
 
-    btn.disabled = true;
+    const card =
+        btn.closest(
+            '.order-card'
+        );
+
+
+    const orderId =
+        card.id.replace(
+            'order-card-',
+            ''
+        );
+
+
+    const nowDelivered =
+        !btn.classList.contains(
+            'is-delivered'
+        );
+
+
+    btn.disabled =
+        true;
+
+
     try {
-        const res = await fetch(`/toggle_delivered/${orderId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_delivered: nowDelivered })
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Update failed');
 
-        _mcSetDeliveredUI(card, data.is_delivered);
-        _mcSetFoldUI(card, data.is_folded);
-        card.setAttribute('data-delivered', data.is_delivered ? 'true' : 'false');
+        const res =
+            await fetch(
+                `/toggle_delivered/${orderId}`,
+                {
+                    method: 'POST',
 
-        // Keep the Delivered/Not Delivered filter in sync immediately.
-        if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body:
+                        JSON.stringify({
+                            is_delivered:
+                                nowDelivered
+                        })
+                }
+            );
+
+
+        const data =
+            await res.json();
+
+
+        if (!data.success) {
+
+            throw new Error(
+                data.error ||
+                'Update failed'
+            );
+        }
+
+
+        _mcSetDeliveredUI(
+            card,
+            data.is_delivered
+        );
+
+
+        _mcSetFoldUI(
+            card,
+            data.is_folded
+        );
+
+
+        card.setAttribute(
+            'data-delivered',
+            data.is_delivered
+                ? 'true'
+                : 'false'
+        );
+
+
+        if (
+            window.updateDailyOrderFilters
+        ) {
+
+            window.updateDailyOrderFilters();
+        }
+
+
     } catch (err) {
-        alert('更新送达状态失败，请重试。\n' + (err.message || ''));
+
+        alert(
+            '更新送达状态失败，请重试。\n' +
+            (err.message || '')
+        );
+
+
     } finally {
-        btn.disabled = false;
+
+        btn.disabled =
+            false;
     }
 }
+
+
+/* =========================================================
+   TOGGLE FOLD
+   ========================================================= */
 
 async function toggleFoldCard(el) {
-    const card = el.closest('.order-card');
-    const orderId = card.id.replace('order-card-', '');
-    const nowFolded = !card.classList.contains('oc-folded');
+
+    const card =
+        el.closest(
+            '.order-card'
+        );
+
+
+    const orderId =
+        card.id.replace(
+            'order-card-',
+            ''
+        );
+
+
+    const nowFolded =
+        !card.classList.contains(
+            'oc-folded'
+        );
+
 
     try {
-        const res = await fetch(`/toggle_fold/${orderId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_folded: nowFolded })
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Update failed');
 
-        _mcSetFoldUI(card, data.is_folded);
+        const res =
+            await fetch(
+                `/toggle_fold/${orderId}`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body:
+                        JSON.stringify({
+                            is_folded:
+                                nowFolded
+                        })
+                }
+            );
+
+
+        const data =
+            await res.json();
+
+
+        if (!data.success) {
+
+            throw new Error(
+                data.error ||
+                'Update failed'
+            );
+        }
+
+
+        _mcSetFoldUI(
+            card,
+            data.is_folded
+        );
+
+
     } catch (err) {
-        alert('更新折叠状态失败，请重试。\n' + (err.message || ''));
+
+        alert(
+            '更新折叠状态失败，请重试。\n' +
+            (err.message || '')
+        );
     }
 }
+
+
+/* =========================================================
+   TOGGLE DAY FOLD
+   ========================================================= */
 
 async function toggleDayFold(btn) {
-    const dayGroup = btn.closest('.day-group');
+
+    const dayGroup =
+        btn.closest(
+            '.day-group'
+        );
+
+
     if (!dayGroup) return;
-    const cards = Array.from(dayGroup.querySelectorAll('.order-card'));
+
+
+    const cards =
+        Array.from(
+            dayGroup.querySelectorAll(
+                '.order-card'
+            )
+        );
+
+
     if (!cards.length) return;
 
-    const shouldFold = cards.some(card => !card.classList.contains('oc-folded'));
 
-    btn.disabled = true;
-    btn.classList.toggle('all-folded', shouldFold);
-    btn.title = shouldFold ? btn.dataset.labelUnfold : btn.dataset.labelFold;
+    const shouldFold =
+        cards.some(
+            card =>
+                !card.classList.contains(
+                    'oc-folded'
+                )
+        );
 
-    const toUpdate = cards.filter(card => card.classList.contains('oc-folded') !== shouldFold);
-    toUpdate.forEach(card => _mcSetFoldUI(card, shouldFold)); // optimistic UI
+
+    btn.disabled =
+        true;
+
+
+    btn.classList.toggle(
+        'all-folded',
+        shouldFold
+    );
+
+
+    btn.title =
+        shouldFold
+            ? btn.dataset.labelUnfold
+            : btn.dataset.labelFold;
+
+
+    const toUpdate =
+        cards.filter(
+            card =>
+                card.classList.contains(
+                    'oc-folded'
+                ) !== shouldFold
+        );
+
+
+    toUpdate.forEach(
+        card =>
+            _mcSetFoldUI(
+                card,
+                shouldFold
+            )
+    );
+
 
     try {
-        await Promise.all(toUpdate.map(card => {
-            const orderId = card.id.replace('order-card-', '');
-            return fetch(`/toggle_fold/${orderId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_folded: shouldFold })
-            }).then(res => res.json()).then(data => {
-                if (!data.success) throw new Error(data.error || 'Update failed');
-            });
-        }));
+
+        await Promise.all(
+
+            toUpdate.map(
+                card => {
+
+                    const orderId =
+                        card.id.replace(
+                            'order-card-',
+                            ''
+                        );
+
+
+                    return fetch(
+                        `/toggle_fold/${orderId}`,
+                        {
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type':
+                                    'application/json'
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    is_folded:
+                                        shouldFold
+                                })
+                        }
+                    )
+                    .then(
+                        res => res.json()
+                    )
+                    .then(
+                        data => {
+
+                            if (!data.success) {
+
+                                throw new Error(
+                                    data.error ||
+                                    'Update failed'
+                                );
+                            }
+
+                        }
+                    );
+                }
+            )
+        );
+
+
     } catch (err) {
-        // Roll back so the button/cards never claim a state that didn't
-        // actually save.
-        toUpdate.forEach(card => _mcSetFoldUI(card, !shouldFold));
-        btn.classList.toggle('all-folded', !shouldFold);
-        btn.title = !shouldFold ? btn.dataset.labelUnfold : btn.dataset.labelFold;
-        alert('更新折叠状态失败，请重试。\n' + (err.message || ''));
+
+        toUpdate.forEach(
+            card =>
+                _mcSetFoldUI(
+                    card,
+                    !shouldFold
+                )
+        );
+
+
+        btn.classList.toggle(
+            'all-folded',
+            !shouldFold
+        );
+
+
+        btn.title =
+            !shouldFold
+                ? btn.dataset.labelUnfold
+                : btn.dataset.labelFold;
+
+
+        alert(
+            '更新折叠状态失败，请重试。\n' +
+            (err.message || '')
+        );
+
+
     } finally {
-        btn.disabled = false;
+
+        btn.disabled =
+            false;
     }
 }
-window.toggleDayFold = toggleDayFold;
 
-/* ===== Restore purely-client-side filters (paid/delivered/search) after an
-   edit/delete/add redirect reloads the page. See mcSaveClientFilters()
-   above — these were stashed in sessionStorage right before the redirect
-   because they never round-trip through the URL/server. ===== */
-document.addEventListener('DOMContentLoaded', function() {
-    let saved = null;
-    try {
-        const raw = sessionStorage.getItem('mc_restore_client_filters');
-        if (raw) saved = JSON.parse(raw);
-        sessionStorage.removeItem('mc_restore_client_filters');
-    } catch (e) { /* skip */ }
 
-    if (!saved) return;
+window.toggleDayFold =
+    toggleDayFold;
 
-    if (saved.search && document.getElementById('dailyCustomerSearch')) {
-        document.getElementById('dailyCustomerSearch').value = saved.search;
+
+/* =========================================================
+   RESTORE CLIENT FILTERS
+   ========================================================= */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
+
+        let saved = null;
+
+
+        try {
+
+            const raw =
+                sessionStorage.getItem(
+                    'mc_restore_client_filters'
+                );
+
+
+            if (raw) {
+                saved =
+                    JSON.parse(raw);
+            }
+
+
+            sessionStorage.removeItem(
+                'mc_restore_client_filters'
+            );
+
+
+        } catch (e) {}
+
+
+        if (!saved) return;
+
+
+        if (
+            saved.search &&
+            document.getElementById(
+                'dailyCustomerSearch'
+            )
+        ) {
+
+            document.getElementById(
+                'dailyCustomerSearch'
+            ).value =
+                saved.search;
+        }
+
+
+        if (
+            saved.paid &&
+            saved.paid !== 'all' &&
+            typeof setDailyPaidFilter ===
+            'function'
+        ) {
+
+            setDailyPaidFilter(
+                saved.paid
+            );
+        }
+
+
+        if (
+            saved.delivered &&
+            saved.delivered !== 'all' &&
+            typeof setDailyDeliveredFilter ===
+            'function'
+        ) {
+
+            setDailyDeliveredFilter(
+                saved.delivered
+            );
+        }
+
+
+        if (
+            window.updateDailyOrderFilters
+        ) {
+
+            window.updateDailyOrderFilters();
+        }
+
     }
-    if (saved.paid && saved.paid !== 'all' && typeof setDailyPaidFilter === 'function') {
-        setDailyPaidFilter(saved.paid);
-    }
-    if (saved.delivered && saved.delivered !== 'all' && typeof setDailyDeliveredFilter === 'function') {
-        setDailyDeliveredFilter(saved.delivered);
-    }
-    if (window.updateDailyOrderFilters) window.updateDailyOrderFilters();
-});
+);
+
 </script>
