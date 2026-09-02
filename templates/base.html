@@ -739,7 +739,7 @@
 
 
 /* =========================================================
-   FLOATING MENU (iOS Liquid Glass Refinement)
+   Hamburger MENU
    ========================================================= */
 
 .nav-drawer {
@@ -755,24 +755,31 @@
     flex-direction: column;
     overflow: hidden;
 
-    border-radius: 28px;
+    border-radius: 36px; /* Match iOS rounded pill aesthetics */
 
-    /* Authentic iOS Backdrop Blur & Saturation */
-    backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
-    -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
+    /* 1. Extreme Blur + Saturation boost for true refraction */
+    backdrop-filter: blur(50px) saturate(210%) brightness(1.02);
+    -webkit-backdrop-filter: blur(50px) saturate(210%) brightness(1.02);
 
-    /* Semi-transparent iOS Light Glass Fill */
-    background: rgba(255, 255, 255, 0.65);
+    /* 2. Low-opacity gradient fill so background color/images show through */
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.20) 100%
+    );
 
-    /* Subtle hairline border for crisp edge refraction */
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* 3. Outer edge ring */
+    border: 1px solid rgba(255, 255, 255, 0.45);
 
-    /* iOS Precision Glass Rim & Floating Elevation Shadows */
-    box-shadow: 
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),  /* Top edge light reflection */
-        inset 0 -1px 0 0 rgba(255, 255, 255, 0.3), /* Bottom subtle highlight */
-        0 10px 30px rgba(0, 0, 0, 0.08),           /* Soft ambient shadow */
-        0 20px 40px rgba(0, 0, 0, 0.12);           /* Deep elevation shadow */
+    /* 4. Multi-layered specular highlights & deep elevation shadow */
+    box-shadow:
+        /* Crisp top light reflection edge */
+        inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.9),
+        /* Subtle inner bottom highlight */
+        inset 0 -1px 1px 0 rgba(255, 255, 255, 0.3),
+        /* Soft glass ambient shadow */
+        0 15px 35px -5px rgba(0, 0, 0, 0.15),
+        0 5px 15px -3px rgba(0, 0, 0, 0.08);
 
     opacity: 0;
     transform: translateY(-18px) scale(.96);
@@ -784,31 +791,42 @@
         transform .42s cubic-bezier(.16, 1, .3, 1);
 }
 
-/* Optional specular top gradient — cleaned up so it doesn't obscure content */
+/* Curved glossy reflection across top half */
 .nav-drawer::before {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    z-index: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45%;
+    border-radius: 36px 36px 50% 50% / 36px 36px 20px 20px;
     background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.4) 0%,
-        rgba(255, 255, 255, 0) 25%
+        rgba(255, 255, 255, 0.35) 0%,
+        rgba(255, 255, 255, 0) 100%
     );
-}
-
-/* Ensure inner content renders crisply above the specular layer */
-.nav-drawer > * {
-    position: relative;
+    pointer-events: none;
     z-index: 1;
 }
 
-.nav-drawer-overlay.active .nav-drawer {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
+/* Keep menu contents legible on top of glass layers */
+.nav-drawer > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* =========================================================
+   ACTIVE MENU ITEM (Matching iOS Active Pill)
+   ========================================================= */
+
+/* Replace dark solid black menu items with subtle dark-glass or vibrant pills */
+.nav-drawer .menu-item.active {
+    background: rgba(0, 0, 0, 0.75);
+    color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.2),
+        0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* =========================================================
