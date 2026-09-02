@@ -1027,14 +1027,37 @@
 }
 
 #mcTopNav.mc-nav-is-blurred {
-    background: rgba(255,255,255,.38) !important;
-    border-bottom-color: rgba(255,255,255,.72) !important;
+    position: sticky !important;
+    background: rgba(255,255,255,.30) !important;
+    border-bottom-color: rgba(255,255,255,.78) !important;
     box-shadow:
-        0 10px 32px rgba(40,30,20,.12),
-        inset 0 -1px 0 rgba(255,255,255,.82),
-        inset 0 1px 0 rgba(255,255,255,.72);
-    backdrop-filter: blur(24px) saturate(165%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(165%) !important;
+        0 10px 34px rgba(40,30,20,.14),
+        inset 0 -1px 0 rgba(255,255,255,.86),
+        inset 0 1px 0 rgba(255,255,255,.78);
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+#mcTopNav.mc-nav-is-blurred::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.58) 0%,
+            rgba(255,255,255,.20) 48%,
+            rgba(255,255,255,.08) 100%
+        );
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.90),
+        inset 0 -1px 0 rgba(255,255,255,.55);
+}
+
+#mcTopNav.mc-nav-is-blurred > div {
+    position: relative;
+    z-index: 2;
 }
 
 /* ---------- Logo: 56px glass circle, smaller artwork ---------- */
@@ -1188,6 +1211,19 @@
 /* Keep the fan itself above everything clickable. */
 .nav-fanwrap {
     z-index: 401 !important;
+    pointer-events: none !important;
+}
+
+.nav-fanwrap.nav-fan-open {
+    pointer-events: none !important;
+}
+
+.nav-fanwrap .nav-fan-btn {
+    pointer-events: none;
+}
+
+.nav-fanwrap.nav-fan-open .nav-fan-btn {
+    pointer-events: auto;
 }
 
 /* Export controls: glossy glass, matching the nav/filter language. */
@@ -3278,7 +3314,6 @@ async function mcCompressAndSubmit(form) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
     const hamburger = document.getElementById('navHamburgerBtn');
     const wrap = document.getElementById('navFanWrap');
     const backdrop = document.getElementById('navFanBackdrop');
@@ -3286,131 +3321,116 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!hamburger || !wrap || !backdrop) return;
 
-    // Move to <body> so no ancestor transform/overflow can trap the
-    // fixed-position fan (same trick as the Daily Records filter FAB).
-    if (wrap.parentNode !== document.body) document.body.appendChild(wrap);
-    if (backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
-
     function positionNavFanWrap() {
         const rect = hamburger.getBoundingClientRect();
-        wrap.style.top = rect.top + 'px';
-        wrap.style.left = rect.left + 'px';
-        wrap.style.width = rect.width + 'px';
-        wrap.style.height = rect.height + 'px';
+        wrap.style.top = Math.round(rect.top) + 'px';
+        wrap.style.left = Math.round(rect.left) + 'px';
+        wrap.style.width = Math.round(rect.width) + 'px';
+        wrap.style.height = Math.round(rect.height) + 'px';
     }
 
-    // Arc sweeps down and to the left of the hamburger button (185°→275°,
-    // where 0°=right / 90°=up), so bubbles never run off the right edge.
     function layoutNavFan() {
         const buttons = Array.from(wrap.querySelectorAll('.nav-fan-btn'));
         const n = buttons.length;
         if (!n) return;
 
         const cs = getComputedStyle(wrap);
-        const readPx = (name, fb) => {
-            const v = parseFloat(cs.getPropertyValue(name));
-            return Number.isFinite(v) ? v : fb;
-        };
-        const gap = Math.max(0, readPx('--fan-gap', 10));
-        let radius = Math.max(0, readPx('--fan-radius', 82));
+        const gap = Math.max(0, parseFloat(cs.getPropertyValue('--fan-gap')) || 10);
+        let radius = Math.max(0, parseFloat(cs.getPropertyValue('--fan-radius')) || 82);
 
         const btnW = buttons[0].offsetWidth || 46;
         const btnH = buttons[0].offsetHeight || 46;
         const btnDia = Math.max(btnW, btnH);
 
-        const startDeg = 185, endDeg = 275;
+        const startDeg = 185;
+        const endDeg = 275;
         const sweepDeg = endDeg - startDeg;
 
         if (n > 1) {
             const stepRad = (sweepDeg / (n - 1)) * Math.PI / 180;
             const sinHalf = Math.sin(stepRad / 2);
             if (sinHalf > 0.000001) {
-                const minRadius = (btnDia + gap) / (2 * sinHalf);
-                radius = Math.max(radius, minRadius);
+                radius = Math.max(radius, (btnDia + gap) / (2 * sinHalf));
             }
         }
 
         buttons.forEach((btn, i) => {
-            const thetaDeg = n > 1 ? startDeg + (i * sweepDeg / (n - 1)) : (startDeg + endDeg) / 2;
-            const thetaRad = thetaDeg * Math.PI / 180;
-            const x = radius * Math.cos(thetaRad);
-            const y = -radius * Math.sin(thetaRad);
-            btn.style.setProperty('--fan-tx', x.toFixed(2) + 'px');
-            btn.style.setProperty('--fan-ty', y.toFixed(2) + 'px');
+            const deg = n > 1
+                ? startDeg + (i * sweepDeg / (n - 1))
+                : (startDeg + endDeg) / 2;
+            const rad = deg * Math.PI / 180;
+            btn.style.setProperty('--fan-tx', (radius * Math.cos(rad)).toFixed(2) + 'px');
+            btn.style.setProperty('--fan-ty', (-radius * Math.sin(rad)).toFixed(2) + 'px');
         });
     }
 
     function openNavFan() {
-        // Recalculate from the hamburger's current position EVERY time.
         positionNavFanWrap();
         layoutNavFan();
 
+        // Add the open state BEFORE anything else visual happens.
         wrap.classList.add('nav-fan-open');
+        backdrop.classList.add('active');
         hamburger.classList.add('is-open');
         hamburger.setAttribute('aria-expanded', 'true');
         hamburger.setAttribute('aria-label', 'Close navigation');
-        backdrop.classList.add('active');
 
         if (topNav) topNav.classList.add('mc-nav-is-blurred');
-
-        if (typeof wpLockBody === 'function') wpLockBody();
-        else document.body.style.overflow = 'hidden';
-
         document.addEventListener('keydown', escHandler);
     }
 
     function closeNavFan() {
-        // Always fully reset state so open → close → open keeps working.
         wrap.classList.remove('nav-fan-open');
+        backdrop.classList.remove('active');
         hamburger.classList.remove('is-open');
         hamburger.setAttribute('aria-expanded', 'false');
         hamburger.setAttribute('aria-label', 'Open navigation');
-        backdrop.classList.remove('active');
 
         if (topNav) topNav.classList.remove('mc-nav-is-blurred');
-
-        if (typeof wpUnlockBody === 'function') wpUnlockBody();
-        else document.body.style.overflow = '';
-
         document.removeEventListener('keydown', escHandler);
     }
-    window.closeNavFan = closeNavFan;
 
-    function escHandler(e) {
-        if (e.key === 'Escape') {
+    function toggleNavFan(e) {
+        if (e) {
             e.preventDefault();
-            closeNavFan();
+            e.stopPropagation();
         }
-    }
 
-    function toggleNavFan() {
         if (wrap.classList.contains('nav-fan-open')) {
             closeNavFan();
         } else {
             openNavFan();
         }
     }
-    window.toggleNavFan = toggleNavFan;
 
-    // One and only one click handler on the hamburger.
-    hamburger.onclick = function (e) {
+    function escHandler(e) {
+        if (e.key === 'Escape') closeNavFan();
+    }
+
+    // Use pointerup on the actual button. The fan wrapper is explicitly
+    // pointer-events:none, so it can NEVER block this button.
+    hamburger.addEventListener('pointerup', toggleNavFan);
+
+    // Backdrop is the only full-screen close target.
+    backdrop.addEventListener('pointerup', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        toggleNavFan();
-        return false;
-    };
-
-    // Start from a known closed state.
-    closeNavFan();
-
-    let resizeTimer = null;
-    window.addEventListener('resize', function () {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
-            if (wrap.classList.contains('nav-fan-open')) { positionNavFanWrap(); layoutNavFan(); }
-        }, 150);
+        closeNavFan();
     });
 
+    window.openNavFan = openNavFan;
+    window.closeNavFan = closeNavFan;
+    window.toggleNavFan = toggleNavFan;
+
+    window.addEventListener('resize', function () {
+        if (wrap.classList.contains('nav-fan-open')) {
+            positionNavFanWrap();
+            layoutNavFan();
+        }
+    });
+
+    // Always initialize closed.
+    closeNavFan();
 });
 </script>
 
