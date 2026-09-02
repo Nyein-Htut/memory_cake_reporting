@@ -639,11 +639,10 @@
             display: flex; flex-direction: column; gap: 8px;
         }
         .nav-drawer-status {
-            display: flex; align-items: center; gap: 6px;
-            padding: 0 6px;
-            font-size: 10px; c/* =========================================================
-   MEMORY CAKE — FLOATING NAV MENU (glass icon-grid style)
-   ========================================================= */
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 6px;
+    font-size: 10px;
+}
 
 /* =========================================================
    NAV SPEED-DIAL (glossy glass orbit, same language as the
@@ -806,8 +805,73 @@
     background: radial-gradient(circle at 50% 35%, #fecaca 0%, #fca5a5 100%);
 }
 
-.nav-hamburger-btn.is-open svg { transform: rotate(135deg); }
+.nav-hamburger-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
 
+    color: #1c1917;
+    border: 1px solid rgba(255, 255, 255, .9);
+
+    background: radial-gradient(
+        circle at 50% 35%,
+        rgba(255, 255, 255, .95) 0%,
+        rgba(253, 250, 246, .75) 50%,
+        rgba(242, 237, 230, .85) 100%
+    );
+
+    box-shadow:
+        inset 0 3px 5px rgba(255, 255, 255, 1),
+        inset 0 -5px 10px rgba(195, 185, 175, .5),
+        inset 0 -1px 3px rgba(140, 125, 110, .35),
+        0 10px 24px rgba(50, 40, 30, .18),
+        0 3px 8px rgba(0, 0, 0, .08);
+
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, background .2s ease;
+}
+
+.nav-hamburger-btn::before {
+    content: "";
+    position: absolute;
+    width: 76%; height: 42%;
+    left: 12%; top: 4%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.6) 45%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.nav-hamburger-btn:hover {
+    background: radial-gradient(circle at 50% 30%, rgba(255,255,255,1) 0%, rgba(255,252,248,.85) 60%, rgba(245,238,230,.9) 100%);
+    box-shadow:
+        inset 0 4px 6px rgba(255, 255, 255, 1),
+        inset 0 -5px 12px rgba(180, 165, 150, .45),
+        0 14px 28px rgba(50, 40, 30, .24);
+}
+
+.nav-hamburger-btn:active {
+    transform: scale(.9);
+}
+
+.nav-hamburger-btn svg {
+    width: 19px; height: 19px;
+    position: relative;
+    z-index: 2;
+    transition: transform .3s ease;
+}
+
+.nav-hamburger-btn.is-open svg {
+    transform: rotate(135deg);
+}
 
 /* =========================================================
    REDUCED MOTION
