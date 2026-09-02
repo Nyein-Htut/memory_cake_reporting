@@ -91,6 +91,7 @@
     color: #57534e;
 
     cursor: pointer;
+
     transition:
         all .2s ease;
 
@@ -160,7 +161,6 @@
     max-height: 260px;
     opacity: 1;
 
-    /* slightly lower than before */
     margin-top: 10px;
 }
 
@@ -202,7 +202,9 @@
 
 .of-panel input[type="text"]:focus {
     border-color: #1c1917;
-    box-shadow: 0 0 0 3px rgba(16,185,129,.08);
+
+    box-shadow:
+        0 0 0 3px rgba(16,185,129,.08);
 }
 
 
@@ -229,7 +231,9 @@
 
 .of-item-card:hover {
     border-color: #d6d3d1;
-    box-shadow: 0 5px 16px rgba(28,25,23,.05);
+
+    box-shadow:
+        0 5px 16px rgba(28,25,23,.05);
 }
 
 .of-item-row-main {
@@ -339,6 +343,7 @@
 
 /* =========================================================
    MORE PANEL
+   DEFAULT = OPEN
    ========================================================= */
 
 .of-item-more-panel {
@@ -348,11 +353,15 @@
 
     border-top: 1px dashed #e7e5e4;
 
-    display: none;
+    display: block;
 }
 
-.of-item-more-panel.of-open {
-    display: block;
+/*
+ * Clicking the 🖼️ button can still collapse
+ * the remarks/photo area.
+ */
+.of-item-more-panel.of-collapsed {
+    display: none;
 }
 
 
@@ -364,6 +373,7 @@
     position: fixed;
 
     right: max(1.1rem, env(safe-area-inset-right));
+
     bottom: max(
         1.1rem,
         calc(env(safe-area-inset-bottom) + .5rem)
@@ -374,7 +384,8 @@
     width: 54px;
     height: 54px;
 
-    border-radius: 18px;
+    /* FULL CIRCLE */
+    border-radius: 50%;
 
     border: 1px solid rgba(255,255,255,.7);
 
@@ -399,12 +410,13 @@
 
     transition:
         transform .25s cubic-bezier(.2,1.3,.3,1),
-        box-shadow .25s ease,
-        border-radius .25s ease;
+        box-shadow .25s ease;
 }
 
 .add-order-fab:hover {
-    transform: translateY(-3px) scale(1.03);
+    transform:
+        translateY(-3px)
+        scale(1.03);
 
     box-shadow:
         0 16px 34px rgba(5,150,105,.30),
@@ -428,7 +440,6 @@
 
     .of-modal-card {
         max-height: 94vh;
-
         border-radius: 22px !important;
     }
 
@@ -463,7 +474,8 @@
         width: 52px;
         height: 52px;
 
-        border-radius: 17px;
+        /* FULL CIRCLE ON MOBILE TOO */
+        border-radius: 50%;
     }
 }
 
@@ -629,11 +641,6 @@
                     >
 
 
-                    <!-- IMPORTANT:
-                         Keep this exact ID because
-                         openSourcePicker() uses it.
-                    -->
-
                     <button
                         type="button"
                         id="sourceTriggerBtn"
@@ -757,10 +764,6 @@
                     >
 
 
-                    <!-- IMPORTANT:
-                         Keep exact ID because picker uses it.
-                    -->
-
                     <button
                         type="button"
                         id="deliveryTriggerBtn"
@@ -860,6 +863,7 @@
 
                     <!-- =================================================
                          FIRST ITEM
+                         MORE SECTION IS OPEN BY DEFAULT
                          ================================================= -->
 
                     <div class="item-row of-item-card">
@@ -886,7 +890,7 @@
                                 type="button"
                                 class="of-item-icon-btn"
                                 onclick="toggleItemMore(this)"
-                                title="မှတ်ချက် / ပုံ"
+                                title="မှတ်ချက် / ပုံ ဖျောက်ရန်"
                             >
                                 🖼️
                             </button>
@@ -904,7 +908,7 @@
                         </div>
 
 
-                        <!-- MORE -->
+                        <!-- MORE — VISIBLE BY DEFAULT -->
 
                         <div class="of-item-more-panel">
 
@@ -1429,6 +1433,7 @@ function getLocalISODate() {
 
 /* =========================================================
    ITEM MORE PANEL
+   DEFAULT = OPEN
    ========================================================= */
 
 function toggleItemMore(btn) {
@@ -1447,13 +1452,22 @@ function toggleItemMore(btn) {
     if (!panel) return;
 
 
-    const nowOpen =
-        panel.classList.toggle('of-open');
+    /*
+     * Since the panel is visible by default,
+     * clicking the image button now COLLAPSES it.
+     */
 
+    const isCollapsed =
+        panel.classList.toggle('of-collapsed');
+
+
+    /*
+     * Active means the panel is currently visible.
+     */
 
     btn.classList.toggle(
         'of-active',
-        nowOpen
+        !isCollapsed
     );
 
 }
@@ -1505,7 +1519,14 @@ function removeItemRow(btn) {
 
         if (more) {
 
-            more.classList.remove('of-open');
+            /*
+             * Keep remarks/photos OPEN
+             * when resetting the only row.
+             */
+
+            more.classList.remove(
+                'of-collapsed'
+            );
 
         }
 
@@ -1575,7 +1596,7 @@ function addNewItemRow() {
                 type="button"
                 class="of-item-icon-btn"
                 onclick="toggleItemMore(this)"
-                title="မှတ်ချက် / ပုံ"
+                title="မှတ်ချက် / ပုံ ဖျောက်ရန်"
             >
                 🖼️
             </button>
@@ -1591,6 +1612,13 @@ function addNewItemRow() {
 
         </div>
 
+
+        <!--
+             IMPORTANT:
+             No "of-collapsed" class here.
+             Therefore every NEW item opens
+             with remarks + photos visible.
+        -->
 
         <div class="of-item-more-panel">
 
