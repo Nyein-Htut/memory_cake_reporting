@@ -1247,7 +1247,134 @@ body.nav-menu-open {
         inset 0 -6px 13px rgba(180,165,150,.44),
         0 14px 28px rgba(50,40,30,.22) !important;
 }
-\n\n/* =========================================================\n   FINAL NAV FIX — DO NOT MOVE ABOVE THE EXISTING NAV CSS\n   Actual bug: backdrop-filter on the header can only blur content BEHIND\n   the header. It cannot blur the header's own contents or make the entire\n   page blurry. The page overlay must blur the page, while the header gets\n   its own filter.\n   ========================================================= */\n\n/* Keep the header transparent enough that the overlay can create a clean\n   glass treatment, without Tailwind's solid bg-white winning the cascade. */\n#mcTopNav {\n    position: sticky !important;\n    top: 0 !important;\n    z-index: 60 !important;\n    background: rgba(255,255,255,.86) !important;\n    isolation: isolate;\n    transition:\n        background-color .22s ease,\n        border-color .22s ease,\n        box-shadow .22s ease,\n        filter .22s ease;\n}\n\n/* The favicon is only 48×48. Do NOT enlarge the raster source to 56×56.\n   The wrapper stays 48px so the browser displays the asset at native size. */\n.mc-logo-glass {\n    width: 48px !important;\n    height: 48px !important;\n    min-width: 48px !important;\n    min-height: 48px !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    border: 0 !important;\n    border-radius: 10px !important;\n    overflow: hidden !important;\n    display: flex !important;\n    align-items: center !important;\n    justify-content: center !important;\n    background: transparent !important;\n    box-shadow: none !important;\n    filter: none !important;\n    backdrop-filter: none !important;\n    -webkit-backdrop-filter: none !important;\n}\n\n.mc-logo-glass img {\n    display: block !important;\n    width: 48px !important;\n    height: 48px !important;\n    max-width: 48px !important;\n    max-height: 48px !important;\n    min-width: 48px !important;\n    min-height: 48px !important;\n    object-fit: contain !important;\n    object-position: center !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    border: 0 !important;\n    filter: none !important;\n    transform: none !important;\n    image-rendering: auto !important;\n    backface-visibility: visible !important;\n}\n\n/* MOBILE: keep the logo at native-ish size rather than upscaling the ICO. */\n@media (max-width: 639px) {\n    .mc-logo-glass {\n        width: 44px !important;\n        height: 44px !important;\n        min-width: 44px !important;\n        min-height: 44px !important;\n    }\n    .mc-logo-glass img {\n        width: 44px !important;\n        height: 44px !important;\n        max-width: 44px !important;\n        max-height: 44px !important;\n        min-width: 44px !important;\n        min-height: 44px !important;\n    }\n}\n\n/* WHOLE-PAGE BLUR.\n   Keep this layer BELOW the header, then blur the header itself separately.\n   This preserves the hamburger's clickability and lets the backdrop's own\n   click handler continue to work. */\n.nav-fan-backdrop {\n    position: fixed !important;\n    inset: 0 !important;\n    z-index: 55 !important;\n    display: none !important;\n    background: rgba(28,25,23,.18) !important;\n    backdrop-filter: blur(7px) saturate(115%) !important;\n    -webkit-backdrop-filter: blur(7px) saturate(115%) !important;\n    opacity: 0 !important;\n    pointer-events: none !important;\n    transition: opacity .22s ease !important;\n}\n\n.nav-fan-backdrop.active {\n    display: block !important;\n    opacity: 1 !important;\n    pointer-events: auto !important;\n}\n\n/* IMPORTANT: because the header is above the page overlay, the overlay\n   cannot blur it. Apply a real filter to the header while open. */\n#mcTopNav.mc-nav-is-blurred {\n    background: rgba(255,255,255,.48) !important;\n    border-bottom-color: rgba(255,255,255,.60) !important;\n    box-shadow: 0 8px 26px rgba(40,30,20,.12) !important;\n    filter: blur(6px) !important;\n    -webkit-filter: blur(6px) !important;\n}\n\n/* The floating fan stays above the blur layer. */\n.nav-fanwrap {\n    position: fixed !important;\n    z-index: 70 !important;\n}\n\n.nav-fanwrap.nav-fan-open {\n    z-index: 70 !important;\n}\n\n.nav-hamburger-btn {\n    position: relative !important;\n    z-index: 2 !important;\n}\n</style>
+
+
+/* =========================================================
+   MEMORY CAKE — FINAL NAV OVERLAY FIX
+   =========================================================
+
+   Correct architecture:
+       page + header
+           ↓
+       fullscreen blur backdrop
+           ↓
+       floating navigation (sharp)
+
+   The old version had the backdrop BELOW the header, which means
+   backdrop-filter could never blur the header. It also contained literal
+   escaped newline characters, so the intended override was malformed.
+*/
+
+/* Header stays normal while closed. */
+#mcTopNav {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 500 !important;
+    background: rgba(255,255,255,.88) !important;
+}
+
+/* Render the supplied favicon at its native 48px size; no CSS blur. */
+.mc-logo-glass {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.mc-logo-glass img {
+    display: block !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    filter: none !important;
+    transform: none !important;
+    image-rendering: auto !important;
+}
+
+/*
+   THIS IS THE KEY FIX.
+   The backdrop is ABOVE the entire page/header, so backdrop-filter blurs
+   BOTH the page and the header. The floating menu is above the backdrop.
+*/
+.nav-fan-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9000 !important;
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: rgba(28,25,23,.16) !important;
+    backdrop-filter: blur(8px) saturate(115%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(115%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity .22s ease !important;
+}
+
+.nav-fan-backdrop.active {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Do not blur the header with filter: blur(). The overlay above it does the
+   correct composited blur and avoids creating a separate blurred stacking
+   context. */
+#mcTopNav.mc-nav-is-blurred {
+    filter: none !important;
+    -webkit-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Only the expanded fan menu stays sharp above the fullscreen blur. */
+.nav-fanwrap {
+    position: fixed !important;
+    z-index: 10000 !important;
+}
+
+.nav-fanwrap.nav-fan-open {
+    z-index: 10000 !important;
+}
+
+.nav-fanwrap .nav-fan-btn {
+    position: absolute;
+    z-index: 10001 !important;
+}
+
+/* The hamburger remains underneath the overlay while open. Clicking the
+   fullscreen backdrop closes the menu, exactly like a modal/filter overlay. */
+.nav-hamburger-btn {
+    position: relative !important;
+    z-index: 501 !important;
+}
+
+body.nav-menu-open {
+    overflow: hidden !important;
+}
+
+</style>
 
 </head>
     <!-- Wheel Picker: Time (Hour / Minute) -->
