@@ -641,32 +641,43 @@
         .nav-drawer-status {
             display: flex; align-items: center; gap: 6px;
             padding: 0 6px;
-            font-size: 10px; color: #a8a29e;
-            text-transform: uppercase; letter-spacing: .12em;
-        }
-        .nav-drawer-link.logout-link { color: #dc2626; }
-        .nav-drawer-link.logout-link:hover { background: #fef2f2; } */
-        /* =========================================================
-   MEMORY CAKE — FLOATING NAV MENU
+            font-size: 10px; c/* =========================================================
+   MEMORY CAKE — FLOATING NAV MENU (glass icon-grid style)
    ========================================================= */
-/* ---------- Hamburger button ---------- */
+
+/* ---------- Hamburger button (glossy glass circle) ---------- */
 
 .nav-hamburger-btn {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 13px;
-    border: 1px solid rgba(231, 229, 228, 0.9);
+    border-radius: 50%;
 
-    background: rgba(255, 255, 255, 0.82);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.95),
+            rgba(245,245,244,.75)
+        );
+
+    border: 1px solid rgba(255,255,255,.9);
+
     color: #292524;
 
     cursor: pointer;
     flex-shrink: 0;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    box-shadow:
+        0 4px 14px rgba(28,25,23,.10),
+        inset 0 1px 0 rgba(255,255,255,.9),
+        inset 0 -2px 4px rgba(28,25,23,.04);
 
     transition:
         transform .25s cubic-bezier(.2,.8,.2,1),
@@ -676,25 +687,44 @@
 }
 
 .nav-hamburger-btn:hover {
-    background: rgba(255, 255, 255, 0.98);
-    border-color: #d6d3d1;
-
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,1),
+            rgba(250,250,249,.9)
+        );
     transform: translateY(-1px);
-
     box-shadow:
-        0 5px 18px rgba(28, 25, 23, .08);
+        0 8px 22px rgba(28,25,23,.14),
+        inset 0 1px 0 rgba(255,255,255,.95);
 }
 
 .nav-hamburger-btn:active {
-    transform: scale(.94);
+    transform: scale(.92);
+}
+
+.nav-hamburger-btn.is-open {
+    background:
+        linear-gradient(
+            145deg,
+            #292524,
+            #1c1917
+        );
+    border-color: rgba(41,37,36,.6);
+    color: #fff;
+    box-shadow:
+        0 8px 22px rgba(28,25,23,.28),
+        inset 0 1px 0 rgba(255,255,255,.08);
 }
 
 .nav-hamburger-btn svg {
     width: 20px;
     height: 20px;
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+}
 
-    transition:
-        transform .35s cubic-bezier(.34,1.56,.64,1);
+.nav-hamburger-btn.is-open svg {
+    transform: rotate(90deg);
 }
 
 
@@ -705,7 +735,6 @@
 .nav-drawer-overlay {
     position: fixed;
     inset: 0;
-
     z-index: 300;
 
     background: rgba(28, 25, 23, .035);
@@ -726,22 +755,22 @@
 .nav-drawer-overlay.active {
     opacity: 1;
     visibility: visible;
-
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
 }
 
 
 /* =========================================================
-   AUTHENTIC iOS LIQUID GLASS CONTAINER
+   FLOATING GLASS PANEL
    ========================================================= */
 
 .nav-drawer {
     position: fixed;
+
     top: 70px;
     right: 14px;
 
-    width: 340px;
+    width: 300px;
     max-width: calc(100vw - 28px);
     max-height: calc(100vh - 88px);
 
@@ -749,81 +778,51 @@
     flex-direction: column;
     overflow: hidden;
 
-    border-radius: 32px;
-    isolation: isolate;
+    border-radius: 28px;
 
-    /* Deep floating elevation shadow */
+    background:
+        linear-gradient(
+            160deg,
+            rgba(255,255,255,.90),
+            rgba(250,249,247,.80)
+        );
+
+    border: 1px solid rgba(255,255,255,.8);
+
     box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.22),
-        0 8px 24px rgba(0, 0, 0, 0.12);
+        0 24px 70px rgba(28,25,23,.18),
+        0 8px 24px rgba(28,25,23,.08),
+        inset 0 1px 0 rgba(255,255,255,.95);
+
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
 
     opacity: 0;
-    transform: translate3d(0, -18px, 0) scale(0.96);
+    transform: translateY(-18px) scale(.94);
     transform-origin: top right;
     pointer-events: none;
 
-    transition: 
+    transition:
         opacity .22s ease,
-        transform .42s cubic-bezier(.16, 1, .3, 1);
+        transform .42s cubic-bezier(.16,1,.3,1);
 }
 
-/* 1. GLASS BACKDROP LAYER (Prevents transform/blur rendering bugs) */
+.nav-drawer-overlay.active .nav-drawer {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
 .nav-drawer::before {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    z-index: -1;
-
-    /* High blur + saturation boost */
-    backdrop-filter: blur(50px) saturate(240%) brightness(0.98);
-    -webkit-backdrop-filter: blur(50px) saturate(240%) brightness(0.98);
-
-    /* Translucent glass tint */
-    background: linear-gradient(
-        140deg,
-        rgba(255, 255, 255, 0.75) 0%,
-        rgba(255, 255, 255, 0.52) 50%,
-        rgba(255, 255, 255, 0.38) 100%
-    );
-
-    /* Rim border */
-    border: 1px solid rgba(255, 255, 255, 0.75);
-
-    /* Signature iOS glass specular highlights */
-    box-shadow: 
-        inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 -1px 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-/* 2. SPECULAR TOP GLOSS SHINE */
-.nav-drawer::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 38%;
-    border-radius: 32px 32px 100% 100% / 32px 32px 40px 40px;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.5) 0%,
-        rgba(255, 255, 255, 0) 100%
-    );
+    top: -60px;
+    right: -40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,.10), transparent 68%);
     pointer-events: none;
-    z-index: 0;
-}
-
-.nav-drawer > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* OPEN STATE */
-.nav-drawer-overlay.active .nav-drawer {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    pointer-events: auto;
 }
 
 
@@ -833,392 +832,241 @@
 
 .nav-drawer-header {
     position: relative;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
-    padding: 19px 18px 16px;
-
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid rgba(231,229,228,.65);
 }
 
-/* Brand area */
 .nav-drawer-header-title {
     display: flex;
     align-items: center;
-    gap: 11px;
-
-    font-family:
-        'Playfair Display',
-        'Noto Serif SC',
-        serif;
-
+    gap: 10px;
+    font-family: 'Playfair Display', 'Noto Serif SC', serif;
     font-weight: 700;
-    font-size: 20px;
-
+    font-size: 17px;
     letter-spacing: -.02em;
-
-    color: #1c1917; /* High contrast header title */
+    color: #292524;
 }
 
-/* Cake logo circle */
 .nav-drawer-header-title::before {
     content: "✦";
-
-    width: 36px;
-    height: 36px;
-
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff,
-            #f5f5f4
-        );
-
-    color: #44403c;
-
+    border-radius: 11px;
+    background: linear-gradient(135deg, #f5f5f4, #e7e5e4);
+    color: #57534e;
     font-family: serif;
-    font-size: 17px;
-
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,1),
-        0 3px 10px rgba(0,0,0,.08);
-
-    transition:
-        transform .45s cubic-bezier(.34,1.56,.64,1),
-        background .3s ease;
+    font-size: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 3px 10px rgba(28,25,23,.06);
 }
-
-.nav-drawer-overlay.active .nav-drawer-header-title::before {
-    transform: rotate(-8deg) scale(1.05);
-}
-
-
-/* =========================================================
-   ROLE BADGE
-   ========================================================= */
 
 .nav-drawer-role-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-
-    margin-top: 5px;
-    margin-left: 47px;
-
-    padding: 5px 10px;
-
+    padding: 4px 9px;
     border-radius: 999px;
-
     font-size: 9px;
     font-weight: 800;
-
-    letter-spacing: .1em;
+    letter-spacing: .08em;
     text-transform: uppercase;
-
-    background: rgba(209, 250, 229, 0.9);
+    background: rgba(236,253,245,.8);
     color: #047857;
-
-    border: 1px solid rgba(167, 243, 208, 0.9);
-
-    box-shadow:
-        0 2px 8px rgba(16,185,129,.1);
+    border: 1px solid rgba(167,243,208,.8);
 }
 
 .nav-drawer-role-badge::before {
     content: "";
-
     width: 6px;
     height: 6px;
-
     border-radius: 50%;
-
     background: #10b981;
-
-    box-shadow:
-        0 0 0 3px rgba(16,185,129,.15);
-
+    box-shadow: 0 0 0 3px rgba(16,185,129,.10);
     animation: menu-status-pulse 2s ease-in-out infinite;
 }
 
 @keyframes menu-status-pulse {
-
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(.72);
-        opacity: .65;
-    }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(.72); opacity: .65; }
 }
 
 .nav-drawer-role-badge.role-staff {
-    background: rgba(239, 246, 255, 0.85);
+    background: rgba(239,246,255,.85);
     color: #1d4ed8;
-    border-color: rgba(191, 219, 254, 0.85);
+    border-color: rgba(191,219,254,.85);
 }
-
-.nav-drawer-role-badge.role-staff::before {
-    background: #3b82f6;
-}
-
-
-/* =========================================================
-   CLOSE BUTTON
-   ========================================================= */
+.nav-drawer-role-badge.role-staff::before { background: #3b82f6; }
 
 .nav-drawer-close-btn {
-    width: 36px;
-    height: 36px;
-
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 12px;
-
-    background: rgba(255, 255, 255, 0.6);
-    color: #44403c;
-
-    border: 1px solid rgba(255, 255, 255, 0.8);
-
+    border-radius: 50%;
+    background: rgba(245,245,244,.8);
+    color: #78716c;
+    border: 1px solid rgba(231,229,228,.6);
     cursor: pointer;
-
-    transition:
-        transform .35s cubic-bezier(.34,1.56,.64,1),
-        background .2s ease,
-        color .2s ease;
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s ease, color .2s ease;
 }
-
-.nav-drawer-close-btn:hover {
-    background: #ffffff;
-    color: #1c1917;
-
-    transform: rotate(90deg);
-}
-
-.nav-drawer-close-btn:active {
-    transform: rotate(90deg) scale(.9);
-}
+.nav-drawer-close-btn:hover { background: #f0efed; color: #292524; transform: rotate(90deg); }
+.nav-drawer-close-btn:active { transform: rotate(90deg) scale(.9); }
 
 
 /* =========================================================
-   BODY (FROSTED GLASS LAYER FOR HIGH LEGIBILITY)
+   BODY — icon grid instead of a list
    ========================================================= */
 
 .nav-drawer-body {
     flex: 1;
-
     overflow-y: auto;
+    padding: 16px 14px 6px;
 
-    padding: 10px;
-    margin: 8px;
-
-    display: flex;
-    flex-direction: column;
-
-    gap: 6px;
-
-    /* Frosted glass inner backing plate */
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 24px;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 
     scrollbar-width: none;
 }
-
-.nav-drawer-body::-webkit-scrollbar {
-    display: none;
-}
-
-
-/* =========================================================
-   MENU LINKS / ITEMS
-   ========================================================= */
+.nav-drawer-body::-webkit-scrollbar { display: none; }
 
 .nav-drawer-link {
     position: relative;
 
     display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    gap: 7px;
 
-    gap: 13px;
+    padding: 14px 6px 10px;
 
-    min-height: 49px;
-
-    padding: 10px 14px;
-
-    border-radius: 16px;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    /* High contrast text with white drop-shadow */
-    color: #1c1917;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    border-radius: 18px;
 
     text-decoration: none;
+    text-align: center;
 
-    overflow: hidden;
+    background: rgba(255,255,255,.55);
+    border: 1px solid rgba(231,229,228,.7);
 
     opacity: 0;
-
-    transform:
-        translateY(-7px)
-        scale(.98);
+    transform: translateY(-6px) scale(.96);
 
     transition:
         background .2s ease,
         color .2s ease,
+        border-color .2s ease,
         transform .2s ease,
         box-shadow .2s ease;
 }
 
-
-/* Stagger menu entry animation */
 .nav-drawer-overlay.active .nav-drawer-link {
-    animation: menu-item-in .45s cubic-bezier(.16,1,.3,1) forwards;
+    animation: menu-item-in .4s cubic-bezier(.16,1,.3,1) forwards;
 }
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(1) { animation-delay: .04s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(2) { animation-delay: .075s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(3) { animation-delay: .11s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(4) { animation-delay: .145s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(5) { animation-delay: .18s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(6) { animation-delay: .215s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(1) { animation-delay: .03s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(2) { animation-delay: .06s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(3) { animation-delay: .09s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(4) { animation-delay: .12s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(5) { animation-delay: .15s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(6) { animation-delay: .18s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(7) { animation-delay: .21s; }
 
 @keyframes menu-item-in {
-    from {
-        opacity: 0;
-        transform: translateY(-8px) scale(.97);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(-6px) scale(.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Hover */
 .nav-drawer-link:hover {
-    background: rgba(255, 255, 255, 0.55);
-    color: #000000;
-    transform: translateX(3px);
+    background: #fff;
+    border-color: #d6d3d1;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(28,25,23,.08);
 }
 
-/* Top specular shine on hover */
-.nav-drawer-link::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,.55),
-        transparent
-    );
-    transform: skewX(-18deg);
-    transition: left .5s ease;
-    pointer-events: none;
+.nav-drawer-link .nav-tile-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(150deg, #f5f5f4, #e7e5e4);
+    color: #57534e;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), background .2s ease, color .2s ease;
 }
-
-.nav-drawer-link:hover::after {
-    left: 130%;
+.nav-drawer-link:hover .nav-tile-icon {
+    transform: scale(1.08) rotate(-4deg);
 }
-
-
-/* =========================================================
-   ICON CONTAINER
-   ========================================================= */
 
 .nav-drawer-link svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    stroke-width: 2;
-    color: #292524;
-
-    transition:
-        transform .35s cubic-bezier(.34,1.56,.64,1),
-        color .2s ease;
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.8;
 }
 
-.nav-drawer-link:hover svg {
-    transform: scale(1.12) rotate(-4deg);
+.nav-drawer-link .nav-tile-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #57534e;
+    line-height: 1.25;
 }
 
-
-/* =========================================================
-   ACTIVE MENU PILL (iOS DARK GLASS STYLE)
-   ========================================================= */
-
+/* Active tile */
 .nav-drawer-link.active {
-    color: #ffffff;
-    text-shadow: none;
-
-    background: #1c1917;
-
-    box-shadow:
-        0 6px 18px rgba(0, 0, 0, 0.18),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
-
-    transform: translateX(0);
+    background: linear-gradient(150deg, #292524, #1c1917);
+    border-color: transparent;
+    box-shadow: 0 7px 18px rgba(28,25,23,.18), inset 0 1px 0 rgba(255,255,255,.08);
 }
-
-.nav-drawer-link.active svg {
-    color: #ffffff;
+.nav-drawer-link.active .nav-tile-icon {
+    background: rgba(255,255,255,.14);
+    color: #fff;
 }
-
-.nav-drawer-link.active::before {
-    content: "";
-    position: absolute;
-    left: 6px;
-    top: 50%;
-    width: 4px;
-    height: 20px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.95);
-    transform: translateY(-50%);
-    box-shadow: 0 0 10px rgba(255,255,255,.5);
-}
+.nav-drawer-link.active .nav-tile-label { color: #fff; }
 
 .nav-drawer-link.active.role-staff {
-    background: #047857;
-    box-shadow: 0 6px 18px rgba(4, 120, 87, 0.25);
+    background: linear-gradient(150deg, #047857, #065f46);
+    box-shadow: 0 7px 18px rgba(4,120,87,.2);
+}
+
+/* Logout tile */
+.nav-drawer-link.logout-link .nav-tile-icon {
+    background: linear-gradient(150deg, #fee2e2, #fecaca);
+    color: #dc2626;
+}
+.nav-drawer-link.logout-link .nav-tile-label { color: #dc2626; }
+.nav-drawer-link.logout-link:hover {
+    background: rgba(254,242,242,.7);
+    border-color: rgba(252,165,165,.8);
+}
+.nav-drawer-link.logout-link:hover .nav-tile-icon {
+    transform: scale(1.08);
+    background: linear-gradient(150deg, #fecaca, #fca5a5);
 }
 
 
 /* =========================================================
-   FOOTER & STATUS
+   FOOTER — connection status only
    ========================================================= */
 
 .nav-drawer-footer {
-    padding: 11px 16px calc(14px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(231,229,228,.65);
 }
 
 .nav-drawer-status {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 4px 4px 6px;
-    font-size: 10px;
-    font-weight: 700;
-    color: #57534e;
+    padding: 6px 2px;
+    font-size: 9px;
+    color: #a8a29e;
     text-transform: uppercase;
     letter-spacing: .13em;
 }
@@ -1229,66 +1077,26 @@
     height: 6px;
     border-radius: 50%;
     background: #10b981;
-    box-shadow:
-        0 0 0 3px rgba(16,185,129,.12),
-        0 0 10px rgba(16,185,129,.4);
-
+    box-shadow: 0 0 0 3px rgba(16,185,129,.08), 0 0 10px rgba(16,185,129,.3);
     animation: menu-status-pulse 2s ease-in-out infinite;
 }
 
 
 /* =========================================================
-   LOGOUT
-   ========================================================= */
-
-.nav-drawer-link.logout-link {
-    color: #dc2626;
-    text-shadow: none;
-    min-height: 44px;
-}
-
-.nav-drawer-link.logout-link svg {
-    color: #dc2626;
-}
-
-.nav-drawer-link.logout-link:hover {
-    background: rgba(254, 242, 242, 0.9);
-    color: #b91c1c;
-}
-
-.nav-drawer-link.logout-link:hover svg {
-    transform: translateX(3px);
-}
-/* =========================================================
    MOBILE
    ========================================================= */
 
 @media (max-width: 640px) {
-
     .nav-drawer {
         top: 64px;
         right: 10px;
-
         width: calc(100vw - 20px);
-
         max-width: none;
-
         max-height: calc(100vh - 76px);
-
-        border-radius: 22px;
+        border-radius: 24px;
     }
-
-    .nav-drawer-header {
-        padding: 17px 16px 14px;
-    }
-
-    .nav-drawer-body {
-        padding: 10px;
-    }
-
-    .nav-drawer-link {
-        min-height: 48px;
-    }
+    .nav-drawer-header { padding: 16px 16px 12px; }
+    .nav-drawer-body { grid-template-columns: repeat(3, 1fr); padding: 14px 12px 4px; }
 }
 
 
@@ -1297,7 +1105,6 @@
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-
     .nav-drawer,
     .nav-drawer-link,
     .nav-hamburger-btn,
@@ -1305,11 +1112,7 @@
         transition: none !important;
         animation: none !important;
     }
-
-    .nav-drawer-link {
-        opacity: 1;
-        transform: none;
-    }
+    .nav-drawer-link { opacity: 1; transform: none; }
 }
 
         /* =========================================================
@@ -3371,10 +3174,6 @@ async function mcCompressAndSubmit(form) {
     id="navDrawerOverlay"
 >
 
-    <!-- =====================================================
-         FLOATING MENU
-         ===================================================== -->
-
     <div
         class="nav-drawer"
         id="navDrawer"
@@ -3387,337 +3186,142 @@ async function mcCompressAndSubmit(form) {
         <div class="nav-drawer-header">
 
             <div>
-
                 <div class="nav-drawer-header-title">
                     Memory Cake
                 </div>
 
-                <span class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}">
-
+                <span class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}" style="margin-top:5px; margin-left:42px; display:inline-flex;">
                     <span
                         class="w-1.5 h-1.5 rounded-full {% if session.get('role') == 'staff' %}bg-blue-500{% else %}bg-emerald-500{% endif %}"
                         style="display:inline-block;"
                     ></span>
-
-                    {% if session.get('role') == 'staff' %}
-                        Staff
-                    {% else %}
-                        Manager
-                    {% endif %}
-
+                    {% if session.get('role') == 'staff' %}Staff{% else %}Manager{% endif %}
                 </span>
-
             </div>
 
-
-            <!-- CLOSE -->
             <button
                 type="button"
                 id="navDrawerCloseBtn"
                 class="nav-drawer-close-btn"
                 aria-label="Close navigation"
             >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    width="16"
-                    height="16"
-                >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
                     <path d="M6 6l12 12M18 6 6 18"/>
                 </svg>
-
             </button>
 
         </div>
 
-
-
-        <!-- =================================================
-             MENU ITEMS
-             ================================================= -->
-
+        <!-- ICON GRID -->
         <div class="nav-drawer-body">
 
             {% if session.get('role') == 'staff' %}
 
-
-            <!-- STAFF DAILY -->
-            <a
-                href="/staff"
-                class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-
-                နေ့စဉ်မှတ်တမ်း (Daily)
-
+            <a href="/staff" class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">နေ့စဉ်<br>Daily</span>
             </a>
 
-
-            <!-- STAFF EXPENSES -->
-            <a
-                href="/expenses"
-                class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/>
-                    <path d="M9 8h6M9 12h6M9 16h4"/>
-                </svg>
-
-                အသုံးစရိတ် (Expenses)
-
+            <a href="/expenses" class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">အသုံးစရိတ်<br>Expenses</span>
             </a>
 
-
-            <!-- STAFF BALANCE -->
-            <a
-                href="/balance"
-                class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M12 3v18"/>
-                    <path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
-                    <path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
-                    <path d="M4 21h16M8 3h8"/>
-                </svg>
-
-                လက်ကျန်ငွေ (Balance)
-
+            <a href="/balance" class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">လက်ကျန်ငွေ<br>Balance</span>
             </a>
-
 
             {% else %}
 
-
-            <!-- =================================================
-                 MANAGER
-                 ================================================= -->
-
-            <!-- DAILY -->
-            <a
-                href="/"
-                class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-
-                每日记录 (Daily)
-
+            <a href="/" class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">每日记录<br>Daily</span>
             </a>
 
-
-            <!-- INCOME -->
-            <a
-                href="/income"
-                class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v10"/>
-                    <path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/>
-                </svg>
-
-                收入记录 (Income)
-
+            <a href="/income" class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">收入记录<br>Income</span>
             </a>
 
-
-            <!-- EXPENSES -->
-            <a
-                href="/expenses"
-                class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/>
-                    <path d="M9 8h6M9 12h6M9 16h4"/>
-                </svg>
-
-                支出记录 (Expenses)
-
+            <a href="/expenses" class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">支出记录<br>Expenses</span>
             </a>
 
-
-            <!-- EXPENSE REPORT -->
-            <a
-                href="/expense_report"
-                class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M21 12A9 9 0 1 1 12 3v9z"/>
-                    <path d="M12 3a9 9 0 0 1 9 9h-9z"/>
-                </svg>
-
-                支出报表 (Report)
-
+            <a href="/expense_report" class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">支出报表<br>Report</span>
             </a>
 
-
-            <!-- BALANCE -->
-            <a
-                href="/balance"
-                class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M12 3v18"/>
-                    <path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
-                    <path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/>
-                    <path d="M4 21h16M8 3h8"/>
-                </svg>
-
-                余额核对 (Balance)
-
+            <a href="/balance" class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">余额核对<br>Balance</span>
             </a>
 
-
-            <!-- MONTHLY -->
-            <a
-                href="/monthly"
-                class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M3 3v18h18"/>
-                    <path d="M7 15l4-5 3 3 5-7"/>
-                </svg>
-
-                月度报表 (Monthly)
-
+            <a href="/monthly" class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">月度报表<br>Monthly</span>
             </a>
-
 
             {% endif %}
 
-        </div>
-
-
-
-        <!-- =================================================
-             FOOTER
-             ================================================= -->
-
-        <div class="nav-drawer-footer">
-
-            <!-- STATUS -->
-            <div class="nav-drawer-status">
-
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-
-                {% if session.get('role') == 'staff' %}
-                    ချိတ်ဆက်ပြီး
-                {% else %}
-                    System Connected
-                {% endif %}
-
-            </div>
-
-
             <!-- LOGOUT -->
-            <a
-                href="/logout"
-                class="nav-drawer-link logout-link"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <path d="M16 17l5-5-5-5"/>
-                    <path d="M21 12H9"/>
-                </svg>
-
-                {% if session.get('role') == 'staff' %}
-                    အကောင့်ထွက်ရန် (Logout)
-                {% else %}
-                    安全登出 (Logout)
-                {% endif %}
-
+            <a href="/logout" class="nav-drawer-link logout-link">
+                <span class="nav-tile-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+                    </svg>
+                </span>
+                <span class="nav-tile-label">
+                    {% if session.get('role') == 'staff' %}ထွက်ရန်<br>Logout{% else %}登出<br>Logout{% endif %}
+                </span>
             </a>
 
+        </div>
+
+        <!-- FOOTER (status only, logout moved into the grid above) -->
+        <div class="nav-drawer-footer">
+            <div class="nav-drawer-status">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                {% if session.get('role') == 'staff' %}ချိတ်ဆက်ပြီး{% else %}System Connected{% endif %}
+            </div>
         </div>
 
     </div>
