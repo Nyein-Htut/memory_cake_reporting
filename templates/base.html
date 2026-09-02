@@ -665,9 +665,9 @@
     inset: 0;
     z-index: 49;
 
-    background: rgba(255, 255, 255, .16);
-    backdrop-filter: blur(8px) saturate(130%);
-    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    background: rgba(255, 255, 255, .20);
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
 
     display: none;
 }
@@ -1026,6 +1026,10 @@
         backdrop-filter .22s ease;
 }
 
+body.nav-menu-open {
+    overflow: hidden;
+}
+
 #mcTopNav.mc-nav-is-blurred {
     position: sticky !important;
     background: rgba(255,255,255,.30) !important;
@@ -1199,22 +1203,35 @@
     transform: scale(.92) !important;
 }
 
-/* Keep the backdrop below the header but above the page. */
+/* ---------- Navigation stacking / interaction fix ---------- */
+/*
+ * Layer order:
+ *   page < backdrop < sticky header < floating nav buttons
+ *
+ * The backdrop must NOT sit above the header, otherwise it steals the
+ * hamburger click and cannot visually blur the header itself.
+ * The header gets its own glass treatment via .mc-nav-is-blurred.
+ */
 .nav-fan-backdrop {
-    z-index: 40 !important;
-    pointer-events: none;
+    z-index: 55 !important;
+    pointer-events: none !important;
+    opacity: 0;
+    transition: opacity .22s ease;
 }
 .nav-fan-backdrop.active {
-    pointer-events: auto;
+    display: block;
+    opacity: 1;
+    pointer-events: auto !important;
 }
 
-/* Keep the fan itself above everything clickable. */
+#mcTopNav {
+    position: sticky !important;
+    top: 0;
+    z-index: 60 !important;
+}
+
 .nav-fanwrap {
-    z-index: 401 !important;
-    pointer-events: none !important;
-}
-
-.nav-fanwrap.nav-fan-open {
+    z-index: 70 !important;
     pointer-events: none !important;
 }
 
@@ -3204,7 +3221,7 @@ async function mcCompressAndSubmit(form) {
                 class="nav-hamburger-btn"
                 aria-label="Open navigation"
                 aria-expanded="false"
-                aria-controls="navDrawerOverlay"
+                aria-controls="navFanWrap"
             >
 
                 <svg
@@ -3306,7 +3323,7 @@ async function mcCompressAndSubmit(form) {
 
 </div>
 
-<div class="nav-fan-backdrop no-print" id="navFanBackdrop" onclick="closeNavFan()"></div>
+<div class="nav-fan-backdrop no-print" id="navFanBackdrop"></div>
 
 <!-- =========================================================
      JAVASCRIPT
@@ -3376,6 +3393,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hamburger.setAttribute('aria-label', 'Close navigation');
 
         if (topNav) topNav.classList.add('mc-nav-is-blurred');
+        document.body.classList.add('nav-menu-open');
         document.addEventListener('keydown', escHandler);
     }
 
@@ -3387,6 +3405,7 @@ document.addEventListener('DOMContentLoaded', function () {
         hamburger.setAttribute('aria-label', 'Open navigation');
 
         if (topNav) topNav.classList.remove('mc-nav-is-blurred');
+        document.body.classList.remove('nav-menu-open');
         document.removeEventListener('keydown', escHandler);
     }
 
@@ -3407,15 +3426,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.key === 'Escape') closeNavFan();
     }
 
-    // Use pointerup on the actual button. The fan wrapper is explicitly
-    // pointer-events:none, so it can NEVER block this button.
-    hamburger.addEventListener('pointerup', toggleNavFan);
+    // Use click on the real hamburger button.
+    // This gives one activation per user click/tap and avoids pointerup
+    // + synthetic mouse/touch event double-firing.
+    hamburger.addEventListener('click', toggleNavFan);
 
-    // Backdrop is the only full-screen close target.
-    backdrop.addEventListener('pointerup', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        closeNavFan();
+    // Close only when the user clicks the backdrop itself.
+    backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) {
+            closeNavFan();
+        }
     });
 
     window.openNavFan = openNavFan;
