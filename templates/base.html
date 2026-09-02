@@ -1027,13 +1027,14 @@
 }
 
 #mcTopNav.mc-nav-is-blurred {
-    background: rgba(255,255,255,.48) !important;
-    border-bottom-color: rgba(255,255,255,.68) !important;
+    background: rgba(255,255,255,.38) !important;
+    border-bottom-color: rgba(255,255,255,.72) !important;
     box-shadow:
-        0 8px 28px rgba(40,30,20,.10),
-        inset 0 -1px 0 rgba(255,255,255,.72);
-    backdrop-filter: blur(18px) saturate(155%);
-    -webkit-backdrop-filter: blur(18px) saturate(155%);
+        0 10px 32px rgba(40,30,20,.12),
+        inset 0 -1px 0 rgba(255,255,255,.82),
+        inset 0 1px 0 rgba(255,255,255,.72);
+    backdrop-filter: blur(24px) saturate(165%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(165%) !important;
 }
 
 /* ---------- Logo: 56px glass circle, smaller artwork ---------- */
@@ -1116,6 +1117,8 @@
     color: #292524 !important;
     overflow: hidden;
     z-index: 52 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
     transition:
         transform .18s ease,
         box-shadow .22s ease,
@@ -1145,29 +1148,14 @@
     z-index: 3;
     width: 20px !important;
     height: 20px !important;
-    transition: opacity .15s ease, transform .2s ease;
-}
-
-/* Real X — don't rotate the hamburger icon. */
-.nav-hamburger-btn.is-open svg {
-    opacity: 0;
-    transform: none !important;
-}
-
-.nav-hamburger-btn.is-open::after {
-    content: "×";
-    position: absolute;
-    z-index: 4;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    font-size: 31px;
-    font-weight: 300;
-    line-height: 1;
-    color: #292524;
     pointer-events: none;
+    transition: transform .28s cubic-bezier(.22,1,.36,1);
+}
+
+/* Requested: keep the original 3 bars, simply rotate the icon when open. */
+.nav-hamburger-btn.is-open svg {
+    opacity: 1 !important;
+    transform: rotate(90deg) !important;
 }
 
 .nav-hamburger-btn:hover {
@@ -1190,7 +1178,7 @@
 
 /* Keep the backdrop below the header but above the page. */
 .nav-fan-backdrop {
-    z-index: 49 !important;
+    z-index: 40 !important;
     pointer-events: none;
 }
 .nav-fan-backdrop.active {
@@ -3388,13 +3376,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     window.closeNavFan = closeNavFan;
 
-    function escHandler(e) { if (e.key === 'Escape') closeNavFan(); }
+    function escHandler(e) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeNavFan();
+        }
+    }
 
-    hamburger.addEventListener('click', function (e) {
+    function toggleNavFan() {
+        if (wrap.classList.contains('nav-fan-open')) {
+            closeNavFan();
+        } else {
+            openNavFan();
+        }
+    }
+    window.toggleNavFan = toggleNavFan;
+
+    // One and only one click handler on the hamburger.
+    hamburger.onclick = function (e) {
         e.preventDefault();
         e.stopPropagation();
-        wrap.classList.contains('nav-fan-open') ? closeNavFan() : openNavFan();
-    });
+        toggleNavFan();
+        return false;
+    };
 
     // Start from a known closed state.
     closeNavFan();
