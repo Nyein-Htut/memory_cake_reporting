@@ -645,459 +645,168 @@
    MEMORY CAKE — FLOATING NAV MENU (glass icon-grid style)
    ========================================================= */
 
-/* ---------- Hamburger button (glossy glass circle) ---------- */
+/* =========================================================
+   NAV SPEED-DIAL (glossy glass orbit, same language as the
+   Daily Records filter FAB)
+   ========================================================= */
 
-.nav-hamburger-btn {
+.nav-fanwrap {
+    position: fixed;
+    z-index: 401;
     width: 44px;
     height: 44px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.95),
-            rgba(245,245,244,.75)
-        );
-
-    border: 1px solid rgba(255,255,255,.9);
-
-    color: #292524;
-
-    cursor: pointer;
-    flex-shrink: 0;
-
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-
-    box-shadow:
-        0 4px 14px rgba(28,25,23,.10),
-        inset 0 1px 0 rgba(255,255,255,.9),
-        inset 0 -2px 4px rgba(28,25,23,.04);
-
-    transition:
-        transform .25s cubic-bezier(.2,.8,.2,1),
-        background .25s ease,
-        border-color .25s ease,
-        box-shadow .25s ease;
+    --fan-radius: 82px;
+    --fan-btn-size: 46px;
+    --fan-gap: 10px;
 }
 
-.nav-hamburger-btn:hover {
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,1),
-            rgba(250,250,249,.9)
-        );
-    transform: translateY(-1px);
-    box-shadow:
-        0 8px 22px rgba(28,25,23,.14),
-        inset 0 1px 0 rgba(255,255,255,.95);
-}
-
-.nav-hamburger-btn:active {
-    transform: scale(.92);
-}
-
-.nav-hamburger-btn.is-open {
-    background:
-        linear-gradient(
-            145deg,
-            #292524,
-            #1c1917
-        );
-    border-color: rgba(41,37,36,.6);
-    color: #fff;
-    box-shadow:
-        0 8px 22px rgba(28,25,23,.28),
-        inset 0 1px 0 rgba(255,255,255,.08);
-}
-
-.nav-hamburger-btn svg {
-    width: 20px;
-    height: 20px;
-    transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-}
-
-.nav-hamburger-btn.is-open svg {
-    transform: rotate(90deg);
-}
-
-
-/* =========================================================
-   OVERLAY
-   ========================================================= */
-
-.nav-drawer-overlay {
+.nav-fan-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 300;
+    z-index: 399;
 
-    background: rgba(28, 25, 23, .035);
+    background: rgba(255, 255, 255, .16);
+    backdrop-filter: blur(8px) saturate(130%);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
 
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-
-    opacity: 0;
-    visibility: hidden;
-
-    transition:
-        opacity .28s ease,
-        visibility .28s ease,
-        backdrop-filter .35s ease,
-        -webkit-backdrop-filter .35s ease;
+    display: none;
 }
+.nav-fan-backdrop.active { display: block; }
 
-.nav-drawer-overlay.active {
-    opacity: 1;
-    visibility: visible;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-}
-
-
-/* =========================================================
-   FLOATING GLASS PANEL
-   ========================================================= */
-
-.nav-drawer {
-    position: fixed;
-
-    top: 70px;
-    right: 14px;
-
-    width: 300px;
-    max-width: calc(100vw - 28px);
-    max-height: calc(100vh - 88px);
-
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-
-    border-radius: 28px;
-
-    background:
-        linear-gradient(
-            160deg,
-            rgba(255,255,255,.90),
-            rgba(250,249,247,.80)
-        );
-
-    border: 1px solid rgba(255,255,255,.8);
-
-    box-shadow:
-        0 24px 70px rgba(28,25,23,.18),
-        0 8px 24px rgba(28,25,23,.08),
-        inset 0 1px 0 rgba(255,255,255,.95);
-
-    backdrop-filter: blur(26px);
-    -webkit-backdrop-filter: blur(26px);
-
-    opacity: 0;
-    transform: translateY(-18px) scale(.94);
-    transform-origin: top right;
-    pointer-events: none;
-
-    transition:
-        opacity .22s ease,
-        transform .42s cubic-bezier(.16,1,.3,1);
-}
-
-.nav-drawer-overlay.active .nav-drawer {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.nav-drawer::before {
-    content: "";
+.nav-fan-btn {
     position: absolute;
-    top: -60px;
-    right: -40px;
-    width: 140px;
-    height: 140px;
+    left: -1px;
+    top: -1px;
+
+    width: 46px;
+    height: 46px;
+
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(16,185,129,.10), transparent 68%);
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.nav-drawer-header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 18px 14px;
-    border-bottom: 1px solid rgba(231,229,228,.65);
-}
-
-.nav-drawer-header-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Playfair Display', 'Noto Serif SC', serif;
-    font-weight: 700;
-    font-size: 17px;
-    letter-spacing: -.02em;
-    color: #292524;
-}
-
-.nav-drawer-header-title::before {
-    content: "✦";
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #f5f5f4, #e7e5e4);
-    color: #57534e;
-    font-family: serif;
-    font-size: 15px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 3px 10px rgba(28,25,23,.06);
-}
-
-.nav-drawer-role-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    background: rgba(236,253,245,.8);
-    color: #047857;
-    border: 1px solid rgba(167,243,208,.8);
-}
-
-.nav-drawer-role-badge::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,.10);
-    animation: menu-status-pulse 2s ease-in-out infinite;
-}
-
-@keyframes menu-status-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(.72); opacity: .65; }
-}
-
-.nav-drawer-role-badge.role-staff {
-    background: rgba(239,246,255,.85);
-    color: #1d4ed8;
-    border-color: rgba(191,219,254,.85);
-}
-.nav-drawer-role-badge.role-staff::before { background: #3b82f6; }
-
-.nav-drawer-close-btn {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(245,245,244,.8);
-    color: #78716c;
-    border: 1px solid rgba(231,229,228,.6);
-    cursor: pointer;
-    transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s ease, color .2s ease;
-}
-.nav-drawer-close-btn:hover { background: #f0efed; color: #292524; transform: rotate(90deg); }
-.nav-drawer-close-btn:active { transform: rotate(90deg) scale(.9); }
-
-
-/* =========================================================
-   BODY — icon grid instead of a list
-   ========================================================= */
-
-.nav-drawer-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 14px 6px;
-
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-
-    scrollbar-width: none;
-}
-.nav-drawer-body::-webkit-scrollbar { display: none; }
-
-.nav-drawer-link {
-    position: relative;
 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-
-    padding: 14px 6px 10px;
-
-    border-radius: 18px;
+    gap: 2px;
 
     text-decoration: none;
-    text-align: center;
+    color: #1c1917;
 
-    background: rgba(255,255,255,.55);
-    border: 1px solid rgba(231,229,228,.7);
+    background: radial-gradient(
+        circle at 50% 35%,
+        rgba(255, 255, 255, .95) 0%,
+        rgba(253, 250, 246, .75) 50%,
+        rgba(242, 237, 230, .85) 100%
+    );
 
+    border: 1px solid rgba(255, 255, 255, .9);
+
+    box-shadow:
+        inset 0 3px 5px rgba(255, 255, 255, 1),
+        inset 0 -5px 10px rgba(195, 185, 175, .5),
+        inset 0 -1px 3px rgba(140, 125, 110, .35),
+        0 10px 24px rgba(50, 40, 30, .18),
+        0 3px 8px rgba(0, 0, 0, .08);
+
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+
+    overflow: hidden;
+
+    transform: translate(0, 0) scale(.25) rotate(-18deg);
     opacity: 0;
-    transform: translateY(-6px) scale(.96);
+    pointer-events: none;
+    transform-origin: center center;
 
     transition:
+        transform .46s cubic-bezier(.22, 1.35, .36, 1),
+        opacity .2s ease,
         background .2s ease,
-        color .2s ease,
-        border-color .2s ease,
-        transform .2s ease,
         box-shadow .2s ease;
+
+    z-index: 1;
 }
 
-.nav-drawer-overlay.active .nav-drawer-link {
-    animation: menu-item-in .4s cubic-bezier(.16,1,.3,1) forwards;
-}
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(1) { animation-delay: .03s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(2) { animation-delay: .06s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(3) { animation-delay: .09s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(4) { animation-delay: .12s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(5) { animation-delay: .15s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(6) { animation-delay: .18s; }
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(7) { animation-delay: .21s; }
-
-@keyframes menu-item-in {
-    from { opacity: 0; transform: translateY(-6px) scale(.96); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.nav-drawer-link:hover {
-    background: #fff;
-    border-color: #d6d3d1;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(28,25,23,.08);
-}
-
-.nav-drawer-link .nav-tile-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(150deg, #f5f5f4, #e7e5e4);
-    color: #57534e;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
-    transition: transform .3s cubic-bezier(.34,1.56,.64,1), background .2s ease, color .2s ease;
-}
-.nav-drawer-link:hover .nav-tile-icon {
-    transform: scale(1.08) rotate(-4deg);
-}
-
-.nav-drawer-link svg {
-    width: 19px;
-    height: 19px;
-    stroke-width: 1.8;
-}
-
-.nav-drawer-link .nav-tile-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    color: #57534e;
-    line-height: 1.25;
-}
-
-/* Active tile */
-.nav-drawer-link.active {
-    background: linear-gradient(150deg, #292524, #1c1917);
-    border-color: transparent;
-    box-shadow: 0 7px 18px rgba(28,25,23,.18), inset 0 1px 0 rgba(255,255,255,.08);
-}
-.nav-drawer-link.active .nav-tile-icon {
-    background: rgba(255,255,255,.14);
-    color: #fff;
-}
-.nav-drawer-link.active .nav-tile-label { color: #fff; }
-
-.nav-drawer-link.active.role-staff {
-    background: linear-gradient(150deg, #047857, #065f46);
-    box-shadow: 0 7px 18px rgba(4,120,87,.2);
-}
-
-/* Logout tile */
-.nav-drawer-link.logout-link .nav-tile-icon {
-    background: linear-gradient(150deg, #fee2e2, #fecaca);
-    color: #dc2626;
-}
-.nav-drawer-link.logout-link .nav-tile-label { color: #dc2626; }
-.nav-drawer-link.logout-link:hover {
-    background: rgba(254,242,242,.7);
-    border-color: rgba(252,165,165,.8);
-}
-.nav-drawer-link.logout-link:hover .nav-tile-icon {
-    transform: scale(1.08);
-    background: linear-gradient(150deg, #fecaca, #fca5a5);
-}
-
-
-/* =========================================================
-   FOOTER — connection status only
-   ========================================================= */
-
-.nav-drawer-footer {
-    padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(231,229,228,.65);
-}
-
-.nav-drawer-status {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 2px;
-    font-size: 9px;
-    color: #a8a29e;
-    text-transform: uppercase;
-    letter-spacing: .13em;
-}
-
-.nav-drawer-status::before {
+.nav-fan-btn::before {
     content: "";
-    width: 6px;
-    height: 6px;
+    position: absolute;
+    width: 76%;
+    height: 42%;
+    left: 12%;
+    top: 4%;
     border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,.08), 0 0 10px rgba(16,185,129,.3);
-    animation: menu-status-pulse 2s ease-in-out infinite;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, .98) 0%,
+        rgba(255, 255, 255, .6) 45%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
 }
 
+.nav-fan-btn > * { position: relative; z-index: 3; }
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 640px) {
-    .nav-drawer {
-        top: 64px;
-        right: 10px;
-        width: calc(100vw - 20px);
-        max-width: none;
-        max-height: calc(100vh - 76px);
-        border-radius: 24px;
-    }
-    .nav-drawer-header { padding: 16px 16px 12px; }
-    .nav-drawer-body { grid-template-columns: repeat(3, 1fr); padding: 14px 12px 4px; }
+.nav-fan-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
 }
+
+.nav-fanwrap.nav-fan-open .nav-fan-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(1) rotate(0deg);
+}
+
+.nav-fan-btn.fan-pos-0 { transition-delay: .02s; }
+.nav-fan-btn.fan-pos-1 { transition-delay: .05s; }
+.nav-fan-btn.fan-pos-2 { transition-delay: .08s; }
+.nav-fan-btn.fan-pos-3 { transition-delay: .11s; }
+.nav-fan-btn.fan-pos-4 { transition-delay: .14s; }
+.nav-fan-btn.fan-pos-5 { transition-delay: .17s; }
+.nav-fan-btn.fan-pos-6 { transition-delay: .20s; }
+.nav-fanwrap:not(.nav-fan-open) .nav-fan-btn { transition-delay: 0s; }
+
+.nav-fan-btn:hover {
+    background: radial-gradient(
+        circle at 50% 30%,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 252, 248, .85) 60%,
+        rgba(245, 238, 230, .9) 100%
+    );
+    box-shadow:
+        inset 0 4px 6px rgba(255, 255, 255, 1),
+        inset 0 -5px 12px rgba(180, 165, 150, .45),
+        0 14px 28px rgba(50, 40, 30, .24);
+}
+
+.nav-fan-btn:active {
+    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(.9) rotate(0deg);
+}
+
+/* Current page = filled dark, like the .of-open state elsewhere */
+.nav-fan-btn.active {
+    background: radial-gradient(circle at 50% 35%, #292524 0%, #1c1917 100%);
+    color: #fff;
+    border-color: rgba(41, 37, 36, .6);
+}
+.nav-fan-btn.active.role-staff {
+    background: radial-gradient(circle at 50% 35%, #047857 0%, #065f46 100%);
+}
+
+/* Logout tile — rose tint */
+.nav-fan-btn.logout {
+    background: radial-gradient(circle at 50% 35%, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+    border-color: rgba(252, 165, 165, .8);
+}
+.nav-fan-btn.logout:hover {
+    background: radial-gradient(circle at 50% 35%, #fecaca 0%, #fca5a5 100%);
+}
+
+.nav-hamburger-btn.is-open svg { transform: rotate(135deg); }
 
 
 /* =========================================================
@@ -3168,321 +2877,189 @@ async function mcCompressAndSubmit(form) {
 <!-- =========================================================
      FLOATING MENU OVERLAY
      ========================================================= -->
+<div class="nav-fanwrap no-print" id="navFanWrap">
 
-<div
-    class="nav-drawer-overlay"
-    id="navDrawerOverlay"
->
+    {% if session.get('role') == 'staff' %}
 
-    <div
-        class="nav-drawer"
-        id="navDrawer"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Memory Cake navigation"
-    >
+    <a href="/staff" class="nav-fan-btn fan-pos-0 role-staff {% if active_page == 'staff' %}active{% endif %}" title="Daily">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+    </a>
 
-        <!-- HEADER -->
-        <div class="nav-drawer-header">
+    <a href="/expenses" class="nav-fan-btn fan-pos-1 role-staff {% if active_page == 'expenses' %}active{% endif %}" title="Expenses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
+        </svg>
+    </a>
 
-            <div>
-                <div class="nav-drawer-header-title">
-                    Memory Cake
-                </div>
+    <a href="/balance" class="nav-fan-btn fan-pos-2 role-staff {% if active_page == 'balance' %}active{% endif %}" title="Balance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
+        </svg>
+    </a>
 
-                <span class="nav-drawer-role-badge {% if session.get('role') == 'staff' %}role-staff{% endif %}" style="margin-top:5px; margin-left:42px; display:inline-flex;">
-                    <span
-                        class="w-1.5 h-1.5 rounded-full {% if session.get('role') == 'staff' %}bg-blue-500{% else %}bg-emerald-500{% endif %}"
-                        style="display:inline-block;"
-                    ></span>
-                    {% if session.get('role') == 'staff' %}Staff{% else %}Manager{% endif %}
-                </span>
-            </div>
+    <a href="/logout" class="nav-fan-btn fan-pos-3 logout" title="Logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+        </svg>
+    </a>
 
-            <button
-                type="button"
-                id="navDrawerCloseBtn"
-                class="nav-drawer-close-btn"
-                aria-label="Close navigation"
-            >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">
-                    <path d="M6 6l12 12M18 6 6 18"/>
-                </svg>
-            </button>
+    {% else %}
 
-        </div>
+    <a href="/" class="nav-fan-btn fan-pos-0 {% if active_page == 'daily' %}active{% endif %}" title="Daily">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+    </a>
 
-        <!-- ICON GRID -->
-        <div class="nav-drawer-body">
+    <a href="/income" class="nav-fan-btn fan-pos-1 {% if active_page == 'income' %}active{% endif %}" title="Income">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/>
+        </svg>
+    </a>
 
-            {% if session.get('role') == 'staff' %}
+    <a href="/expenses" class="nav-fan-btn fan-pos-2 {% if active_page == 'expenses' %}active{% endif %}" title="Expenses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
+        </svg>
+    </a>
 
-            <a href="/staff" class="nav-drawer-link role-staff {% if active_page == 'staff' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">နေ့စဉ်<br>Daily</span>
-            </a>
+    <a href="/expense_report" class="nav-fan-btn fan-pos-3 {% if active_page == 'expense_report' %}active{% endif %}" title="Report">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/>
+        </svg>
+    </a>
 
-            <a href="/expenses" class="nav-drawer-link role-staff {% if active_page == 'expenses' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">အသုံးစရိတ်<br>Expenses</span>
-            </a>
+    <a href="/balance" class="nav-fan-btn fan-pos-4 {% if active_page == 'balance' %}active{% endif %}" title="Balance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
+        </svg>
+    </a>
 
-            <a href="/balance" class="nav-drawer-link role-staff {% if active_page == 'balance' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">လက်ကျန်ငွေ<br>Balance</span>
-            </a>
+    <a href="/monthly" class="nav-fan-btn fan-pos-5 {% if active_page == 'monthly' %}active{% endif %}" title="Monthly">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>
+        </svg>
+    </a>
 
-            {% else %}
+    <a href="/logout" class="nav-fan-btn fan-pos-6 logout" title="Logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+        </svg>
+    </a>
 
-            <a href="/" class="nav-drawer-link {% if active_page == 'daily' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">每日记录<br>Daily</span>
-            </a>
-
-            <a href="/income" class="nav-drawer-link {% if active_page == 'income' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.7 2.5 2c0 2.5-5 1.5-5 4 0 1.3 1.2 2 2.5 2s2.5-.5 2.5-2"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">收入记录<br>Income</span>
-            </a>
-
-            <a href="/expenses" class="nav-drawer-link {% if active_page == 'expenses' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6M9 16h4"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">支出记录<br>Expenses</span>
-            </a>
-
-            <a href="/expense_report" class="nav-drawer-link {% if active_page == 'expense_report' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M12 3a9 9 0 0 1 9 9h-9z"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">支出报表<br>Report</span>
-            </a>
-
-            <a href="/balance" class="nav-drawer-link {% if active_page == 'balance' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3v18"/><path d="M5 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M19 8l-3 6a4 4 0 0 0 8 0l-3-6z"/><path d="M4 21h16M8 3h8"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">余额核对<br>Balance</span>
-            </a>
-
-            <a href="/monthly" class="nav-drawer-link {% if active_page == 'monthly' %}active{% endif %}">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">月度报表<br>Monthly</span>
-            </a>
-
-            {% endif %}
-
-            <!-- LOGOUT -->
-            <a href="/logout" class="nav-drawer-link logout-link">
-                <span class="nav-tile-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
-                    </svg>
-                </span>
-                <span class="nav-tile-label">
-                    {% if session.get('role') == 'staff' %}ထွက်ရန်<br>Logout{% else %}登出<br>Logout{% endif %}
-                </span>
-            </a>
-
-        </div>
-
-        <!-- FOOTER (status only, logout moved into the grid above) -->
-        <div class="nav-drawer-footer">
-            <div class="nav-drawer-status">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                {% if session.get('role') == 'staff' %}ချိတ်ဆက်ပြီး{% else %}System Connected{% endif %}
-            </div>
-        </div>
-
-    </div>
+    {% endif %}
 
 </div>
 
-
+<div class="nav-fan-backdrop no-print" id="navFanBackdrop" onclick="closeNavFan()"></div>
 
 <!-- =========================================================
      JAVASCRIPT
      ========================================================= -->
 
 <script>
-
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
 
     const hamburger = document.getElementById('navHamburgerBtn');
-    const overlay = document.getElementById('navDrawerOverlay');
-    const drawer = document.getElementById('navDrawer');
-    const closeBtn = document.getElementById('navDrawerCloseBtn');
+    const wrap = document.getElementById('navFanWrap');
+    const backdrop = document.getElementById('navFanBackdrop');
 
-    if (!hamburger || !overlay || !drawer) {
-        return;
+    if (!hamburger || !wrap || !backdrop) return;
+
+    // Move to <body> so no ancestor transform/overflow can trap the
+    // fixed-position fan (same trick as the Daily Records filter FAB).
+    if (wrap.parentNode !== document.body) document.body.appendChild(wrap);
+    if (backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
+
+    function positionNavFanWrap() {
+        const rect = hamburger.getBoundingClientRect();
+        wrap.style.top = rect.top + 'px';
+        wrap.style.left = rect.left + 'px';
+        wrap.style.width = rect.width + 'px';
+        wrap.style.height = rect.height + 'px';
     }
 
+    // Arc sweeps down and to the left of the hamburger button (185°→275°,
+    // where 0°=right / 90°=up), so bubbles never run off the right edge.
+    function layoutNavFan() {
+        const buttons = Array.from(wrap.querySelectorAll('.nav-fan-btn'));
+        const n = buttons.length;
+        if (!n) return;
 
-    /* =====================================================
-       OPEN
-       ===================================================== */
+        const cs = getComputedStyle(wrap);
+        const readPx = (name, fb) => {
+            const v = parseFloat(cs.getPropertyValue(name));
+            return Number.isFinite(v) ? v : fb;
+        };
+        const gap = Math.max(0, readPx('--fan-gap', 10));
+        let radius = Math.max(0, readPx('--fan-radius', 82));
 
-    function openMenu() {
+        const btnW = buttons[0].offsetWidth || 46;
+        const btnH = buttons[0].offsetHeight || 46;
+        const btnDia = Math.max(btnW, btnH);
 
-        overlay.classList.add('active');
+        const startDeg = 185, endDeg = 275;
+        const sweepDeg = endDeg - startDeg;
 
+        if (n > 1) {
+            const stepRad = (sweepDeg / (n - 1)) * Math.PI / 180;
+            const sinHalf = Math.sin(stepRad / 2);
+            if (sinHalf > 0.000001) {
+                const minRadius = (btnDia + gap) / (2 * sinHalf);
+                radius = Math.max(radius, minRadius);
+            }
+        }
+
+        buttons.forEach((btn, i) => {
+            const thetaDeg = n > 1 ? startDeg + (i * sweepDeg / (n - 1)) : (startDeg + endDeg) / 2;
+            const thetaRad = thetaDeg * Math.PI / 180;
+            const x = radius * Math.cos(thetaRad);
+            const y = -radius * Math.sin(thetaRad);
+            btn.style.setProperty('--fan-tx', x.toFixed(2) + 'px');
+            btn.style.setProperty('--fan-ty', y.toFixed(2) + 'px');
+        });
+    }
+
+    function openNavFan() {
+        positionNavFanWrap();
+        layoutNavFan();
+        wrap.classList.add('nav-fan-open');
         hamburger.classList.add('is-open');
-
         hamburger.setAttribute('aria-expanded', 'true');
-
-        hamburger.setAttribute(
-            'aria-label',
-            'Close navigation'
-        );
-
-        if (typeof wpLockBody === 'function') {
-            wpLockBody();
-        } else {
-            document.body.style.overflow = 'hidden';
-        }
-
+        backdrop.classList.add('active');
+        if (typeof wpLockBody === 'function') wpLockBody(); else document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', escHandler);
     }
 
-
-    /* =====================================================
-       CLOSE
-       ===================================================== */
-
-    function closeMenu() {
-
-        overlay.classList.remove('active');
-
+    function closeNavFan() {
+        wrap.classList.remove('nav-fan-open');
         hamburger.classList.remove('is-open');
-
         hamburger.setAttribute('aria-expanded', 'false');
-
-        hamburger.setAttribute(
-            'aria-label',
-            'Open navigation'
-        );
-
-        if (typeof wpUnlockBody === 'function') {
-            wpUnlockBody();
-        } else {
-            document.body.style.overflow = '';
-        }
-
+        backdrop.classList.remove('active');
+        if (typeof wpUnlockBody === 'function') wpUnlockBody(); else document.body.style.overflow = '';
+        document.removeEventListener('keydown', escHandler);
     }
+    window.closeNavFan = closeNavFan;
 
-
-    /* =====================================================
-       HAMBURGER
-       ===================================================== */
+    function escHandler(e) { if (e.key === 'Escape') closeNavFan(); }
 
     hamburger.addEventListener('click', function (e) {
-
         e.preventDefault();
         e.stopPropagation();
-
-        if (overlay.classList.contains('active')) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
-
+        wrap.classList.contains('nav-fan-open') ? closeNavFan() : openNavFan();
     });
 
-
-    /* =====================================================
-       CLOSE BUTTON
-       ===================================================== */
-
-    if (closeBtn) {
-
-        closeBtn.addEventListener('click', function (e) {
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            closeMenu();
-
-        });
-
-    }
-
-
-    /* =====================================================
-       CLICK OUTSIDE
-       ===================================================== */
-
-    overlay.addEventListener('click', function (e) {
-
-        if (e.target === overlay) {
-            closeMenu();
-        }
-
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            if (wrap.classList.contains('nav-fan-open')) { positionNavFanWrap(); layoutNavFan(); }
+        }, 150);
     });
 
-
-    /* =====================================================
-       ESCAPE
-       ===================================================== */
-
-    document.addEventListener('keydown', function (e) {
-
-        if (
-            e.key === 'Escape' &&
-            overlay.classList.contains('active')
-        ) {
-            closeMenu();
-        }
-
-    });
-
-
-    /* =====================================================
-       NAVIGATION LINKS
-       ===================================================== */
-
-    drawer.addEventListener('click', function (e) {
-
-        const link = e.target.closest('.nav-drawer-link');
-
-        if (!link) {
-            return;
-        }
-
-        closeMenu();
-
-    });
-
-})();
-
+});
 </script>
 
 {% endif %}
