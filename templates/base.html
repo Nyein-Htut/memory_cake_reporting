@@ -1376,131 +1376,6 @@ body.nav-menu-open {
 
 </style>
 
-
-<style>
-/* =========================================================
-   MEMORY CAKE — NAV EXEMPT CONTROLS
-   Final layering:
-       page/header < fullscreen blur backdrop < nav fan + exempt controls
-
-   The logo + hamburger are temporarily moved into a fixed layer while
-   the menu is open. This is necessary because a child inside the header
-   cannot visually escape the header's stacking context.
-   ========================================================= */
-
-#mcTopNav {
-    z-index: 500 !important;
-}
-
-/* Full-page blur sits ABOVE the header. */
-.nav-fan-backdrop {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 9000 !important;
-    display: none !important;
-    background: rgba(28,25,23,.12) !important;
-    backdrop-filter: blur(8px) saturate(115%) !important;
-    -webkit-backdrop-filter: blur(8px) saturate(115%) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: opacity .22s ease !important;
-}
-
-.nav-fan-backdrop.active {
-    display: block !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-
-/* The fan buttons remain sharp above the blur. */
-.nav-fanwrap,
-.nav-fanwrap.nav-fan-open {
-    z-index: 10000 !important;
-}
-
-/* Layer for the logo + hamburger that must remain sharp, like the filter FAB. */
-.mc-nav-exempt-layer {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 10001 !important;
-    pointer-events: none !important;
-}
-
-.mc-nav-exempt-layer > .mc-logo-glass,
-.mc-nav-exempt-layer > .nav-hamburger-btn {
-    pointer-events: auto !important;
-    position: fixed !important;
-    margin: 0 !important;
-}
-
-/* Do not apply any blur/filter to the exempt controls themselves. */
-.mc-nav-exempt-layer .mc-logo-glass,
-.mc-nav-exempt-layer .mc-logo-glass img,
-.mc-nav-exempt-layer .nav-hamburger-btn {
-    filter: none !important;
-    -webkit-filter: none !important;
-}
-
-/* Native favicon rendering — don't upscale the 48px source. */
-.mc-nav-exempt-layer .mc-logo-glass {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 10px !important;
-    overflow: hidden !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-.mc-nav-exempt-layer .mc-logo-glass img {
-    display: block !important;
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    max-width: 48px !important;
-    max-height: 48px !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    transform: none !important;
-    image-rendering: auto !important;
-}
-
-/* Keep hamburger identical to the existing glossy filter-button language. */
-.mc-nav-exempt-layer .nav-hamburger-btn {
-    width: 56px !important;
-    height: 56px !important;
-    min-width: 56px !important;
-    min-height: 56px !important;
-    border-radius: 50% !important;
-    z-index: 10002 !important;
-}
-
-/* Temporary placeholders keep the header layout from moving when controls
-   are moved to the fixed exempt layer. */
-.mc-nav-exempt-placeholder {
-    display: block !important;
-    flex: 0 0 auto !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
-/* The original header doesn't need a separate blur/filter anymore. */
-#mcTopNav.mc-nav-is-blurred {
-    filter: none !important;
-    -webkit-filter: none !important;
-}
-</style>
-
 </head>
     <!-- Wheel Picker: Time (Hour / Minute) -->
 <div class="wp-overlay" id="wpTimeOverlay" onclick="if(event.target===this) closeWheelOverlay('wpTimeOverlay')">
@@ -3589,92 +3464,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const logo = document.querySelector('.mc-logo-glass');
-    let exemptLayer = null;
-    let logoPlaceholder = null;
-    let hamburgerPlaceholder = null;
-
-    function createExemptLayer() {
-        if (exemptLayer) return exemptLayer;
-
-        exemptLayer = document.createElement('div');
-        exemptLayer.id = 'mcNavExemptLayer';
-        exemptLayer.className = 'mc-nav-exempt-layer no-print';
-        exemptLayer.setAttribute('aria-hidden', 'false');
-        document.body.appendChild(exemptLayer);
-
-        return exemptLayer;
-    }
-
-    function makePlaceholder(el) {
-        const rect = el.getBoundingClientRect();
-        const ph = document.createElement('span');
-        ph.className = 'mc-nav-exempt-placeholder';
-        ph.setAttribute('aria-hidden', 'true');
-        ph.style.width = Math.round(rect.width) + 'px';
-        ph.style.height = Math.round(rect.height) + 'px';
-        el.parentNode.insertBefore(ph, el);
-        el.remove();
-        return ph;
-    }
-
-    function positionExemptControl(el, rect) {
-        el.style.top = Math.round(rect.top) + 'px';
-        el.style.left = Math.round(rect.left) + 'px';
-    }
-
-    function moveControlsAboveBlur() {
-        const layer = createExemptLayer();
-
-        const logoRect = logo ? logo.getBoundingClientRect() : null;
-        const hamburgerRect = hamburger.getBoundingClientRect();
-
-        if (logo) {
-            logoPlaceholder = makePlaceholder(logo);
-            layer.appendChild(logo);
-            positionExemptControl(logo, logoRect);
-        }
-
-        hamburgerPlaceholder = makePlaceholder(hamburger);
-        layer.appendChild(hamburger);
-        positionExemptControl(hamburger, hamburgerRect);
-
-        /* The real hamburger is now above the fullscreen blur, so it remains
-           visible/clickable exactly like a filter FAB. */
-        hamburger.classList.add('is-open');
-    }
-
-    function restoreControlsToHeader() {
-        if (logo && logoPlaceholder && logoPlaceholder.parentNode) {
-            logoPlaceholder.parentNode.insertBefore(logo, logoPlaceholder);
-            logoPlaceholder.remove();
-        }
-
-        if (hamburgerPlaceholder && hamburgerPlaceholder.parentNode) {
-            hamburgerPlaceholder.parentNode.insertBefore(hamburger, hamburgerPlaceholder);
-            hamburgerPlaceholder.remove();
-        }
-
-        logoPlaceholder = null;
-        hamburgerPlaceholder = null;
-
-        if (exemptLayer) {
-            exemptLayer.remove();
-            exemptLayer = null;
-        }
-    }
-
     function openNavFan() {
         positionNavFanWrap();
         layoutNavFan();
 
-        /* First move the controls out of the header stacking context. */
-        moveControlsAboveBlur();
-
-        /* Then place the fullscreen blur above the page + header. */
+        // Add the open state BEFORE anything else visual happens.
         wrap.classList.add('nav-fan-open');
         backdrop.classList.add('active');
-
+        hamburger.classList.add('is-open');
         hamburger.setAttribute('aria-expanded', 'true');
         hamburger.setAttribute('aria-label', 'Close navigation');
 
@@ -3686,7 +3483,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeNavFan() {
         wrap.classList.remove('nav-fan-open');
         backdrop.classList.remove('active');
-
         hamburger.classList.remove('is-open');
         hamburger.setAttribute('aria-expanded', 'false');
         hamburger.setAttribute('aria-label', 'Open navigation');
@@ -3694,8 +3490,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (topNav) topNav.classList.remove('mc-nav-is-blurred');
         document.body.classList.remove('nav-menu-open');
         document.removeEventListener('keydown', escHandler);
-
-        restoreControlsToHeader();
     }
 
     function toggleNavFan(e) {
@@ -3735,11 +3529,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (wrap.classList.contains('nav-fan-open')) {
             positionNavFanWrap();
             layoutNavFan();
-
-            if (exemptLayer) {
-                if (logo) positionExemptControl(logo, logoPlaceholder.getBoundingClientRect());
-                positionExemptControl(hamburger, hamburgerPlaceholder.getBoundingClientRect());
-            }
         }
     });
 
