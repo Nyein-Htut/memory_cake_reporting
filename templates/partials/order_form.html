@@ -1,481 +1,1986 @@
-{# Manager order entry form - Compact Icon-Chip Edition #}
+```html
+{# Manager order entry form - Ultra Compact Quick-Action Edition #}
+
 <style>
-.of-modal-overlay { transition: opacity .25s ease; opacity: 0; }
-.of-modal-overlay.pm-active { opacity: 1; }
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.of-modal-overlay {
+    transition: opacity .22s ease;
+    opacity: 0;
+}
+
+.of-modal-overlay.pm-active {
+    opacity: 1;
+}
+
 .of-modal-card {
-    transform: perspective(1400px) rotateX(-14deg) translateY(46px) scale(.92);
+    transform: perspective(1400px) rotateX(-10deg) translateY(35px) scale(.96);
     opacity: 0;
     transform-origin: top center;
-    transition: transform .5s cubic-bezier(.19,1.2,.35,1), opacity .35s ease, box-shadow .5s ease;
+    transition:
+        transform .38s cubic-bezier(.19,1.2,.35,1),
+        opacity .25s ease,
+        box-shadow .4s ease;
 }
+
 .of-modal-card.pm-in {
     transform: perspective(1400px) rotateX(0deg) translateY(0) scale(1);
     opacity: 1;
-    box-shadow: 0 30px 80px rgba(28,25,23,.28), 0 10px 30px rgba(28,25,23,.12);
+    box-shadow:
+        0 25px 70px rgba(28,25,23,.22),
+        0 8px 25px rgba(28,25,23,.10);
 }
+
 .of-modal-card.pm-out {
-    transform: perspective(1400px) rotateX(10deg) translateY(30px) scale(.94);
+    transform: perspective(1400px) rotateX(8deg) translateY(25px) scale(.97);
     opacity: 0;
-    transition: transform .22s ease, opacity .18s ease;
+    transition: transform .2s ease, opacity .16s ease;
 }
 
-.of-chip-row { display:flex; flex-wrap:wrap; gap:9px; }
+
+/* =========================================================
+   QUICK ACTION AREA
+   ========================================================= */
+
+.of-quick-wrap {
+    position: relative;
+    z-index: 30;
+}
+
+.of-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
 .of-chip {
-    display:flex; align-items:center; gap:6px;
-    padding:11px 15px; border-radius:9999px;
-    border:1.5px solid #e7e5e4; background:#fff;
-    font-size:12.5px; font-weight:700; color:#57534e;
-    cursor:pointer; transition: all .2s ease; user-select:none;
-}
-.of-chip:hover { border-color:#a8a29e; }
-.of-chip-icon { font-size:16px; line-height:1; }
-.of-chip-dot { width:6px; height:6px; border-radius:50%; background:#059669; display:none; }
-.of-chip.of-filled { border-color:#a7f3d0; background:#ecfdf5; color:#047857; }
-.of-chip.of-filled .of-chip-dot { display:inline-block; }
-.of-chip.of-open { border-color:#1c1917; background:#1c1917; color:#fff; }
-.of-chip.of-open .of-chip-dot { background:#fff; }
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 
-.of-panel {
-    overflow:hidden; max-height:0; opacity:0;
-    transition: max-height .32s cubic-bezier(.2,.8,.2,1), opacity .25s ease, margin-top .3s ease;
-    margin-top:0;
-}
-.of-panel.of-panel-open { max-height:260px; opacity:1; margin-top:10px; }
-.of-panel-inner { background:#fafaf9; border:1px solid #f0efed; border-radius:14px; padding:14px 15px; }
-.of-panel-label {
-    font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
-    color:#a8a29e; margin-bottom:7px; display:block;
+    height: 36px;
+    padding: 0 11px;
+
+    border-radius: 9999px;
+    border: 1px solid #e7e5e4;
+    background: #fff;
+
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #57534e;
+
+    cursor: pointer;
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease,
+        transform .15s ease;
+
+    user-select: none;
+    white-space: nowrap;
 }
 
-.of-item-card { background:#fff; border:1px solid #e7e5e4; border-radius:16px; padding:12px; position:relative; }
-.of-item-row-main { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.of-item-input { border:1px solid #d6d3d1; border-radius:9px; padding:9px 11px; font-size:12.5px; background:#fff; outline:none; }
-.of-item-input:focus { border-color:#1c1917; }
-.of-item-name-input { flex:2; min-width:110px; }
-.of-item-size-input { width:64px; }
-.of-item-price-input { width:100px; }
+.of-chip:hover {
+    border-color: #a8a29e;
+    background: #fafaf9;
+}
+
+.of-chip:active {
+    transform: scale(.97);
+}
+
+.of-chip-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.of-chip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #059669;
+    display: none;
+    margin-left: 1px;
+}
+
+.of-chip.of-filled {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.of-chip.of-filled .of-chip-dot {
+    display: inline-block;
+}
+
+.of-chip.of-open {
+    background: #1c1917;
+    border-color: #1c1917;
+    color: #fff;
+}
+
+.of-chip.of-open .of-chip-dot {
+    background: #fff;
+}
+
+
+/* =========================================================
+   FLOATING INPUT
+   Does NOT consume vertical layout space
+   ========================================================= */
+
+.of-floating-field {
+    position: absolute;
+    left: 0;
+    top: 43px;
+
+    width: min(430px, calc(100vw - 48px));
+
+    padding: 8px;
+
+    background: rgba(255,255,255,.96);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border: 1px solid rgba(231,229,228,.95);
+    border-radius: 14px;
+
+    box-shadow:
+        0 16px 35px rgba(28,25,23,.14),
+        0 4px 10px rgba(28,25,23,.06);
+
+    opacity: 0;
+    transform: translateY(-5px) scale(.98);
+    pointer-events: none;
+
+    transition:
+        opacity .16s ease,
+        transform .16s ease;
+}
+
+.of-floating-field.of-show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.of-floating-label {
+    display: block;
+    padding: 2px 5px 5px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+
+    color: #a8a29e;
+}
+
+.of-floating-input {
+    width: 100%;
+    height: 38px;
+
+    border: 1px solid #d6d3d1;
+    border-radius: 10px;
+
+    padding: 0 11px;
+
+    font-size: 12px;
+    background: #fff;
+    color: #292524;
+
+    outline: none;
+}
+
+.of-floating-input:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(16,185,129,.08);
+}
+
+
+/* payment floating box */
+
+.of-payment-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.of-payment-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 12px;
+    font-weight: 700;
+    color: #44403c;
+
+    cursor: pointer;
+}
+
+.of-payment-check input {
+    width: 17px;
+    height: 17px;
+    accent-color: #059669;
+}
+
+.of-payment-date {
+    margin-top: 7px;
+}
+
+
+/* =========================================================
+   ITEMS
+   ========================================================= */
+
+.of-items-section {
+    border-top: 1px solid #f0efed;
+    padding-top: 12px;
+}
+
+.of-items-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.of-items-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: #78716c;
+}
+
+.of-add-item-btn {
+    height: 29px;
+    padding: 0 10px;
+
+    border-radius: 9px;
+    border: 1px solid #e7e5e4;
+
+    background: #fafaf9;
+    color: #44403c;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.of-add-item-btn:hover {
+    background: #f0efed;
+}
+
+
+/* item card */
+
+.of-item-card {
+    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 12px;
+    padding: 7px 8px;
+
+    position: relative;
+}
+
+.of-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.of-item-row-main {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.of-item-input {
+    height: 32px;
+
+    border: 1px solid #ddd9d6;
+    border-radius: 8px;
+
+    padding: 0 8px;
+
+    font-size: 11px;
+    background: #fff;
+
+    outline: none;
+}
+
+.of-item-input:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 2px rgba(16,185,129,.07);
+}
+
+.of-item-name-input {
+    flex: 1 1 auto;
+    min-width: 100px;
+}
+
+.of-item-size-input {
+    width: 58px;
+    flex: 0 0 58px;
+}
+
+.of-item-price-input {
+    width: 88px;
+    flex: 0 0 88px;
+}
+
+
+/* item icon buttons */
+
 .of-item-icon-btn {
-    width:34px; height:34px; border-radius:9999px; border:1px solid #e7e5e4;
-    background:#fafaf9; color:#78716c; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; font-size:14px; flex-shrink:0; transition: all .15s ease;
+    width: 31px;
+    height: 31px;
+
+    flex: 0 0 31px;
+
+    border-radius: 50%;
+    border: 1px solid #e7e5e4;
+
+    background: #fafaf9;
+    color: #78716c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    transition: all .15s ease;
 }
-.of-item-icon-btn:hover { background:#f0efed; }
-.of-item-icon-btn.of-active { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
-.of-item-remove-btn { color:#e11d48; border-color:#ffe4e6; background:#fff1f2; }
-.of-item-remove-btn:hover { background:#ffe4e6; }
-.of-item-more-panel { margin-top:10px; padding-top:10px; border-top:1px dashed #e7e5e4; display:none; }
-.of-item-more-panel.of-open { display:block; }
+
+.of-item-icon-btn:hover {
+    background: #f0efed;
+}
+
+.of-item-icon-btn.of-active {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.of-item-remove-btn {
+    color: #e11d48;
+    border-color: #ffe4e6;
+    background: #fff1f2;
+}
+
+.of-item-remove-btn:hover {
+    background: #ffe4e6;
+}
+
+
+/* =========================================================
+   CAKE CALCULATOR
+   ========================================================= */
+
+.cake-calc-panel {
+    margin-top: 6px !important;
+
+    padding: 7px !important;
+
+    border-radius: 9px !important;
+
+    font-size: 10px;
+}
+
+.cake-calc-boxes {
+    gap: 4px !important;
+}
+
+.cake-calc-panel input {
+    height: 27px;
+}
+
+
+/* =========================================================
+   MORE PANEL
+   ========================================================= */
+
+.of-item-more-panel {
+    margin-top: 6px;
+    padding-top: 6px;
+
+    border-top: 1px dashed #e7e5e4;
+
+    display: none;
+}
+
+.of-item-more-panel.of-open {
+    display: block;
+}
+
+.of-item-more-panel .of-item-input {
+    height: 31px;
+}
+
+
+/* =========================================================
+   BOTTOM ACTIONS
+   ========================================================= */
+
+.of-bottom-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+
+    padding-top: 10px;
+
+    border-top: 1px solid #f0efed;
+}
+
+.of-cancel-btn,
+.of-save-btn {
+    height: 38px;
+
+    border-radius: 10px;
+
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .04em;
+
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.of-cancel-btn {
+    padding: 0 18px;
+    background: #f5f5f4;
+    color: #57534e;
+}
+
+.of-cancel-btn:hover {
+    background: #e7e5e4;
+}
+
+.of-save-btn {
+    padding: 0 22px;
+    background: #059669;
+    color: white;
+
+    box-shadow: 0 4px 10px rgba(5,150,105,.15);
+}
+
+.of-save-btn:hover {
+    background: #047857;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+    .of-chip-row {
+        gap: 5px;
+    }
+
+    .of-chip {
+        height: 34px;
+        padding: 0 9px;
+        font-size: 10.5px;
+    }
+
+    .of-item-row-main {
+        flex-wrap: wrap;
+    }
+
+    .of-item-name-input {
+        min-width: calc(100% - 5px);
+        flex-basis: 100%;
+    }
+
+    .of-item-size-input {
+        flex: 1;
+        width: auto;
+    }
+
+    .of-item-price-input {
+        flex: 1.4;
+        width: auto;
+    }
+
+    .of-floating-field {
+        width: calc(100vw - 40px);
+    }
+
+    .of-bottom-actions {
+        flex-direction: row;
+    }
+
+    .of-cancel-btn,
+    .of-save-btn {
+        flex: 1;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL HEIGHT SCREENS
+   ========================================================= */
+
+@media (max-height: 760px) {
+
+    .of-modal-card {
+        max-height: 94vh !important;
+    }
+
+    .of-modal-card > form {
+        padding: 14px !important;
+    }
+
+    .of-chip {
+        height: 32px;
+    }
+
+    .of-item-input {
+        height: 29px;
+    }
+
+    .of-item-icon-btn {
+        width: 29px;
+        height: 29px;
+        flex-basis: 29px;
+    }
+
+    .of-items-section {
+        padding-top: 9px;
+    }
+
+    .of-bottom-actions {
+        padding-top: 7px;
+    }
+}
+
 </style>
 
-<!-- Modal Overlay Container -->
-<div id="orderFormModal" class="fixed inset-0 z-50 hidden bg-emerald-950/40 backdrop-blur-sm no-print flex items-center justify-center p-4 sm:p-6 of-modal-overlay">
 
-    <!-- Modal Box -->
-    <section class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-stone-200 relative of-modal-card" id="orderFormSection">
+<!-- =========================================================
+     MODAL
+     ========================================================= -->
 
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-white/95 backdrop-blur-md z-20 px-6 py-5 border-b border-stone-100 flex items-center justify-between">
-            <h2 class="section-title text-emerald-800 text-lg font-bold flex items-center gap-2">
-                <span class="p-1.5 bg-emerald-100 rounded-xl text-lg">📝</span>
+<div id="orderFormModal"
+     class="fixed inset-0 z-50 hidden bg-emerald-950/40 backdrop-blur-sm no-print flex items-center justify-center p-3 sm:p-5 of-modal-overlay">
+
+    <section
+        id="orderFormSection"
+        class="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl border border-stone-200 relative of-modal-card">
+
+        <!-- HEADER -->
+
+        <div class="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+
+            <h2 class="section-title text-emerald-800 text-sm font-bold flex items-center gap-2">
+                <span class="p-1 bg-emerald-100 rounded-lg text-sm">📝</span>
                 新账单快速录入
             </h2>
-            <button type="button" onclick="closeOrderModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer">
-                <span class="text-lg font-bold">✕</span>
+
+            <button
+                type="button"
+                onclick="closeOrderModal()"
+                class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer">
+
+                <span class="text-sm font-bold">✕</span>
+
             </button>
+
         </div>
 
-        <!-- Form Body -->
-        <form action="/add_order" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmit(event)" class="p-6 space-y-6 text-sm font-sans">
+
+        <!-- FORM -->
+
+        <form
+            action="/add_order"
+            method="POST"
+            enctype="multipart/form-data"
+            onsubmit="handleFormSubmit(event)"
+            class="p-4 space-y-3 text-sm font-sans">
+
             <input type="hidden" name="return_qs" id="addOrderReturnQs" value="">
 
-            <!-- ===== Icon chip row — tap an icon to reveal just that field ===== -->
-            <div class="of-chip-row">
-                <button type="button" class="of-chip" data-field="source" onclick="ofToggleField('source')">
-                    <span class="of-chip-icon">🏷️</span><span>来源</span><span class="of-chip-dot"></span>
-                </button>
-                <button type="button" class="of-chip" data-field="customer" onclick="ofToggleField('customer')">
-                    <span class="of-chip-icon">👤</span><span>客人</span><span class="of-chip-dot"></span>
-                </button>
-                <button type="button" class="of-chip" data-field="address" onclick="ofToggleField('address')">
-                    <span class="of-chip-icon">📍</span><span>地址</span><span class="of-chip-dot"></span>
-                </button>
-                <button type="button" class="of-chip" data-field="date" onclick="ofToggleField('date')">
-                    <span class="of-chip-icon">📅</span><span>日期时间</span><span class="of-chip-dot"></span>
-                </button>
-                <button type="button" class="of-chip" data-field="fee" onclick="ofToggleField('fee')">
-                    <span class="of-chip-icon">🚗</span><span>车费</span><span class="of-chip-dot"></span>
-                </button>
+
+            <!-- =====================================================
+                 QUICK ACTION BAR
+                 ===================================================== -->
+
+            <div class="of-quick-wrap" id="ofQuickWrap">
+
+                <div class="of-chip-row">
+
+                    <!-- SOURCE -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="source"
+                        onclick="ofQuickAction('source')">
+
+                        <span class="of-chip-icon">🏷️</span>
+                        <span>来源</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- CUSTOMER -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="customer"
+                        onclick="ofQuickAction('customer')">
+
+                        <span class="of-chip-icon">👤</span>
+                        <span>客人</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- ADDRESS -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="address"
+                        onclick="ofQuickAction('address')">
+
+                        <span class="of-chip-icon">📍</span>
+                        <span>地址</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- DATE -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="date"
+                        onclick="ofQuickAction('date')">
+
+                        <span class="of-chip-icon">📅</span>
+                        <span>日期</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- DELIVERY FEE -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="fee"
+                        onclick="ofQuickAction('fee')">
+
+                        <span class="of-chip-icon">🚗</span>
+                        <span>车费</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    {% if show_payment %}
+
+                    <!-- PAYMENT -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="payment"
+                        onclick="ofQuickAction('payment')">
+
+                        <span class="of-chip-icon">💰</span>
+                        <span>付款</span>
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- =================================================
+                     FLOATING CUSTOMER FIELD
+                     ================================================= -->
+
+                <div id="ofFloat-customer" class="of-floating-field">
+
+                    <span class="of-floating-label">
+                        客人姓名 · Customer
+                    </span>
+
+                    <input
+                        type="text"
+                        name="customer"
+                        id="ofCustomerInput"
+                        class="of-floating-input"
+                        placeholder="输入客人姓名..."
+                        oninput="ofRefreshChipStates()">
+
+                </div>
+
+
+                <!-- ADDRESS -->
+
+                <div id="ofFloat-address" class="of-floating-field">
+
+                    <span class="of-floating-label">
+                        地址 & 电话 · Address & Contact
+                    </span>
+
+                    <input
+                        type="text"
+                        name="address"
+                        id="ofAddressInput"
+                        class="of-floating-input"
+                        placeholder="输入送货地址 / 电话..."
+                        oninput="ofRefreshChipStates()">
+
+                </div>
+
+
+                <!-- DELIVERY FEE -->
+
+                <div id="ofFloat-fee" class="of-floating-field">
+
+                    <span class="of-floating-label">
+                        车费 · Delivery Fee
+                    </span>
+
+                    <input
+                        type="text"
+                        name="delivery_fee"
+                        id="ofFeeInput"
+                        class="of-floating-input"
+                        inputmode="numeric"
+                        placeholder="输入车费 MMK..."
+                        oninput="ofRefreshChipStates()">
+
+                </div>
+
+
+                <!-- PAYMENT -->
+
                 {% if show_payment %}
-                <button type="button" class="of-chip" data-field="payment" onclick="ofToggleField('payment')">
-                    <span class="of-chip-icon">💰</span><span>付款</span><span class="of-chip-dot"></span>
-                </button>
-                {% endif %}
-            </div>
 
-            <div class="of-panel" id="ofPanel-source">
-                <div class="of-panel-inner">
-                    <span class="of-panel-label">订单来源 (Source)</span>
-                    <input type="hidden" name="source" id="sourceHidden" value="">
-                    <button type="button" id="sourceTriggerBtn" class="wp-trigger wp-empty text-sm" onclick="openSourcePicker('sourceTriggerBtn','sourceHidden','订单来源选择 (Select Source)')">
-                        <span class="text-stone-400">Select Source</span>
-                        <svg class="w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                </div>
-            </div>
+                <div id="ofFloat-payment" class="of-floating-field">
 
-            <div class="of-panel" id="ofPanel-customer">
-                <div class="of-panel-inner">
-                    <span class="of-panel-label">客人姓名 (Customer)</span>
-                    <input type="text" name="customer" class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10" oninput="ofRefreshChipStates()">
-                </div>
-            </div>
+                    <div class="of-payment-content">
 
-            <div class="of-panel" id="ofPanel-address">
-                <div class="of-panel-inner">
-                    <span class="of-panel-label">送货地址 &amp; 电话 (Address &amp; Contact)</span>
-                    <input type="text" name="address" class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10" oninput="ofRefreshChipStates()">
-                </div>
-            </div>
+                        <label class="of-payment-check">
 
-            <div class="of-panel" id="ofPanel-date">
-                <div class="of-panel-inner">
-                    <span class="of-panel-label">送达日期时间 (Delivery Date &amp; Time)</span>
-                    <input type="hidden" name="date" id="dateHidden" value="">
-                    <input type="hidden" name="time" id="timeHidden" value="">
-                    <button type="button" id="deliveryTriggerBtn" class="wp-trigger wp-empty text-sm" onclick="openDeliveryDateWheelPicker('deliveryTriggerBtn','dateHidden','timeHidden')">
-                        <span class="text-stone-400">日期时间</span>
-                        <svg class="w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-                    </button>
-                </div>
-            </div>
+                            <input
+                                type="checkbox"
+                                name="is_paid"
+                                id="isPaidCheckbox"
+                                onchange="
+                                    togglePaymentDate(
+                                        'paymentDateWrap',
+                                        'paymentDateHidden',
+                                        'paymentDateTriggerBtn',
+                                        'isPaidCheckbox'
+                                    );
+                                    ofRefreshChipStates();
+                                ">
 
-            <div class="of-panel" id="ofPanel-fee">
-                <div class="of-panel-inner">
-                    <span class="of-panel-label">车费 (Delivery Fee)</span>
-                    <input type="text" name="delivery_fee" class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10" oninput="ofRefreshChipStates()">
-                </div>
-            </div>
+                            <span>已付款 · Mark as Paid</span>
 
-            {% if show_payment %}
-            <div class="of-panel" id="ofPanel-payment">
-                <div class="of-panel-inner space-y-3">
-                    <label class="w-full flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="is_paid" id="isPaidCheckbox" onchange="togglePaymentDate('paymentDateWrap','paymentDateHidden','paymentDateTriggerBtn','isPaidCheckbox'); ofRefreshChipStates();" class="w-4 h-4 accent-emerald-600">
-                        <span class="text-stone-700 font-semibold text-sm">已付款 (Mark as Paid)</span>
-                    </label>
-                    <div id="paymentDateWrap" class="hidden">
-                        <span class="of-panel-label">付款日期 (Payment Date)</span>
-                        <input type="hidden" name="payment_date" id="paymentDateHidden" value="">
-                        <button type="button" id="paymentDateTriggerBtn" class="wp-trigger wp-empty text-sm" onclick="openDateWheelPicker('paymentDateTriggerBtn','paymentDateHidden')">
-                            <span class="text-stone-400">选择付款日期 Select Payment Date</span>
-                            <svg class="w-4 h-4 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        </label>
+
+                    </div>
+
+
+                    <div id="paymentDateWrap" class="hidden of-payment-date">
+
+                        <span class="of-floating-label">
+                            付款日期
+                        </span>
+
+                        <input
+                            type="hidden"
+                            name="payment_date"
+                            id="paymentDateHidden"
+                            value="">
+
+                        <button
+                            type="button"
+                            id="paymentDateTriggerBtn"
+                            class="wp-trigger wp-empty text-sm"
+                            onclick="openDateWheelPicker(
+                                'paymentDateTriggerBtn',
+                                'paymentDateHidden'
+                            )">
+
+                            <span class="text-stone-400">
+                                选择付款日期
+                            </span>
+
+                            <svg
+                                class="w-4 h-4 text-stone-400"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2">
+
+                                <rect x="3" y="5" width="18" height="16" rx="2"/>
+                                <path d="M3 10h18M8 3v4M16 3v4"/>
+
+                            </svg>
+
                         </button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
 
-            <!-- Items Details -->
-            <div class="border-t border-stone-100 pt-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xs font-bold tracking-widest uppercase text-stone-500">商品清单明细 (Voucher Items)</h3>
-                    <button type="button" onclick="addNewItemRow()" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold py-1.5 px-4 rounded-xl transition-all">
-                        ➕ 添加品类商品
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- =====================================================
+                 HIDDEN / PICKER FIELDS
+                 ===================================================== -->
+
+            <input type="hidden" name="source" id="sourceHidden" value="">
+
+            <input type="hidden" name="date" id="dateHidden" value="">
+            <input type="hidden" name="time" id="timeHidden" value="">
+
+
+            <!-- =====================================================
+                 ITEMS
+                 ===================================================== -->
+
+            <div class="of-items-section">
+
+                <div class="of-items-header">
+
+                    <span class="of-items-title">
+                        商品清单 · Voucher Items
+                    </span>
+
+                    <button
+                        type="button"
+                        onclick="addNewItemRow()"
+                        class="of-add-item-btn">
+
+                        ＋ 添加商品
+
                     </button>
+
                 </div>
 
-                <div id="itemsContainer" class="space-y-3">
+
+                <div id="itemsContainer" class="of-items-container">
+
+                    <!-- FIRST ITEM -->
+
                     <div class="item-row of-item-card">
+
                         <div class="of-item-row-main">
-                            <input type="text" name="item_name[]" placeholder="商品名称" class="of-item-input of-item-name-input">
-                            <input type="text" name="size[]" placeholder="尺寸" class="of-item-input of-item-size-input">
-                            <input type="number" name="item_price[]" placeholder="金额 MMK" class="of-item-input of-item-price-input item-price-input">
-                            <button type="button" class="of-item-icon-btn" onclick="toggleCakeCalculator(this)" title="金额计算器">🧮</button>
-                            <button type="button" class="of-item-icon-btn" onclick="toggleItemMore(this)" title="备注 / 图片">🖼️</button>
-                            <button type="button" class="of-item-icon-btn of-item-remove-btn" onclick="this.closest('.item-row').remove()" title="删除商品">✕</button>
+
+                            <input
+                                type="text"
+                                name="item_name[]"
+                                placeholder="商品名称"
+                                class="of-item-input of-item-name-input">
+
+
+                            <input
+                                type="text"
+                                name="size[]"
+                                placeholder="尺寸"
+                                class="of-item-input of-item-size-input">
+
+
+                            <input
+                                type="number"
+                                name="item_price[]"
+                                placeholder="金额"
+                                class="of-item-input of-item-price-input item-price-input">
+
+
+                            <button
+                                type="button"
+                                class="of-item-icon-btn"
+                                onclick="toggleCakeCalculator(this)"
+                                title="金额计算器">
+
+                                🧮
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="of-item-icon-btn"
+                                onclick="toggleItemMore(this)"
+                                title="备注 / 图片">
+
+                                🖼️
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="of-item-icon-btn of-item-remove-btn"
+                                onclick="removeItemRow(this)"
+                                title="删除商品">
+
+                                ✕
+
+                            </button>
+
                         </div>
+
+
+                        <!-- CAKE CALCULATOR -->
+
                         <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
+
                             <div class="cake-calc-boxes space-y-1.5"></div>
-                            <div class="flex items-center justify-between gap-2 pt-0.5">
-                                <button type="button" onclick="addCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
-                                <button type="button" onclick="closeCakeCalculator(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
+
+                            <div class="flex items-center justify-between gap-2">
+
+                                <button
+                                    type="button"
+                                    onclick="addCalcBox(this)"
+                                    class="text-[10px] font-semibold text-emerald-700 cursor-pointer">
+
+                                    ＋ 添加层
+
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onclick="closeCakeCalculator(this)"
+                                    class="text-[10px] font-semibold text-stone-500 cursor-pointer">
+
+                                    ✕ 关闭
+
+                                </button>
+
                             </div>
-                            <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">合计: 0 MMK</div>
+
+                            <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">
+
+                                合计: 0 MMK
+
+                            </div>
+
                         </div>
+
+
+                        <!-- MORE -->
+
                         <div class="of-item-more-panel">
+
                             <div class="space-y-2">
-                                <input type="text" name="remarks[]" placeholder="定制备注文字..." class="of-item-input w-full">
+
+                                <input
+                                    type="text"
+                                    name="remarks[]"
+                                    placeholder="定制备注文字..."
+                                    class="of-item-input w-full">
+
+
                                 <div class="grid grid-cols-2 gap-2">
+
                                     <div>
-                                        <label class="block text-stone-500 text-[10px] mb-1 font-semibold">🎂 蛋糕参考图</label>
-                                        <input type="file" name="cakeImage[]" accept="image/*" class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+
+                                        <label class="block text-stone-500 text-[9px] mb-1 font-semibold">
+                                            🎂 蛋糕参考图
+                                        </label>
+
+                                        <input
+                                            type="file"
+                                            name="cakeImage[]"
+                                            accept="image/*"
+                                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+
                                     </div>
+
+
                                     <div>
-                                        <label class="block text-rose-600 text-[10px] mb-1 font-semibold">💐 花束参考图</label>
-                                        <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
+
+                                        <label class="block text-rose-600 text-[9px] mb-1 font-semibold">
+                                            💐 花束参考图
+                                        </label>
+
+                                        <input
+                                            type="file"
+                                            name="flowerImage[]"
+                                            accept="image/*"
+                                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
+
                                     </div>
+
                                 </div>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
 
-            <!-- Sticky Bottom Actions -->
-            <div class="flex justify-end pt-4 border-t border-stone-100 gap-3">
-                <button type="button" onclick="closeOrderModal()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-8 rounded-xl transition-all">
-                    取消 (Cancel)
+
+            <!-- =====================================================
+                 ACTIONS
+                 ===================================================== -->
+
+            <div class="of-bottom-actions">
+
+                <button
+                    type="button"
+                    onclick="closeOrderModal()"
+                    class="of-cancel-btn">
+
+                    取消
+
                 </button>
-                <button type="submit" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-10 rounded-xl transition-all shadow-md">
-                    确认保存账单 (Save Order Voucher)
+
+                <button
+                    type="submit"
+                    class="of-save-btn">
+
+                    ✓ 保存账单
+
                 </button>
+
             </div>
+
         </form>
+
     </section>
+
 </div>
 
-<button type="button"
+
+<!-- =========================================================
+     FAB
+     ========================================================= -->
+
+<button
+    type="button"
     id="fabAddOrderBtn"
     onclick="openOrderModal()"
-    aria-label="新增订单 (Add an Order)"
+    aria-label="新增订单"
     class="no-print add-order-fab"
-    style="right: max(1.1rem, env(safe-area-inset-right)); bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.5rem));">
-    <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    style="
+        right:max(1.1rem,env(safe-area-inset-right));
+        bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
+    ">
+
+    <svg
+        class="w-7 h-7 sm:w-8 sm:h-8"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round">
+
         <path d="M12 5v14M5 12h14"/>
+
     </svg>
+
 </button>
 
+
 <script>
-    function openOrderModal() {
-        const modal = document.getElementById('orderFormModal');
-        const card = document.getElementById('orderFormSection');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+function openOrderModal() {
+
+    const modal = document.getElementById('orderFormModal');
+    const card = document.getElementById('orderFormSection');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(() => {
+
+        modal.classList.add('pm-active');
+
         requestAnimationFrame(() => {
-            modal.classList.add('pm-active');
-            requestAnimationFrame(() => {
-                card.classList.remove('pm-out');
-                card.classList.add('pm-in');
-            });
-        });
-    }
 
-    function closeOrderModal() {
-        const modal = document.getElementById('orderFormModal');
-        const card = document.getElementById('orderFormSection');
-        card.classList.remove('pm-in');
-        card.classList.add('pm-out');
-        modal.classList.remove('pm-active');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
             card.classList.remove('pm-out');
-            document.body.style.overflow = '';
-        }, 220);
-    }
+            card.classList.add('pm-in');
 
-    document.getElementById('orderFormModal').addEventListener('click', function(e) {
-        if (e.target === this) closeOrderModal();
-    });
-
-    /* ===== Icon-chip field accordion ===== */
-    function ofToggleField(key) {
-        const panel = document.getElementById('ofPanel-' + key);
-        if (!panel) return;
-        const wasOpen = panel.classList.contains('of-panel-open');
-        document.querySelectorAll('.of-panel.of-panel-open').forEach(p => p.classList.remove('of-panel-open'));
-        document.querySelectorAll('.of-chip.of-open').forEach(c => c.classList.remove('of-open'));
-        if (!wasOpen) {
-            panel.classList.add('of-panel-open');
-            const chip = document.querySelector(`.of-chip[data-field="${key}"]`);
-            if (chip) chip.classList.add('of-open');
-            const inp = panel.querySelector('input[type="text"]');
-            if (inp) setTimeout(() => inp.focus(), 260);
-        }
-    }
-
-    function ofSetFilled(key, filled) {
-        const chip = document.querySelector(`.of-chip[data-field="${key}"]`);
-        if (chip) chip.classList.toggle('of-filled', !!filled);
-    }
-
-    function ofRefreshChipStates() {
-        const sourceHidden = document.getElementById('sourceHidden');
-        ofSetFilled('source', !!(sourceHidden && sourceHidden.value));
-        const customerInput = document.querySelector('#ofPanel-customer [name="customer"]');
-        ofSetFilled('customer', !!(customerInput && customerInput.value.trim()));
-        const addressInput = document.querySelector('#ofPanel-address [name="address"]');
-        ofSetFilled('address', !!(addressInput && addressInput.value.trim()));
-        const dateHidden = document.getElementById('dateHidden');
-        const timeHidden = document.getElementById('timeHidden');
-        ofSetFilled('date', !!(dateHidden && dateHidden.value && timeHidden && timeHidden.value));
-        const feeInput = document.querySelector('#ofPanel-fee [name="delivery_fee"]');
-        ofSetFilled('fee', !!(feeInput && feeInput.value.trim()));
-        const payEl = document.getElementById('isPaidCheckbox');
-        if (payEl) ofSetFilled('payment', payEl.checked);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        ['sourceTriggerBtn', 'deliveryTriggerBtn', 'paymentDateTriggerBtn'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (!btn) return;
-            const span = btn.querySelector('span');
-            if (!span) return;
-            new MutationObserver(ofRefreshChipStates).observe(span, { childList: true, characterData: true, subtree: true });
         });
-        ofRefreshChipStates();
+
     });
 
-    function handleFormSubmit(event) {
-        event.preventDefault();
-        const form = event.target;
-        const returnQsInput = form.querySelector('input[name="return_qs"]');
-        if (returnQsInput) {
-            returnQsInput.value = window.mcBuildReturnQS
+}
+
+
+function closeOrderModal() {
+
+    closeAllQuickFields();
+
+    const modal = document.getElementById('orderFormModal');
+    const card = document.getElementById('orderFormSection');
+
+    card.classList.remove('pm-in');
+    card.classList.add('pm-out');
+
+    modal.classList.remove('pm-active');
+
+    setTimeout(() => {
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+
+        card.classList.remove('pm-out');
+
+        document.body.style.overflow = '';
+
+    }, 200);
+
+}
+
+
+document
+    .getElementById('orderFormModal')
+    .addEventListener('click', function(e) {
+
+        if (e.target === this) {
+            closeOrderModal();
+        }
+
+    });
+
+
+/* =========================================================
+   QUICK ACTIONS
+   ========================================================= */
+
+function closeAllQuickFields() {
+
+    document
+        .querySelectorAll('.of-floating-field.of-show')
+        .forEach(el => el.classList.remove('of-show'));
+
+    document
+        .querySelectorAll('.of-chip.of-open')
+        .forEach(el => el.classList.remove('of-open'));
+
+}
+
+
+function closeQuickField(key) {
+
+    const field = document.getElementById('ofFloat-' + key);
+
+    if (field) {
+        field.classList.remove('of-show');
+    }
+
+    const chip = document.querySelector(
+        `.of-chip[data-field="${key}"]`
+    );
+
+    if (chip) {
+        chip.classList.remove('of-open');
+    }
+
+}
+
+
+function ofQuickAction(key) {
+
+    /*
+       Source and Date do NOT create a panel.
+       They immediately open the existing picker.
+    */
+
+    if (key === 'source') {
+
+        closeAllQuickFields();
+
+        openSourcePicker(
+            'sourceTriggerBtn',
+            'sourceHidden',
+            '订单来源选择 (Select Source)'
+        );
+
+        return;
+    }
+
+
+    if (key === 'date') {
+
+        closeAllQuickFields();
+
+        openDeliveryDateWheelPicker(
+            'deliveryTriggerBtn',
+            'dateHidden',
+            'timeHidden'
+        );
+
+        return;
+    }
+
+
+    const field = document.getElementById('ofFloat-' + key);
+    const chip = document.querySelector(
+        `.of-chip[data-field="${key}"]`
+    );
+
+    if (!field || !chip) return;
+
+
+    const wasOpen = field.classList.contains('of-show');
+
+    closeAllQuickFields();
+
+
+    if (!wasOpen) {
+
+        field.classList.add('of-show');
+        chip.classList.add('of-open');
+
+
+        setTimeout(() => {
+
+            const input = field.querySelector(
+                'input[type="text"]'
+            );
+
+            if (input) {
+
+                input.focus();
+
+                /*
+                   Put cursor at end instead of selecting
+                   existing text.
+                */
+
+                input.setSelectionRange(
+                    input.value.length,
+                    input.value.length
+                );
+
+            }
+
+        }, 80);
+
+    }
+
+}
+
+
+/* =========================================================
+   CHIP STATE
+   ========================================================= */
+
+function ofSetFilled(key, filled) {
+
+    const chip = document.querySelector(
+        `.of-chip[data-field="${key}"]`
+    );
+
+    if (chip) {
+        chip.classList.toggle(
+            'of-filled',
+            !!filled
+        );
+    }
+
+}
+
+
+function ofRefreshChipStates() {
+
+    const sourceHidden =
+        document.getElementById('sourceHidden');
+
+    ofSetFilled(
+        'source',
+        !!(
+            sourceHidden &&
+            sourceHidden.value
+        )
+    );
+
+
+    const customer =
+        document.getElementById('ofCustomerInput');
+
+    ofSetFilled(
+        'customer',
+        !!(
+            customer &&
+            customer.value.trim()
+        )
+    );
+
+
+    const address =
+        document.getElementById('ofAddressInput');
+
+    ofSetFilled(
+        'address',
+        !!(
+            address &&
+            address.value.trim()
+        )
+    );
+
+
+    const dateHidden =
+        document.getElementById('dateHidden');
+
+    const timeHidden =
+        document.getElementById('timeHidden');
+
+    ofSetFilled(
+        'date',
+        !!(
+            dateHidden &&
+            dateHidden.value &&
+            timeHidden &&
+            timeHidden.value
+        )
+    );
+
+
+    const fee =
+        document.getElementById('ofFeeInput');
+
+    ofSetFilled(
+        'fee',
+        !!(
+            fee &&
+            fee.value.trim()
+        )
+    );
+
+
+    const paid =
+        document.getElementById('isPaidCheckbox');
+
+    if (paid) {
+
+        ofSetFilled(
+            'payment',
+            paid.checked
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLICK OUTSIDE QUICK FIELD
+   ========================================================= */
+
+document.addEventListener('click', function(e) {
+
+    const wrap =
+        document.getElementById('ofQuickWrap');
+
+    if (!wrap) return;
+
+    if (!wrap.contains(e.target)) {
+
+        closeAllQuickFields();
+
+    }
+
+});
+
+
+/* =========================================================
+   DEFAULT DELIVERY DATE
+   ========================================================= */
+
+function getLocalISODate() {
+
+    const d = new Date();
+
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+}
+
+
+(function initDefaultDeliveryDate() {
+
+    const dateHidden =
+        document.getElementById('dateHidden');
+
+    if (
+        dateHidden &&
+        !dateHidden.value
+    ) {
+
+        dateHidden.value =
+            getLocalISODate();
+
+    }
+
+})();
+
+
+/* =========================================================
+   CAKE CALCULATOR
+   ========================================================= */
+
+function toggleCakeCalculator(btn) {
+
+    const itemRow =
+        btn.closest('.item-row');
+
+    const panel =
+        itemRow.querySelector('.cake-calc-panel');
+
+    const boxesWrap =
+        panel.querySelector('.cake-calc-boxes');
+
+    const isHidden =
+        panel.classList.contains('hidden');
+
+
+    if (isHidden) {
+
+        if (boxesWrap.children.length === 0) {
+
+            addCalcBoxRow(boxesWrap);
+            addCalcBoxRow(boxesWrap);
+
+        }
+
+        panel.classList.remove('hidden');
+        btn.classList.add('of-active');
+
+    } else {
+
+        panel.classList.add('hidden');
+        btn.classList.remove('of-active');
+
+    }
+
+}
+
+
+function toggleItemMore(btn) {
+
+    const itemRow =
+        btn.closest('.item-row');
+
+    const panel =
+        itemRow.querySelector('.of-item-more-panel');
+
+    const nowOpen =
+        panel.classList.toggle('of-open');
+
+    btn.classList.toggle(
+        'of-active',
+        nowOpen
+    );
+
+}
+
+
+function addCalcBoxRow(boxesWrap) {
+
+    const idx =
+        boxesWrap.children.length + 1;
+
+    const row =
+        document.createElement('div');
+
+    row.className =
+        'flex items-center gap-1.5';
+
+    row.innerHTML = `
+
+        <span
+            class="cake-calc-box-label text-[10px] text-stone-400 w-10 shrink-0">
+
+            第${idx}层
+
+        </span>
+
+        <input
+            type="number"
+            placeholder="MMK"
+            class="cake-calc-box-input flex-1 border border-stone-300 rounded p-1.5 text-xs bg-white outline-none focus:border-emerald-500"
+            oninput="recalcCakeTotal(this.closest('.item-row'))">
+
+        <button
+            type="button"
+            onclick="removeCalcBox(this)"
+            class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1 cursor-pointer">
+
+            ✕
+
+        </button>
+
+    `;
+
+    boxesWrap.appendChild(row);
+
+}
+
+
+function addCalcBox(btn) {
+
+    addCalcBoxRow(
+        btn
+            .closest('.item-row')
+            .querySelector('.cake-calc-boxes')
+    );
+
+}
+
+
+function removeCalcBox(btn) {
+
+    const itemRow =
+        btn.closest('.item-row');
+
+    btn.parentElement.remove();
+
+    renumberCalcBoxes(itemRow);
+
+    recalcCakeTotal(itemRow);
+
+}
+
+
+function renumberCalcBoxes(itemRow) {
+
+    const boxesWrap =
+        itemRow.querySelector(
+            '.cake-calc-boxes'
+        );
+
+    Array.from(
+        boxesWrap.children
+    ).forEach((row, i) => {
+
+        const label =
+            row.querySelector(
+                '.cake-calc-box-label'
+            );
+
+        if (label) {
+
+            label.textContent =
+                `第${i + 1}层`;
+
+        }
+
+    });
+
+}
+
+
+function recalcCakeTotal(itemRow) {
+
+    if (!itemRow) return;
+
+    let total = 0;
+
+    itemRow
+        .querySelectorAll(
+            '.cake-calc-box-input'
+        )
+        .forEach(inp => {
+
+            total +=
+                parseFloat(inp.value) || 0;
+
+        });
+
+
+    const priceInput =
+        itemRow.querySelector(
+            '.item-price-input'
+        );
+
+    if (priceInput) {
+
+        priceInput.value =
+            total || '';
+
+    }
+
+
+    const totalLabel =
+        itemRow.querySelector(
+            '.cake-calc-total'
+        );
+
+    if (totalLabel) {
+
+        totalLabel.textContent =
+            `合计: ${total.toLocaleString()} MMK`;
+
+    }
+
+}
+
+
+function closeCakeCalculator(btn) {
+
+    const itemRow =
+        btn.closest('.item-row');
+
+    itemRow
+        .querySelector('.cake-calc-panel')
+        .classList.add('hidden');
+
+    const calcButton =
+        itemRow.querySelector(
+            '.of-item-icon-btn'
+        );
+
+    if (calcButton) {
+
+        calcButton.classList.remove(
+            'of-active'
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   REMOVE ITEM
+   ========================================================= */
+
+function removeItemRow(btn) {
+
+    const row =
+        btn.closest('.item-row');
+
+    const container =
+        document.getElementById(
+            'itemsContainer'
+        );
+
+
+    /*
+       Always keep at least one item row.
+    */
+
+    if (
+        container &&
+        container.querySelectorAll('.item-row').length <= 1
+    ) {
+
+        const inputs =
+            row.querySelectorAll('input');
+
+        inputs.forEach(input => {
+
+            if (input.type === 'file') {
+
+                input.value = '';
+
+            } else {
+
+                input.value = '';
+
+            }
+
+        });
+
+        return;
+
+    }
+
+
+    row.remove();
+
+}
+
+
+/* =========================================================
+   ADD NEW ITEM
+   ========================================================= */
+
+function addNewItemRow() {
+
+    const container =
+        document.getElementById(
+            'itemsContainer'
+        );
+
+
+    const row =
+        document.createElement('div');
+
+    row.className =
+        'item-row of-item-card';
+
+
+    row.innerHTML = `
+
+        <div class="of-item-row-main">
+
+            <input
+                type="text"
+                name="item_name[]"
+                placeholder="商品名称"
+                class="of-item-input of-item-name-input">
+
+
+            <input
+                type="text"
+                name="size[]"
+                placeholder="尺寸"
+                class="of-item-input of-item-size-input">
+
+
+            <input
+                type="number"
+                name="item_price[]"
+                placeholder="金额"
+                class="of-item-input of-item-price-input item-price-input">
+
+
+            <button
+                type="button"
+                class="of-item-icon-btn"
+                onclick="toggleCakeCalculator(this)"
+                title="金额计算器">
+
+                🧮
+
+            </button>
+
+
+            <button
+                type="button"
+                class="of-item-icon-btn"
+                onclick="toggleItemMore(this)"
+                title="备注 / 图片">
+
+                🖼️
+
+            </button>
+
+
+            <button
+                type="button"
+                class="of-item-icon-btn of-item-remove-btn"
+                onclick="removeItemRow(this)"
+                title="删除商品">
+
+                ✕
+
+            </button>
+
+        </div>
+
+
+        <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
+
+            <div class="cake-calc-boxes space-y-1.5"></div>
+
+            <div class="flex items-center justify-between gap-2">
+
+                <button
+                    type="button"
+                    onclick="addCalcBox(this)"
+                    class="text-[10px] font-semibold text-emerald-700 cursor-pointer">
+
+                    ＋ 添加层
+
+                </button>
+
+                <button
+                    type="button"
+                    onclick="closeCakeCalculator(this)"
+                    class="text-[10px] font-semibold text-stone-500 cursor-pointer">
+
+                    ✕ 关闭
+
+                </button>
+
+            </div>
+
+            <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">
+
+                合计: 0 MMK
+
+            </div>
+
+        </div>
+
+
+        <div class="of-item-more-panel">
+
+            <div class="space-y-2">
+
+                <input
+                    type="text"
+                    name="remarks[]"
+                    placeholder="定制备注文字..."
+                    class="of-item-input w-full">
+
+
+                <div class="grid grid-cols-2 gap-2">
+
+                    <div>
+
+                        <label class="block text-stone-500 text-[9px] mb-1 font-semibold">
+                            🎂 蛋糕参考图
+                        </label>
+
+                        <input
+                            type="file"
+                            name="cakeImage[]"
+                            accept="image/*"
+                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="block text-rose-600 text-[9px] mb-1 font-semibold">
+                            💐 花束参考图
+                        </label>
+
+                        <input
+                            type="file"
+                            name="flowerImage[]"
+                            accept="image/*"
+                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    container.appendChild(row);
+
+}
+
+
+/* =========================================================
+   FORM SUBMIT
+   ========================================================= */
+
+function handleFormSubmit(event) {
+
+    event.preventDefault();
+
+    const form =
+        event.target;
+
+
+    const returnQsInput =
+        form.querySelector(
+            'input[name="return_qs"]'
+        );
+
+
+    if (returnQsInput) {
+
+        returnQsInput.value =
+            window.mcBuildReturnQS
                 ? window.mcBuildReturnQS()
                 : window.location.search.replace(/^\?/, '');
-        }
-        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
 
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '图片处理中，请稍候...';
-        }
-        mcCompressAndSubmit(form).catch((err) => {
-            console.error('Image compression failed, submitting originals:', err);
+    }
+
+
+    if (
+        window.mcSaveClientFilters
+    ) {
+
+        window.mcSaveClientFilters();
+
+    }
+
+
+    const submitBtn =
+        form.querySelector(
+            'button[type="submit"]'
+        );
+
+
+    if (submitBtn) {
+
+        submitBtn.disabled = true;
+
+        submitBtn.textContent =
+            '图片处理中，请稍候...';
+
+    }
+
+
+    mcCompressAndSubmit(form)
+        .catch((err) => {
+
+            console.error(
+                'Image compression failed, submitting originals:',
+                err
+            );
+
             form.submit();
+
         });
-    }
 
-    function getLocalISODate() {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }
+}
 
-    (function initDefaultDeliveryDate() {
-        const dateHidden = document.getElementById('dateHidden');
-        if (dateHidden && !dateHidden.value) {
-            dateHidden.value = getLocalISODate();
-            const span = document.querySelector('#deliveryTriggerBtn span');
-            if (span) {
-                span.textContent = `${wpShortDayLabel(dateHidden.value)} · --:--`;
-                document.getElementById('deliveryTriggerBtn').classList.remove('wp-empty');
-            }
-        }
-    })();
 
-    /* ===== Layered-cake price calculator (unchanged behavior) ===== */
-    function toggleCakeCalculator(btn) {
-        const itemRow = btn.closest('.item-row');
-        const panel = itemRow.querySelector('.cake-calc-panel');
-        const boxesWrap = panel.querySelector('.cake-calc-boxes');
-        const isHidden = panel.classList.contains('hidden');
-        if (isHidden) {
-            if (boxesWrap.children.length === 0) {
-                addCalcBoxRow(boxesWrap);
-                addCalcBoxRow(boxesWrap);
-            }
-            panel.classList.remove('hidden');
-            btn.classList.add('of-active');
-        } else {
-            panel.classList.add('hidden');
-            btn.classList.remove('of-active');
-        }
-    }
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
 
-    function toggleItemMore(btn) {
-        const itemRow = btn.closest('.item-row');
-        const panel = itemRow.querySelector('.of-item-more-panel');
-        const nowOpen = panel.classList.toggle('of-open');
-        btn.classList.toggle('of-active', nowOpen);
-    }
+document.addEventListener(
+    'DOMContentLoaded',
+    function() {
 
-    function addCalcBoxRow(boxesWrap) {
-        const idx = boxesWrap.children.length + 1;
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-1.5';
-        row.innerHTML = `
-            <span class="cake-calc-box-label text-[10px] text-stone-400 w-10 shrink-0">第${idx}层</span>
-            <input type="number" placeholder="MMK" class="cake-calc-box-input flex-1 border border-stone-300 rounded p-1.5 text-xs bg-white outline-none focus:border-emerald-500" oninput="recalcCakeTotal(this.closest('.item-row'))">
-            <button type="button" onclick="removeCalcBox(this)" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1 cursor-pointer">✕</button>
-        `;
-        boxesWrap.appendChild(row);
-    }
+        ofRefreshChipStates();
 
-    function addCalcBox(btn) {
-        addCalcBoxRow(btn.closest('.item-row').querySelector('.cake-calc-boxes'));
     }
+);
 
-    function removeCalcBox(btn) {
-        const itemRow = btn.closest('.item-row');
-        btn.parentElement.remove();
-        renumberCalcBoxes(itemRow);
-        recalcCakeTotal(itemRow);
-    }
-
-    function renumberCalcBoxes(itemRow) {
-        const boxesWrap = itemRow.querySelector('.cake-calc-boxes');
-        Array.from(boxesWrap.children).forEach((row, i) => {
-            const label = row.querySelector('.cake-calc-box-label');
-            if (label) label.textContent = `第${i + 1}层`;
-        });
-    }
-
-    function recalcCakeTotal(itemRow) {
-        if (!itemRow) return;
-        let total = 0;
-        itemRow.querySelectorAll('.cake-calc-box-input').forEach(inp => { total += parseFloat(inp.value) || 0; });
-        const priceInput = itemRow.querySelector('.item-price-input');
-        if (priceInput) priceInput.value = total || '';
-        const totalLabel = itemRow.querySelector('.cake-calc-total');
-        if (totalLabel) totalLabel.textContent = `合计: ${total.toLocaleString()} MMK`;
-    }
-
-    function closeCakeCalculator(btn) {
-        const itemRow = btn.closest('.item-row');
-        itemRow.querySelector('.cake-calc-panel').classList.add('hidden');
-        itemRow.querySelector('.of-item-icon-btn').classList.remove('of-active');
-    }
-
-    function addNewItemRow() {
-        const container = document.getElementById('itemsContainer');
-        const row = document.createElement('div');
-        row.className = 'item-row of-item-card';
-        row.innerHTML = `
-            <div class="of-item-row-main">
-                <input type="text" name="item_name[]" placeholder="商品名称" class="of-item-input of-item-name-input">
-                <input type="text" name="size[]" placeholder="尺寸" class="of-item-input of-item-size-input">
-                <input type="number" name="item_price[]" placeholder="金额 MMK" class="of-item-input of-item-price-input item-price-input">
-                <button type="button" class="of-item-icon-btn" onclick="toggleCakeCalculator(this)" title="金额计算器">🧮</button>
-                <button type="button" class="of-item-icon-btn" onclick="toggleItemMore(this)" title="备注 / 图片">🖼️</button>
-                <button type="button" class="of-item-icon-btn of-item-remove-btn" onclick="this.closest('.item-row').remove()" title="删除商品">✕</button>
-            </div>
-            <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
-                <div class="cake-calc-boxes space-y-1.5"></div>
-                <div class="flex items-center justify-between gap-2 pt-0.5">
-                    <button type="button" onclick="addCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
-                    <button type="button" onclick="closeCakeCalculator(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
-                </div>
-                <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">合计: 0 MMK</div>
-            </div>
-            <div class="of-item-more-panel">
-                <div class="space-y-2">
-                    <input type="text" name="remarks[]" placeholder="定制备注文字..." class="of-item-input w-full">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-stone-500 text-[10px] mb-1 font-semibold">🎂 蛋糕参考图</label>
-                            <input type="file" name="cakeImage[]" accept="image/*" class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
-                        </div>
-                        <div>
-                            <label class="block text-rose-600 text-[10px] mb-1 font-semibold">💐 花束参考图</label>
-                            <input type="file" name="flowerImage[]" accept="image/*" class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(row);
-    }
 </script>
+```
