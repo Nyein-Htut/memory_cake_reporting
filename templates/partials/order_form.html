@@ -1,431 +1,608 @@
-
-{# Manager order entry form - Ultra Compact Quick-Action Edition #}
+<!-- =========================================================
+     MANAGER ORDER ENTRY — ULTRA COMPACT QUICK-ACTION EDITION
+     ========================================================= -->
 
 <style>
-
 /* =========================================================
    MODAL
    ========================================================= */
 
-.of-modal-overlay {
-    transition: opacity .22s ease;
-    opacity: 0;
-}
-
-.of-modal-overlay.pm-active {
-    opacity: 1;
-}
-
-.of-modal-card {
-    transform: perspective(1400px) rotateX(-10deg) translateY(35px) scale(.96);
-    opacity: 0;
-    transform-origin: top center;
-    transition:
-        transform .38s cubic-bezier(.19,1.2,.35,1),
-        opacity .25s ease,
-        box-shadow .4s ease;
-}
-
-.of-modal-card.pm-in {
-    transform: perspective(1400px) rotateX(0deg) translateY(0) scale(1);
-    opacity: 1;
-    box-shadow:
-        0 25px 70px rgba(28,25,23,.22),
-        0 8px 25px rgba(28,25,23,.10);
-}
-
-.of-modal-card.pm-out {
-    transform: perspective(1400px) rotateX(8deg) translateY(25px) scale(.97);
-    opacity: 0;
-    transition: transform .2s ease, opacity .16s ease;
-}
-
-
-/* =========================================================
-   QUICK ACTION AREA
-   ========================================================= */
-
-.of-quick-wrap {
-    position: relative;
-    z-index: 30;
-}
-
-.of-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-}
-
-.of-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-
-    height: 36px;
-    padding: 0 11px;
-
-    border-radius: 9999px;
-    border: 1px solid #e7e5e4;
-    background: #fff;
-
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #57534e;
-
-    cursor: pointer;
-    transition:
-        background .15s ease,
-        border-color .15s ease,
-        color .15s ease,
-        transform .15s ease;
-
-    user-select: none;
-    white-space: nowrap;
-}
-
-.of-chip:hover {
-    border-color: #a8a29e;
-    background: #fafaf9;
-}
-
-.of-chip:active {
-    transform: scale(.97);
-}
-
-.of-chip-icon {
-    font-size: 14px;
-    line-height: 1;
-}
-
-.of-chip-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #059669;
+#orderFormModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
     display: none;
-    margin-left: 1px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: rgba(28, 25, 23, 0.42);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
 }
 
-.of-chip.of-filled {
-    border-color: #a7f3d0;
-    background: #ecfdf5;
-    color: #047857;
+#orderFormModal.show {
+    display: flex;
 }
 
-.of-chip.of-filled .of-chip-dot {
-    display: inline-block;
-}
-
-.of-chip.of-open {
-    background: #1c1917;
-    border-color: #1c1917;
-    color: #fff;
-}
-
-.of-chip.of-open .of-chip-dot {
-    background: #fff;
-}
-
-
-/* =========================================================
-   FLOATING INPUT
-   Does NOT consume vertical layout space
-   ========================================================= */
-
-.of-floating-field {
-    position: absolute;
-    left: 0;
-    top: 43px;
-
-    width: min(430px, calc(100vw - 48px));
-
-    padding: 8px;
+#orderFormSection {
+    width: min(720px, 100%);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overflow-x: hidden;
 
     background: rgba(255,255,255,.96);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-
-    border: 1px solid rgba(231,229,228,.95);
-    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.85);
+    border-radius: 22px;
 
     box-shadow:
-        0 16px 35px rgba(28,25,23,.14),
-        0 4px 10px rgba(28,25,23,.06);
+        0 28px 80px rgba(28,25,23,.22),
+        0 8px 25px rgba(28,25,23,.10);
 
-    opacity: 0;
-    transform: translateY(-5px) scale(.98);
-    pointer-events: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120,113,108,.35) transparent;
 
-    transition:
-        opacity .16s ease,
-        transform .16s ease;
+    animation: orderModalIn .18s ease-out;
 }
 
-.of-floating-field.of-show {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.of-floating-label {
-    display: block;
-    padding: 2px 5px 5px;
-
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-
-    color: #a8a29e;
-}
-
-.of-floating-input {
-    width: 100%;
-    height: 38px;
-
-    border: 1px solid #d6d3d1;
-    border-radius: 10px;
-
-    padding: 0 11px;
-
-    font-size: 12px;
-    background: #fff;
-    color: #292524;
-
-    outline: none;
-}
-
-.of-floating-input:focus {
-    border-color: #059669;
-    box-shadow: 0 0 0 3px rgba(16,185,129,.08);
+@keyframes orderModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 
-/* payment floating box */
+/* =========================================================
+   HEADER
+   ========================================================= */
 
-.of-payment-content {
+.of-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+
+    padding: 12px 14px 9px;
 }
 
-.of-payment-check {
+.of-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #292524;
+    letter-spacing: -.01em;
+}
+
+.of-close {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
 
-    font-size: 12px;
-    font-weight: 700;
-    color: #44403c;
+    border: 0;
+    border-radius: 10px;
+    background: #f5f5f4;
+    color: #78716c;
 
     cursor: pointer;
+    transition: .15s ease;
 }
 
-.of-payment-check input {
-    width: 17px;
-    height: 17px;
-    accent-color: #059669;
-}
-
-.of-payment-date {
-    margin-top: 7px;
+.of-close:hover {
+    background: #e7e5e4;
+    color: #292524;
 }
 
 
 /* =========================================================
-   ITEMS
+   QUICK ACTION BAR
+   ========================================================= */
+
+.of-quick-wrap {
+    position: relative;
+    z-index: 500;
+
+    padding: 0 12px 9px;
+}
+
+.of-quick-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+
+    padding: 2px;
+
+    scrollbar-width: none;
+}
+
+.of-quick-row::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* =========================================================
+   CHIPS
+   ========================================================= */
+
+.of-chip {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    min-height: 31px;
+    padding: 0 9px;
+
+    border: 1px solid #e7e5e4;
+    border-radius: 10px;
+
+    background: rgba(250,250,249,.94);
+    color: #57534e;
+
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease,
+        transform .15s ease,
+        box-shadow .15s ease;
+}
+
+.of-chip:hover {
+    background: #fff;
+    border-color: #d6d3d1;
+    color: #292524;
+    transform: translateY(-1px);
+}
+
+.of-chip.active {
+    background: #292524;
+    border-color: #292524;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(28,25,23,.16);
+}
+
+.of-chip.complete {
+    border-color: #d6d3d1;
+}
+
+.of-chip svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+}
+
+.of-chip-text {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   HIDDEN PICKER PROXIES
+   IMPORTANT:
+   Keep the actual picker trigger buttons in the DOM because
+   the existing picker JS may depend on them.
+   ========================================================= */
+
+.of-picker-proxy {
+    position: absolute !important;
+
+    width: 1px !important;
+    height: 1px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    opacity: 0 !important;
+    overflow: hidden !important;
+
+    pointer-events: none !important;
+
+    border: 0 !important;
+}
+
+
+/* =========================================================
+   FLOATING QUICK FIELDS
+   ========================================================= */
+
+.of-floating-field {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 39px;
+
+    z-index: 1000;
+
+    display: none;
+
+    padding: 11px;
+
+    background: rgba(255,255,255,.98);
+
+    border: 1px solid rgba(214,211,209,.95);
+    border-radius: 15px;
+
+    box-shadow:
+        0 22px 55px rgba(28,25,23,.20),
+        0 6px 18px rgba(28,25,23,.10);
+
+    animation: quickFieldIn .16s ease-out;
+}
+
+.of-floating-field.show {
+    display: block;
+}
+
+@keyframes quickFieldIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px) scale(.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.of-floating-label {
+    display: block;
+
+    margin: 0 0 5px 2px;
+
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+
+    color: #78716c;
+}
+
+.of-floating-input {
+    width: 100%;
+    height: 37px;
+
+    padding: 0 11px;
+
+    border: 1px solid #e7e5e4;
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #fafaf9;
+    color: #292524;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: .15s ease;
+}
+
+.of-floating-input:focus {
+    background: #fff;
+    border-color: #a8a29e;
+
+    box-shadow:
+        0 0 0 3px rgba(168,162,158,.13);
+}
+
+
+/* =========================================================
+   TWO-COLUMN FLOATING FIELD
+   ========================================================= */
+
+.of-floating-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+
+/* =========================================================
+   FORM BACKGROUND
+   THIS is what gets blurred.
+   ========================================================= */
+
+.of-form-background {
+    position: relative;
+
+    transition:
+        filter .22s ease,
+        opacity .22s ease,
+        transform .22s ease;
+}
+
+
+/*
+   When a quick field is active:
+   blur EVERYTHING behind it — including cake name,
+   size, price, remarks, etc.
+*/
+#orderEntryForm.of-focus-mode .of-form-background {
+    filter: blur(5px);
+    opacity: .32;
+    transform: scale(.995);
+
+    pointer-events: none;
+}
+
+
+/* Keep quick bar crisp */
+#orderEntryForm.of-focus-mode .of-quick-wrap {
+    opacity: 1;
+    filter: none;
+}
+
+
+/* =========================================================
+   ITEMS SECTION
    ========================================================= */
 
 .of-items-section {
-    border-top: 1px solid #f0efed;
-    padding-top: 12px;
+    padding: 0 12px 8px;
 }
 
 .of-items-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+
+    margin-bottom: 6px;
 }
 
-.of-items-title {
+.of-section-title {
     font-size: 10px;
     font-weight: 800;
-    letter-spacing: .09em;
-    text-transform: uppercase;
     color: #78716c;
+
+    text-transform: uppercase;
+    letter-spacing: .08em;
 }
 
-.of-add-item-btn {
-    height: 29px;
-    padding: 0 10px;
 
-    border-radius: 9px;
+/* =========================================================
+   ITEM CARD
+   ========================================================= */
+
+.of-item {
+    position: relative;
+
+    padding: 8px;
+
+    margin-bottom: 6px;
+
     border: 1px solid #e7e5e4;
+    border-radius: 13px;
 
     background: #fafaf9;
-    color: #44403c;
-
-    font-size: 10px;
-    font-weight: 700;
-
-    cursor: pointer;
-    transition: all .15s ease;
 }
 
-.of-add-item-btn:hover {
-    background: #f0efed;
+.of-item:last-child {
+    margin-bottom: 0;
 }
 
-
-/* item card */
-
-.of-item-card {
-    background: #fff;
-    border: 1px solid #e7e5e4;
-    border-radius: 12px;
-    padding: 7px 8px;
-
-    position: relative;
-}
-
-.of-items-container {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.of-item-row-main {
-    display: flex;
+.of-item-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(90px, .75fr) 82px 30px;
+    gap: 6px;
     align-items: center;
-    gap: 5px;
 }
 
-.of-item-input {
+.of-item-input,
+.of-item-select {
+    width: 100%;
     height: 32px;
-
-    border: 1px solid #ddd9d6;
-    border-radius: 8px;
 
     padding: 0 8px;
 
-    font-size: 11px;
-    background: #fff;
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
 
     outline: none;
+
+    background: #fff;
+    color: #292524;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    min-width: 0;
 }
 
-.of-item-input:focus {
-    border-color: #059669;
-    box-shadow: 0 0 0 2px rgba(16,185,129,.07);
+.of-item-input:focus,
+.of-item-select:focus {
+    border-color: #a8a29e;
+
+    box-shadow:
+        0 0 0 2px rgba(168,162,158,.10);
 }
 
-.of-item-name-input {
-    flex: 1 1 auto;
-    min-width: 100px;
+.of-price-wrap {
+    position: relative;
 }
 
-.of-item-size-input {
-    width: 58px;
-    flex: 0 0 58px;
+.of-price-input {
+    padding-left: 8px;
+    padding-right: 8px;
+    text-align: right;
 }
 
-.of-item-price-input {
-    width: 88px;
-    flex: 0 0 88px;
-}
-
-
-/* item icon buttons */
-
-.of-item-icon-btn {
-    width: 31px;
-    height: 31px;
-
-    flex: 0 0 31px;
-
-    border-radius: 50%;
-    border: 1px solid #e7e5e4;
-
-    background: #fafaf9;
-    color: #78716c;
+.of-remove-item {
+    width: 30px;
+    height: 30px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    border: 0;
+    border-radius: 8px;
+
+    background: #f5f5f4;
+    color: #a8a29e;
+
     cursor: pointer;
 
-    font-size: 13px;
-
-    transition: all .15s ease;
+    transition: .15s ease;
 }
 
-.of-item-icon-btn:hover {
-    background: #f0efed;
+.of-remove-item:hover {
+    background: #fee2e2;
+    color: #dc2626;
 }
 
-.of-item-icon-btn.of-active {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #047857;
-}
-
-.of-item-remove-btn {
-    color: #e11d48;
-    border-color: #ffe4e6;
-    background: #fff1f2;
-}
-
-.of-item-remove-btn:hover {
-    background: #ffe4e6;
+.of-remove-item svg {
+    width: 14px;
+    height: 14px;
 }
 
 
 /* =========================================================
-   CAKE CALCULATOR
+   ITEM EXTRA BUTTONS
    ========================================================= */
 
-.cake-calc-panel {
-    margin-top: 6px !important;
+.of-item-extra {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 
-    padding: 7px !important;
+    margin-top: 6px;
+}
 
-    border-radius: 9px !important;
+.of-mini-btn {
+    height: 27px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    padding: 0 8px;
+
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+
+    background: #fff;
+    color: #78716c;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .15s ease;
+}
+
+.of-mini-btn:hover {
+    border-color: #d6d3d1;
+    color: #292524;
+    background: #fafaf9;
+}
+
+.of-mini-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
+
+/* =========================================================
+   REMARKS / IMAGES PANEL
+   ========================================================= */
+
+.of-more-panel {
+    display: none;
+
+    margin-top: 6px;
+    padding: 7px;
+
+    border-radius: 9px;
+    background: #f5f5f4;
+}
+
+.of-more-panel.show {
+    display: block;
+}
+
+.of-more-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.of-more-field {
+    width: 100%;
+    min-height: 30px;
+
+    padding: 6px 8px;
+
+    border: 1px solid #e7e5e4;
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #fff;
 
     font-size: 10px;
 }
 
-.cake-calc-boxes {
-    gap: 4px !important;
-}
-
-.cake-calc-panel input {
-    height: 27px;
-}
-
 
 /* =========================================================
-   MORE PANEL
+   ADD ITEM
    ========================================================= */
 
-.of-item-more-panel {
-    margin-top: 6px;
-    padding-top: 6px;
-
-    border-top: 1px dashed #e7e5e4;
-
-    display: none;
-}
-
-.of-item-more-panel.of-open {
-    display: block;
-}
-
-.of-item-more-panel .of-item-input {
+.of-add-item {
+    width: 100%;
     height: 31px;
+
+    margin-top: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    border: 1px dashed #d6d3d1;
+    border-radius: 9px;
+
+    background: transparent;
+    color: #78716c;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition: .15s ease;
+}
+
+.of-add-item:hover {
+    border-color: #a8a29e;
+    background: #fafaf9;
+    color: #44403c;
+}
+
+.of-add-item svg {
+    width: 13px;
+    height: 13px;
 }
 
 
@@ -435,49 +612,118 @@
 
 .of-bottom-actions {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
 
-    padding-top: 10px;
-
-    border-top: 1px solid #f0efed;
+    padding: 7px 12px 12px;
 }
 
 .of-cancel-btn,
-.of-save-btn {
-    height: 38px;
+.of-submit-btn {
+    height: 34px;
 
-    border-radius: 10px;
+    padding: 0 14px;
+
+    border-radius: 9px;
 
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .04em;
+    font-weight: 800;
 
     cursor: pointer;
-    transition: all .15s ease;
+
+    transition: .15s ease;
 }
 
 .of-cancel-btn {
-    padding: 0 18px;
-    background: #f5f5f4;
-    color: #57534e;
+    border: 1px solid #e7e5e4;
+    background: #fafaf9;
+    color: #78716c;
 }
 
 .of-cancel-btn:hover {
-    background: #e7e5e4;
+    background: #f5f5f4;
+    color: #44403c;
 }
 
-.of-save-btn {
-    padding: 0 22px;
-    background: #059669;
-    color: white;
+.of-submit-btn {
+    border: 1px solid #292524;
+    background: #292524;
+    color: #fff;
 
-    box-shadow: 0 4px 10px rgba(5,150,105,.15);
+    box-shadow: 0 4px 12px rgba(28,25,23,.14);
 }
 
-.of-save-btn:hover {
-    background: #047857;
+.of-submit-btn:hover {
+    background: #44403c;
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   CAKE CALCULATOR
+   ========================================================= */
+
+.of-cake-calculator {
+    display: none;
+
+    margin-top: 6px;
+    padding: 8px;
+
+    border-radius: 10px;
+    background: #f5f5f4;
+}
+
+.of-cake-calculator.show {
+    display: block;
+}
+
+.of-layer-row {
+    display: grid;
+    grid-template-columns: 1fr 75px 28px;
+    gap: 5px;
+
+    margin-bottom: 5px;
+}
+
+.of-layer-row input,
+.of-layer-row select {
+    height: 29px;
+
+    padding: 0 7px;
+
+    border: 1px solid #e7e5e4;
+    border-radius: 7px;
+
+    background: #fff;
+    outline: none;
+
+    font-size: 10px;
+}
+
+.of-layer-remove {
+    height: 29px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: #fff;
+    color: #a8a29e;
+
+    cursor: pointer;
+}
+
+.of-layer-total {
+    display: flex;
+    justify-content: space-between;
+
+    padding-top: 5px;
+
+    border-top: 1px solid #e7e5e4;
+
+    font-size: 10px;
+    font-weight: 800;
+    color: #57534e;
 }
 
 
@@ -485,89 +731,109 @@
    MOBILE
    ========================================================= */
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
 
-    .of-chip-row {
-        gap: 5px;
+    #orderFormModal {
+        padding: 7px;
+        align-items: flex-end;
+    }
+
+    #orderFormSection {
+        max-height: calc(100vh - 14px);
+        border-radius: 19px;
+    }
+
+    .of-header {
+        padding: 10px 11px 7px;
+    }
+
+    .of-title {
+        font-size: 13px;
+    }
+
+    .of-quick-wrap {
+        padding: 0 9px 7px;
     }
 
     .of-chip {
-        height: 34px;
-        padding: 0 9px;
-        font-size: 10.5px;
+        min-height: 30px;
+        padding: 0 8px;
+        font-size: 9px;
     }
 
-    .of-item-row-main {
-        flex-wrap: wrap;
-    }
-
-    .of-item-name-input {
-        min-width: calc(100% - 5px);
-        flex-basis: 100%;
-    }
-
-    .of-item-size-input {
-        flex: 1;
-        width: auto;
-    }
-
-    .of-item-price-input {
-        flex: 1.4;
-        width: auto;
+    .of-chip-text {
+        max-width: 72px;
     }
 
     .of-floating-field {
-        width: calc(100vw - 40px);
+        left: 7px;
+        right: 7px;
+        top: 37px;
+    }
+
+    .of-items-section {
+        padding: 0 9px 7px;
+    }
+
+    .of-item-grid {
+        grid-template-columns: minmax(0, 1fr) 75px 70px 28px;
+        gap: 4px;
+    }
+
+    .of-item-input,
+    .of-item-select {
+        height: 30px;
+        font-size: 10px;
+    }
+
+    .of-remove-item {
+        width: 28px;
+        height: 30px;
     }
 
     .of-bottom-actions {
-        flex-direction: row;
-    }
-
-    .of-cancel-btn,
-    .of-save-btn {
-        flex: 1;
+        padding: 6px 9px 10px;
     }
 }
 
 
 /* =========================================================
-   VERY SMALL HEIGHT SCREENS
+   VERY SHORT SCREEN
    ========================================================= */
 
-@media (max-height: 760px) {
+@media (max-height: 650px) {
 
-    .of-modal-card {
-        max-height: 94vh !important;
+    #orderFormSection {
+        max-height: calc(100vh - 10px);
     }
 
-    .of-modal-card > form {
-        padding: 14px !important;
+    .of-header {
+        padding-top: 7px;
+        padding-bottom: 5px;
     }
 
-    .of-chip {
-        height: 32px;
-    }
-
-    .of-item-input {
-        height: 29px;
-    }
-
-    .of-item-icon-btn {
-        width: 29px;
-        height: 29px;
-        flex-basis: 29px;
+    .of-quick-wrap {
+        padding-bottom: 5px;
     }
 
     .of-items-section {
-        padding-top: 9px;
+        padding-bottom: 5px;
+    }
+
+    .of-item {
+        padding: 6px;
+        margin-bottom: 4px;
+    }
+
+    .of-item-extra {
+        margin-top: 4px;
     }
 
     .of-bottom-actions {
-        padding-top: 7px;
+        padding-top: 4px;
+        padding-bottom: 7px;
     }
 }
-
 </style>
 
 
@@ -575,143 +841,192 @@
      MODAL
      ========================================================= -->
 
-<div id="orderFormModal"
-     class="fixed inset-0 z-50 hidden bg-emerald-950/40 backdrop-blur-sm no-print flex items-center justify-center p-3 sm:p-5 of-modal-overlay">
+<div id="orderFormModal">
 
-    <section
-        id="orderFormSection"
-        class="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl border border-stone-200 relative of-modal-card">
+    <div id="orderFormSection">
 
         <!-- HEADER -->
+        <div class="of-header">
 
-        <div class="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-3 border-b border-stone-100 flex items-center justify-between">
-
-            <h2 class="section-title text-emerald-800 text-sm font-bold flex items-center gap-2">
-                <span class="p-1 bg-emerald-100 rounded-lg text-sm">📝</span>
+            <div class="of-title">
                 新账单快速录入
-            </h2>
+            </div>
 
             <button
                 type="button"
-                onclick="closeOrderModal()"
-                class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer">
-
-                <span class="text-sm font-bold">✕</span>
-
+                class="of-close"
+                onclick="closeOrderFormModal()"
+                aria-label="Close"
+            >
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
             </button>
 
         </div>
 
 
-        <!-- FORM -->
+        <!-- =====================================================
+             FORM
+             ===================================================== -->
 
         <form
-            action="/add_order"
+            id="orderEntryForm"
             method="POST"
+            action="/add_order"
             enctype="multipart/form-data"
             onsubmit="handleFormSubmit(event)"
-            class="p-4 space-y-3 text-sm font-sans">
+        >
 
-            <input type="hidden" name="return_qs" id="addOrderReturnQs" value="">
+            <input
+                type="hidden"
+                name="return_qs"
+                id="return_qs"
+                value=""
+            >
 
 
-            <!-- =====================================================
+            <!-- =================================================
                  QUICK ACTION BAR
-                 ===================================================== -->
+                 ================================================= -->
 
-            <div class="of-quick-wrap" id="ofQuickWrap">
+            <div class="of-quick-wrap">
 
-                <div class="of-chip-row">
+                <div class="of-quick-row">
 
                     <!-- SOURCE -->
-
                     <button
                         type="button"
+                        id="ofSourceChip"
                         class="of-chip"
-                        data-field="source"
-                        onclick="ofQuickAction('source')">
+                        onclick="ofOpenSource()"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M4 7h16M4 12h16M4 17h10"/>
+                        </svg>
 
-                        <span class="of-chip-icon">🏷️</span>
-                        <span>来源</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofSourceText"
+                            class="of-chip-text"
+                        >
+                            Source
+                        </span>
                     </button>
 
 
                     <!-- CUSTOMER -->
-
                     <button
                         type="button"
+                        id="ofCustomerChip"
                         class="of-chip"
-                        data-field="customer"
-                        onclick="ofQuickAction('customer')">
+                        onclick="ofQuickAction('customerField')"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="8" r="3"/>
+                            <path d="M5 20c.8-4 3.2-6 7-6s6.2 2 7 6"/>
+                        </svg>
 
-                        <span class="of-chip-icon">👤</span>
-                        <span>客人</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofCustomerText"
+                            class="of-chip-text"
+                        >
+                            Customer
+                        </span>
                     </button>
 
 
                     <!-- ADDRESS -->
-
                     <button
                         type="button"
+                        id="ofAddressChip"
                         class="of-chip"
-                        data-field="address"
-                        onclick="ofQuickAction('address')">
+                        onclick="ofQuickAction('addressField')"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z"/>
+                            <circle cx="12" cy="10" r="2"/>
+                        </svg>
 
-                        <span class="of-chip-icon">📍</span>
-                        <span>地址</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofAddressText"
+                            class="of-chip-text"
+                        >
+                            Address
+                        </span>
                     </button>
 
 
                     <!-- DATE -->
-
                     <button
                         type="button"
+                        id="ofDateChip"
                         class="of-chip"
-                        data-field="date"
-                        onclick="ofQuickAction('date')">
+                        onclick="ofOpenDate()"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="17" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
 
-                        <span class="of-chip-icon">📅</span>
-                        <span>日期</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofDateText"
+                            class="of-chip-text"
+                        >
+                            Date
+                        </span>
                     </button>
 
 
                     <!-- DELIVERY FEE -->
-
                     <button
                         type="button"
+                        id="ofFeeChip"
                         class="of-chip"
-                        data-field="fee"
-                        onclick="ofQuickAction('fee')">
+                        onclick="ofQuickAction('feeField')"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M3 7h11v10H3z"/>
+                            <path d="M14 10h4l3 3v4h-7z"/>
+                            <circle cx="7" cy="19" r="1.5"/>
+                            <circle cx="18" cy="19" r="1.5"/>
+                        </svg>
 
-                        <span class="of-chip-icon">🚗</span>
-                        <span>车费</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofFeeText"
+                            class="of-chip-text"
+                        >
+                            Delivery
+                        </span>
                     </button>
 
 
                     {% if show_payment %}
 
                     <!-- PAYMENT -->
-
                     <button
                         type="button"
+                        id="ofPaymentChip"
                         class="of-chip"
-                        data-field="payment"
-                        onclick="ofQuickAction('payment')">
+                        onclick="ofQuickAction('paymentField')"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="5" width="18" height="14" rx="2"/>
+                            <path d="M3 10h18"/>
+                        </svg>
 
-                        <span class="of-chip-icon">💰</span>
-                        <span>付款</span>
-                        <span class="of-chip-dot"></span>
-
+                        <span
+                            id="ofPaymentText"
+                            class="of-chip-text"
+                        >
+                            Payment
+                        </span>
                     </button>
 
                     {% endif %}
@@ -723,131 +1038,179 @@
                      FLOATING CUSTOMER FIELD
                      ================================================= -->
 
-                <div id="ofFloat-customer" class="of-floating-field">
+                <div
+                    id="customerField"
+                    class="of-floating-field"
+                >
 
-                    <span class="of-floating-label">
-                        客人姓名 · Customer
-                    </span>
+                    <label class="of-floating-label">
+                        Customer Name
+                    </label>
 
                     <input
                         type="text"
                         name="customer"
-                        id="ofCustomerInput"
+                        id="customerInput"
                         class="of-floating-input"
-                        placeholder="输入客人姓名..."
-                        oninput="ofRefreshChipStates()">
+                        placeholder="Customer name"
+                        autocomplete="off"
+                        oninput="ofUpdateChip('customer')"
+                    >
 
                 </div>
 
 
-                <!-- ADDRESS -->
+                <!-- =================================================
+                     FLOATING ADDRESS FIELD
+                     ================================================= -->
 
-                <div id="ofFloat-address" class="of-floating-field">
+                <div
+                    id="addressField"
+                    class="of-floating-field"
+                >
 
-                    <span class="of-floating-label">
-                        地址 & 电话 · Address & Contact
-                    </span>
+                    <label class="of-floating-label">
+                        Delivery Address
+                    </label>
 
                     <input
                         type="text"
                         name="address"
-                        id="ofAddressInput"
+                        id="addressInput"
                         class="of-floating-input"
-                        placeholder="输入送货地址 / 电话..."
-                        oninput="ofRefreshChipStates()">
+                        placeholder="Delivery address"
+                        autocomplete="off"
+                        oninput="ofUpdateChip('address')"
+                    >
 
                 </div>
 
 
-                <!-- DELIVERY FEE -->
+                <!-- =================================================
+                     FLOATING DELIVERY FEE
+                     ================================================= -->
 
-                <div id="ofFloat-fee" class="of-floating-field">
+                <div
+                    id="feeField"
+                    class="of-floating-field"
+                >
 
-                    <span class="of-floating-label">
-                        车费 · Delivery Fee
-                    </span>
+                    <label class="of-floating-label">
+                        Delivery Fee
+                    </label>
 
                     <input
-                        type="text"
+                        type="number"
                         name="delivery_fee"
-                        id="ofFeeInput"
+                        id="deliveryFeeInput"
                         class="of-floating-input"
+                        placeholder="0"
+                        min="0"
                         inputmode="numeric"
-                        placeholder="输入车费 MMK..."
-                        oninput="ofRefreshChipStates()">
+                        oninput="ofUpdateChip('fee')"
+                    >
 
                 </div>
 
-
-                <!-- PAYMENT -->
 
                 {% if show_payment %}
 
-                <div id="ofFloat-payment" class="of-floating-field">
+                <!-- =================================================
+                     FLOATING PAYMENT FIELD
+                     ================================================= -->
 
-                    <div class="of-payment-content">
+                <div
+                    id="paymentField"
+                    class="of-floating-field"
+                >
 
-                        <label class="of-payment-check">
+                    <div class="of-floating-grid">
 
-                            <input
-                                type="checkbox"
-                                name="is_paid"
-                                id="isPaidCheckbox"
-                                onchange="
-                                    togglePaymentDate(
-                                        'paymentDateWrap',
-                                        'paymentDateHidden',
-                                        'paymentDateTriggerBtn',
-                                        'isPaidCheckbox'
-                                    );
-                                    ofRefreshChipStates();
-                                ">
+                        <div>
+                            <label class="of-floating-label">
+                                Payment Method
+                            </label>
 
-                            <span>已付款 · Mark as Paid</span>
+                            <select
+                                name="payment_method"
+                                id="paymentMethodInput"
+                                class="of-item-select"
+                                onchange="ofUpdateChip('payment')"
+                            >
+                                <option value="">
+                                    Select
+                                </option>
 
-                        </label>
+                                <option value="Cash">
+                                    Cash
+                                </option>
+
+                                <option value="KPay">
+                                    KPay
+                                </option>
+
+                                <option value="WavePay">
+                                    WavePay
+                                </option>
+
+                                <option value="Bank">
+                                    Bank
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+                            </select>
+                        </div>
+
+
+                        <div>
+
+                            <label class="of-floating-label">
+                                Payment Date
+                            </label>
+
+                            <button
+                                type="button"
+                                class="of-item-select"
+                                style="cursor:pointer;text-align:left;"
+                                onclick="openPaymentDatePickerFromCompact()"
+                            >
+                                <span id="ofPaymentDateText">
+                                    Select date
+                                </span>
+                            </button>
+
+                        </div>
 
                     </div>
 
 
-                    <div id="paymentDateWrap" class="hidden of-payment-date">
+                    <div style="margin-top:7px;">
 
-                        <span class="of-floating-label">
-                            付款日期
-                        </span>
+                        <label
+                            style="
+                                display:flex;
+                                align-items:center;
+                                gap:6px;
+                                font-size:10px;
+                                font-weight:700;
+                                color:#57534e;
+                                cursor:pointer;
+                            "
+                        >
 
-                        <input
-                            type="hidden"
-                            name="payment_date"
-                            id="paymentDateHidden"
-                            value="">
+                            <input
+                                type="checkbox"
+                                name="is_paid"
+                                id="isPaidInput"
+                                value="1"
+                                onchange="ofUpdateChip('payment')"
+                            >
 
-                        <button
-                            type="button"
-                            id="paymentDateTriggerBtn"
-                            class="wp-trigger wp-empty text-sm"
-                            onclick="openDateWheelPicker(
-                                'paymentDateTriggerBtn',
-                                'paymentDateHidden'
-                            )">
+                            Mark as paid
 
-                            <span class="text-stone-400">
-                                选择付款日期
-                            </span>
-
-                            <svg
-                                class="w-4 h-4 text-stone-400"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2">
-
-                                <rect x="3" y="5" width="18" height="16" rx="2"/>
-                                <path d="M3 10h18M8 3v4M16 3v4"/>
-
-                            </svg>
-
-                        </button>
+                        </label>
 
                     </div>
 
@@ -855,187 +1218,339 @@
 
                 {% endif %}
 
+
+                <!-- =================================================
+                     REAL PICKER TRIGGERS
+                     IMPORTANT — DO NOT REMOVE
+                     ================================================= -->
+
+                <input
+                    type="hidden"
+                    name="source"
+                    id="sourceHidden"
+                    value=""
+                >
+
+                <button
+                    type="button"
+                    id="sourceTriggerBtn"
+                    class="wp-trigger wp-empty of-picker-proxy"
+                    onclick="openSourcePicker(
+                        'sourceTriggerBtn',
+                        'sourceHidden',
+                        '订单来源选择 (Select Source)'
+                    )"
+                >
+                    <span class="text-stone-400">
+                        Select Source
+                    </span>
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+
+
+                <input
+                    type="hidden"
+                    name="date"
+                    id="dateHidden"
+                    value=""
+                >
+
+                <input
+                    type="hidden"
+                    name="time"
+                    id="timeHidden"
+                    value=""
+                >
+
+                <button
+                    type="button"
+                    id="deliveryTriggerBtn"
+                    class="wp-trigger wp-empty of-picker-proxy"
+                    onclick="openDeliveryDateWheelPicker(
+                        'deliveryTriggerBtn',
+                        'dateHidden',
+                        'timeHidden'
+                    )"
+                >
+                    <span class="text-stone-400">
+                        日期时间
+                    </span>
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+
+
+                {% if show_payment %}
+
+                <input
+                    type="hidden"
+                    name="payment_date"
+                    id="paymentDateHidden"
+                    value=""
+                >
+
+                <button
+                    type="button"
+                    id="paymentDateTriggerBtn"
+                    class="wp-trigger wp-empty of-picker-proxy"
+                    onclick="openDateWheelPicker(
+                        'paymentDateTriggerBtn',
+                        'paymentDateHidden'
+                    )"
+                >
+                    <span class="text-stone-400">
+                        选择付款日期 Select Payment Date
+                    </span>
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+
+                {% endif %}
+
             </div>
 
 
             <!-- =====================================================
-                 HIDDEN / PICKER FIELDS
+                 EVERYTHING BELOW GETS BLURRED IN FOCUS MODE
                  ===================================================== -->
 
-            <input type="hidden" name="source" id="sourceHidden" value="">
+            <div class="of-form-background">
 
-            <input type="hidden" name="date" id="dateHidden" value="">
-            <input type="hidden" name="time" id="timeHidden" value="">
+                <!-- =================================================
+                     ITEMS
+                     ================================================= -->
 
+                <div class="of-items-section">
 
-            <!-- =====================================================
-                 ITEMS
-                 ===================================================== -->
+                    <div class="of-items-header">
 
-            <div class="of-items-section">
+                        <span class="of-section-title">
+                            Cake Items
+                        </span>
 
-                <div class="of-items-header">
-
-                    <span class="of-items-title">
-                        商品清单 · Voucher Items
-                    </span>
-
-                    <button
-                        type="button"
-                        onclick="addNewItemRow()"
-                        class="of-add-item-btn">
-
-                        ＋ 添加商品
-
-                    </button>
-
-                </div>
+                    </div>
 
 
-                <div id="itemsContainer" class="of-items-container">
+                    <div id="orderItemsContainer">
 
-                    <!-- FIRST ITEM -->
+                        <!-- INITIAL ITEM -->
 
-                    <div class="item-row of-item-card">
+                        <div class="of-item order-item">
 
-                        <div class="of-item-row-main">
-
-                            <input
-                                type="text"
-                                name="item_name[]"
-                                placeholder="商品名称"
-                                class="of-item-input of-item-name-input">
-
-
-                            <input
-                                type="text"
-                                name="size[]"
-                                placeholder="尺寸"
-                                class="of-item-input of-item-size-input">
-
-
-                            <input
-                                type="number"
-                                name="item_price[]"
-                                placeholder="金额"
-                                class="of-item-input of-item-price-input item-price-input">
-
-
-                            <button
-                                type="button"
-                                class="of-item-icon-btn"
-                                onclick="toggleCakeCalculator(this)"
-                                title="金额计算器">
-
-                                🧮
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                class="of-item-icon-btn"
-                                onclick="toggleItemMore(this)"
-                                title="备注 / 图片">
-
-                                🖼️
-
-                            </button>
-
-
-                            <button
-                                type="button"
-                                class="of-item-icon-btn of-item-remove-btn"
-                                onclick="removeItemRow(this)"
-                                title="删除商品">
-
-                                ✕
-
-                            </button>
-
-                        </div>
-
-
-                        <!-- CAKE CALCULATOR -->
-
-                        <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
-
-                            <div class="cake-calc-boxes space-y-1.5"></div>
-
-                            <div class="flex items-center justify-between gap-2">
-
-                                <button
-                                    type="button"
-                                    onclick="addCalcBox(this)"
-                                    class="text-[10px] font-semibold text-emerald-700 cursor-pointer">
-
-                                    ＋ 添加层
-
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onclick="closeCakeCalculator(this)"
-                                    class="text-[10px] font-semibold text-stone-500 cursor-pointer">
-
-                                    ✕ 关闭
-
-                                </button>
-
-                            </div>
-
-                            <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">
-
-                                合计: 0 MMK
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- MORE -->
-
-                        <div class="of-item-more-panel">
-
-                            <div class="space-y-2">
+                            <div class="of-item-grid">
 
                                 <input
                                     type="text"
-                                    name="remarks[]"
-                                    placeholder="定制备注文字..."
-                                    class="of-item-input w-full">
+                                    name="item_name[]"
+                                    class="of-item-input item-name"
+                                    placeholder="Cake name"
+                                    required
+                                >
 
 
-                                <div class="grid grid-cols-2 gap-2">
+                                <select
+                                    name="item_size[]"
+                                    class="of-item-select item-size"
+                                >
+                                    <option value="">
+                                        Size
+                                    </option>
 
-                                    <div>
+                                    <option value="6">
+                                        6"
+                                    </option>
 
-                                        <label class="block text-stone-500 text-[9px] mb-1 font-semibold">
-                                            🎂 蛋糕参考图
-                                        </label>
+                                    <option value="8">
+                                        8"
+                                    </option>
+
+                                    <option value="10">
+                                        10"
+                                    </option>
+
+                                    <option value="12">
+                                        12"
+                                    </option>
+                                </select>
+
+
+                                <div class="of-price-wrap">
+
+                                    <input
+                                        type="number"
+                                        name="item_price[]"
+                                        class="of-item-input of-price-input item-price"
+                                        placeholder="Price"
+                                        min="0"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    class="of-remove-item"
+                                    onclick="removeOrderItem(this)"
+                                    title="Remove"
+                                >
+                                    <svg viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <path d="M6 6l12 12M18 6L6 18"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+
+                            <div class="of-item-extra">
+
+                                <!-- CAKE CALCULATOR -->
+
+                                <button
+                                    type="button"
+                                    class="of-mini-btn"
+                                    onclick="toggleCakeCalculator(this)"
+                                >
+                                    <svg viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <path d="M4 20h16"/>
+                                        <path d="M6 17V7h12v10"/>
+                                        <path d="M9 11h6M9 14h6"/>
+                                    </svg>
+
+                                    Cake Calc
+                                </button>
+
+
+                                <!-- MORE -->
+
+                                <button
+                                    type="button"
+                                    class="of-mini-btn"
+                                    onclick="toggleMorePanel(this)"
+                                >
+                                    <svg viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <circle cx="5" cy="12" r="1"/>
+                                        <circle cx="12" cy="12" r="1"/>
+                                        <circle cx="19" cy="12" r="1"/>
+                                    </svg>
+
+                                    More
+                                </button>
+
+                            </div>
+
+
+                            <!-- CAKE CALCULATOR -->
+
+                            <div class="of-cake-calculator">
+
+                                <div class="of-layer-container">
+
+                                    <div class="of-layer-row">
 
                                         <input
-                                            type="file"
-                                            name="cakeImage[]"
-                                            accept="image/*"
-                                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
+                                            type="text"
+                                            placeholder="Layer"
+                                            class="layer-name"
+                                        >
+
+                                        <input
+                                            type="number"
+                                            placeholder="Price"
+                                            class="layer-price"
+                                            min="0"
+                                        >
+
+                                        <button
+                                            type="button"
+                                            class="of-layer-remove"
+                                            onclick="this.closest('.of-layer-row').remove(); calculateCakeTotal(this)"
+                                        >
+                                            ×
+                                        </button>
 
                                     </div>
 
+                                </div>
 
-                                    <div>
 
-                                        <label class="block text-rose-600 text-[9px] mb-1 font-semibold">
-                                            💐 花束参考图
-                                        </label>
+                                <button
+                                    type="button"
+                                    class="of-mini-btn"
+                                    onclick="addCakeLayer(this)"
+                                >
+                                    + Add Layer
+                                </button>
 
-                                        <input
-                                            type="file"
-                                            name="flowerImage[]"
-                                            accept="image/*"
-                                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
 
-                                    </div>
+                                <div class="of-layer-total">
+
+                                    <span>
+                                        Total
+                                    </span>
+
+                                    <span class="cake-total-value">
+                                        0
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- MORE PANEL -->
+
+                            <div class="of-more-panel">
+
+                                <div class="of-more-grid">
+
+                                    <textarea
+                                        name="remarks[]"
+                                        class="of-more-field"
+                                        placeholder="Remarks"
+                                        rows="2"
+                                    ></textarea>
+
+
+                                    <input
+                                        type="file"
+                                        name="cakeImage[]"
+                                        class="of-more-field"
+                                        accept="image/*"
+                                    >
+
+
+                                    <input
+                                        type="file"
+                                        name="flowerImage[]"
+                                        class="of-more-field"
+                                        accept="image/*"
+                                    >
 
                                 </div>
 
@@ -1045,256 +1560,331 @@
 
                     </div>
 
+
+                    <!-- ADD ITEM -->
+
+                    <button
+                        type="button"
+                        class="of-add-item"
+                        onclick="addOrderItem()"
+                    >
+
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+
+                        Add Cake
+
+                    </button>
+
                 </div>
 
-            </div>
+
+                <!-- =================================================
+                     BOTTOM ACTIONS
+                     ================================================= -->
+
+                <div class="of-bottom-actions">
+
+                    <button
+                        type="button"
+                        class="of-cancel-btn"
+                        onclick="closeOrderFormModal()"
+                    >
+                        Cancel
+                    </button>
 
 
-            <!-- =====================================================
-                 ACTIONS
-                 ===================================================== -->
+                    <button
+                        type="submit"
+                        class="of-submit-btn"
+                    >
+                        保存账单
+                    </button>
 
-            <div class="of-bottom-actions">
-
-                <button
-                    type="button"
-                    onclick="closeOrderModal()"
-                    class="of-cancel-btn">
-
-                    取消
-
-                </button>
-
-                <button
-                    type="submit"
-                    class="of-save-btn">
-
-                    ✓ 保存账单
-
-                </button>
+                </div>
 
             </div>
 
         </form>
 
-    </section>
+    </div>
 
 </div>
 
 
 <!-- =========================================================
-     FAB
+     JAVASCRIPT
      ========================================================= -->
-
-<button
-    type="button"
-    id="fabAddOrderBtn"
-    onclick="openOrderModal()"
-    aria-label="新增订单"
-    class="no-print add-order-fab"
-    style="
-        right:max(1.1rem,env(safe-area-inset-right));
-        bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
-    ">
-
-    <svg
-        class="w-7 h-7 sm:w-8 sm:h-8"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round">
-
-        <path d="M12 5v14M5 12h14"/>
-
-    </svg>
-
-</button>
-
 
 <script>
 
 /* =========================================================
-   MODAL
+   QUICK FIELD HELPERS
    ========================================================= */
 
-function openOrderModal() {
+function ofCloseQuickFields() {
 
-    const modal = document.getElementById('orderFormModal');
-    const card = document.getElementById('orderFormSection');
+    const form = document.getElementById('orderEntryForm');
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    if (!form) return;
 
-    document.body.style.overflow = 'hidden';
+    form.classList.remove('of-focus-mode');
 
-    requestAnimationFrame(() => {
 
-        modal.classList.add('pm-active');
-
-        requestAnimationFrame(() => {
-
-            card.classList.remove('pm-out');
-            card.classList.add('pm-in');
-
+    document
+        .querySelectorAll('.of-floating-field')
+        .forEach(field => {
+            field.classList.remove('show');
         });
 
-    });
 
+    document
+        .querySelectorAll('.of-chip')
+        .forEach(chip => {
+            chip.classList.remove('active');
+        });
 }
 
 
-function closeOrderModal() {
+/* =========================================================
+   OPEN FLOATING FIELD
+   ========================================================= */
 
-    closeAllQuickFields();
+function ofQuickAction(fieldId) {
 
-    const modal = document.getElementById('orderFormModal');
-    const card = document.getElementById('orderFormSection');
+    const form = document.getElementById('orderEntryForm');
 
-    card.classList.remove('pm-in');
-    card.classList.add('pm-out');
+    if (!form) return;
 
-    modal.classList.remove('pm-active');
+
+    const field = document.getElementById(fieldId);
+
+    if (!field) return;
+
+
+    const alreadyOpen = field.classList.contains('show');
+
+
+    ofCloseQuickFields();
+
+
+    if (alreadyOpen) {
+        return;
+    }
+
+
+    field.classList.add('show');
+
+    form.classList.add('of-focus-mode');
+
+
+    /* Activate corresponding chip */
+
+    const chipMap = {
+        customerField: 'ofCustomerChip',
+        addressField: 'ofAddressChip',
+        feeField: 'ofFeeChip',
+        paymentField: 'ofPaymentChip'
+    };
+
+
+    const chipId = chipMap[fieldId];
+
+    if (chipId) {
+
+        const chip = document.getElementById(chipId);
+
+        if (chip) {
+            chip.classList.add('active');
+        }
+
+    }
+
+
+    /* Focus input */
 
     setTimeout(() => {
 
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        const input =
+            field.querySelector(
+                'input:not([type="checkbox"]), select, textarea'
+            );
 
-        card.classList.remove('pm-out');
-
-        document.body.style.overflow = '';
-
-    }, 200);
-
-}
-
-
-document
-    .getElementById('orderFormModal')
-    .addEventListener('click', function(e) {
-
-        if (e.target === this) {
-            closeOrderModal();
+        if (input) {
+            input.focus();
         }
 
-    });
+    }, 40);
+}
 
 
 /* =========================================================
-   QUICK ACTIONS
+   SOURCE PICKER
    ========================================================= */
 
-function closeAllQuickFields() {
+function ofOpenSource() {
 
-    document
-        .querySelectorAll('.of-floating-field.of-show')
-        .forEach(el => el.classList.remove('of-show'));
+    ofCloseQuickFields();
 
-    document
-        .querySelectorAll('.of-chip.of-open')
-        .forEach(el => el.classList.remove('of-open'));
+    const trigger =
+        document.getElementById('sourceTriggerBtn');
+
+    if (!trigger) {
+        console.warn('sourceTriggerBtn not found');
+        return;
+    }
+
+    openSourcePicker(
+        'sourceTriggerBtn',
+        'sourceHidden',
+        '订单来源选择 (Select Source)'
+    );
 
 }
 
 
-function closeQuickField(key) {
+/* =========================================================
+   DATE / TIME PICKER
+   ========================================================= */
 
-    const field = document.getElementById('ofFloat-' + key);
+function ofOpenDate() {
 
-    if (field) {
-        field.classList.remove('of-show');
+    ofCloseQuickFields();
+
+    const trigger =
+        document.getElementById('deliveryTriggerBtn');
+
+    if (!trigger) {
+        console.warn('deliveryTriggerBtn not found');
+        return;
     }
 
-    const chip = document.querySelector(
-        `.of-chip[data-field="${key}"]`
+    openDeliveryDateWheelPicker(
+        'deliveryTriggerBtn',
+        'dateHidden',
+        'timeHidden'
     );
-
-    if (chip) {
-        chip.classList.remove('of-open');
-    }
 
 }
 
 
-function ofQuickAction(key) {
+/* =========================================================
+   PAYMENT DATE
+   ========================================================= */
 
-    /*
-       Source and Date do NOT create a panel.
-       They immediately open the existing picker.
-    */
+function openPaymentDatePickerFromCompact() {
 
-    if (key === 'source') {
+    const trigger =
+        document.getElementById('paymentDateTriggerBtn');
 
-        closeAllQuickFields();
-
-        openSourcePicker(
-            'sourceTriggerBtn',
-            'sourceHidden',
-            '订单来源选择 (Select Source)'
-        );
-
-        return;
-    }
+    if (!trigger) return;
 
 
-    if (key === 'date') {
-
-        closeAllQuickFields();
-
-        openDeliveryDateWheelPicker(
-            'deliveryTriggerBtn',
-            'dateHidden',
-            'timeHidden'
-        );
-
-        return;
-    }
-
-
-    const field = document.getElementById('ofFloat-' + key);
-    const chip = document.querySelector(
-        `.of-chip[data-field="${key}"]`
+    openDateWheelPicker(
+        'paymentDateTriggerBtn',
+        'paymentDateHidden'
     );
 
-    if (!field || !chip) return;
+}
 
 
-    const wasOpen = field.classList.contains('of-show');
+/* =========================================================
+   CHIP TEXT UPDATE
+   ========================================================= */
 
-    closeAllQuickFields();
+function ofUpdateChip(type) {
+
+    let input;
+    let text;
+
+    if (type === 'customer') {
+
+        input = document.getElementById('customerInput');
+        text = document.getElementById('ofCustomerText');
+
+        if (input && text) {
+            text.textContent =
+                input.value.trim() || 'Customer';
+        }
+
+    }
 
 
-    if (!wasOpen) {
+    if (type === 'address') {
 
-        field.classList.add('of-show');
-        chip.classList.add('of-open');
+        input = document.getElementById('addressInput');
+        text = document.getElementById('ofAddressText');
+
+        if (input && text) {
+            text.textContent =
+                input.value.trim() || 'Address';
+        }
+
+    }
 
 
-        setTimeout(() => {
+    if (type === 'fee') {
 
-            const input = field.querySelector(
-                'input[type="text"]'
-            );
+        input = document.getElementById('deliveryFeeInput');
+        text = document.getElementById('ofFeeText');
 
-            if (input) {
+        if (input && text) {
 
-                input.focus();
+            const value =
+                input.value.trim();
 
-                /*
-                   Put cursor at end instead of selecting
-                   existing text.
-                */
+            text.textContent =
+                value ? `Fee ${value}` : 'Delivery';
 
-                input.setSelectionRange(
-                    input.value.length,
-                    input.value.length
-                );
+        }
+
+    }
+
+
+    if (type === 'payment') {
+
+        const method =
+            document.getElementById('paymentMethodInput');
+
+        const paid =
+            document.getElementById('isPaidInput');
+
+        text =
+            document.getElementById('ofPaymentText');
+
+
+        if (text) {
+
+            if (
+                paid &&
+                paid.checked &&
+                method &&
+                method.value
+            ) {
+
+                text.textContent =
+                    method.value;
+
+            } else if (
+                paid &&
+                paid.checked
+            ) {
+
+                text.textContent =
+                    'Paid';
+
+            } else {
+
+                text.textContent =
+                    'Payment';
 
             }
 
-        }, 80);
+        }
 
     }
 
@@ -1302,101 +1892,111 @@ function ofQuickAction(key) {
 
 
 /* =========================================================
-   CHIP STATE
+   SOURCE CHIP LABEL SYNC
    ========================================================= */
 
-function ofSetFilled(key, filled) {
+function ofRefreshSourceChip() {
 
-    const chip = document.querySelector(
-        `.of-chip[data-field="${key}"]`
-    );
-
-    if (chip) {
-        chip.classList.toggle(
-            'of-filled',
-            !!filled
-        );
-    }
-
-}
-
-
-function ofRefreshChipStates() {
-
-    const sourceHidden =
+    const hidden =
         document.getElementById('sourceHidden');
 
-    ofSetFilled(
-        'source',
-        !!(
-            sourceHidden &&
-            sourceHidden.value
-        )
-    );
+    const text =
+        document.getElementById('ofSourceText');
+
+    const trigger =
+        document.getElementById('sourceTriggerBtn');
 
 
-    const customer =
-        document.getElementById('ofCustomerInput');
-
-    ofSetFilled(
-        'customer',
-        !!(
-            customer &&
-            customer.value.trim()
-        )
-    );
+    if (!text) return;
 
 
-    const address =
-        document.getElementById('ofAddressInput');
+    if (hidden && hidden.value) {
 
-    ofSetFilled(
-        'address',
-        !!(
-            address &&
-            address.value.trim()
-        )
-    );
+        text.textContent =
+            hidden.value;
+
+        document
+            .getElementById('ofSourceChip')
+            ?.classList.add('complete');
+
+        return;
+    }
 
 
-    const dateHidden =
+    if (trigger) {
+
+        const span =
+            trigger.querySelector('span');
+
+        if (span) {
+
+            const value =
+                span.textContent.trim();
+
+            if (
+                value &&
+                !value.toLowerCase().includes('select source')
+            ) {
+
+                text.textContent =
+                    value;
+
+                document
+                    .getElementById('ofSourceChip')
+                    ?.classList.add('complete');
+
+                return;
+            }
+
+        }
+
+    }
+
+
+    text.textContent = 'Source';
+
+}
+
+
+/* =========================================================
+   DATE CHIP LABEL SYNC
+   ========================================================= */
+
+function ofRefreshDateChip() {
+
+    const date =
         document.getElementById('dateHidden');
 
-    const timeHidden =
+    const time =
         document.getElementById('timeHidden');
 
-    ofSetFilled(
-        'date',
-        !!(
-            dateHidden &&
-            dateHidden.value &&
-            timeHidden &&
-            timeHidden.value
-        )
-    );
+    const text =
+        document.getElementById('ofDateText');
 
 
-    const fee =
-        document.getElementById('ofFeeInput');
-
-    ofSetFilled(
-        'fee',
-        !!(
-            fee &&
-            fee.value.trim()
-        )
-    );
+    if (!text) return;
 
 
-    const paid =
-        document.getElementById('isPaidCheckbox');
+    if (date && date.value) {
 
-    if (paid) {
+        let value =
+            date.value;
 
-        ofSetFilled(
-            'payment',
-            paid.checked
-        );
+        if (time && time.value) {
+            value += ' ' + time.value;
+        }
+
+        text.textContent =
+            value;
+
+        document
+            .getElementById('ofDateChip')
+            ?.classList.add('complete');
+
+    } else {
+
+        text.textContent =
+            'Date';
 
     }
 
@@ -1404,277 +2004,389 @@ function ofRefreshChipStates() {
 
 
 /* =========================================================
-   CLICK OUTSIDE QUICK FIELD
+   PAYMENT DATE LABEL SYNC
    ========================================================= */
 
-document.addEventListener('click', function(e) {
+function ofRefreshPaymentDateChip() {
 
-    const wrap =
-        document.getElementById('ofQuickWrap');
+    const hidden =
+        document.getElementById('paymentDateHidden');
 
-    if (!wrap) return;
+    const text =
+        document.getElementById('ofPaymentDateText');
 
-    if (!wrap.contains(e.target)) {
 
-        closeAllQuickFields();
+    if (!hidden || !text) return;
+
+
+    if (hidden.value) {
+
+        text.textContent =
+            hidden.value;
+
+    } else {
+
+        text.textContent =
+            'Select date';
 
     }
+
+}
+
+
+/* =========================================================
+   REFRESH EVERYTHING
+   ========================================================= */
+
+function ofRefreshAll() {
+
+    ofRefreshSourceChip();
+
+    ofRefreshDateChip();
+
+    ofRefreshPaymentDateChip();
+
+    ofUpdateChip('customer');
+
+    ofUpdateChip('address');
+
+    ofUpdateChip('fee');
+
+    ofUpdateChip('payment');
+
+}
+
+
+/* =========================================================
+   CLOSE WHEN CLICKING OUTSIDE QUICK FIELD
+   ========================================================= */
+
+document.addEventListener('click', function(event) {
+
+    const form =
+        document.getElementById('orderEntryForm');
+
+    if (!form) return;
+
+
+    if (!form.classList.contains('of-focus-mode')) {
+        return;
+    }
+
+
+    const quickWrap =
+        event.target.closest('.of-quick-wrap');
+
+
+    if (quickWrap) {
+        return;
+    }
+
+
+    /*
+       Don't close if clicking inside picker overlays.
+       Existing picker UI may be outside the form.
+    */
+
+    const picker =
+        event.target.closest(
+            '.wp-overlay, .wheel-picker, .picker-overlay, .wp-modal'
+        );
+
+
+    if (picker) {
+        return;
+    }
+
+
+    ofCloseQuickFields();
 
 });
 
 
 /* =========================================================
-   DEFAULT DELIVERY DATE
+   ESCAPE CLOSES FLOATING FIELD
    ========================================================= */
 
-function getLocalISODate() {
+document.addEventListener('keydown', function(event) {
 
-    const d = new Date();
+    if (event.key !== 'Escape') return;
 
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    ofCloseQuickFields();
 
-}
-
-
-(function initDefaultDeliveryDate() {
-
-    const dateHidden =
-        document.getElementById('dateHidden');
-
-    if (
-        dateHidden &&
-        !dateHidden.value
-    ) {
-
-        dateHidden.value =
-            getLocalISODate();
-
-    }
-
-})();
+});
 
 
 /* =========================================================
-   CAKE CALCULATOR
+   SOURCE / DATE MUTATION OBSERVER
+   Keeps compact chips synced with existing picker JS.
    ========================================================= */
 
-function toggleCakeCalculator(btn) {
+document.addEventListener('DOMContentLoaded', function() {
 
-    const itemRow =
-        btn.closest('.item-row');
+    [
+        'sourceTriggerBtn',
+        'deliveryTriggerBtn',
+        'paymentDateTriggerBtn'
+    ].forEach(function(id) {
 
-    const panel =
-        itemRow.querySelector('.cake-calc-panel');
+        const btn =
+            document.getElementById(id);
 
-    const boxesWrap =
-        panel.querySelector('.cake-calc-boxes');
-
-    const isHidden =
-        panel.classList.contains('hidden');
-
-
-    if (isHidden) {
-
-        if (boxesWrap.children.length === 0) {
-
-            addCalcBoxRow(boxesWrap);
-            addCalcBoxRow(boxesWrap);
-
-        }
-
-        panel.classList.remove('hidden');
-        btn.classList.add('of-active');
-
-    } else {
-
-        panel.classList.add('hidden');
-        btn.classList.remove('of-active');
-
-    }
-
-}
+        if (!btn) return;
 
 
-function toggleItemMore(btn) {
+        const span =
+            btn.querySelector('span');
 
-    const itemRow =
-        btn.closest('.item-row');
-
-    const panel =
-        itemRow.querySelector('.of-item-more-panel');
-
-    const nowOpen =
-        panel.classList.toggle('of-open');
-
-    btn.classList.toggle(
-        'of-active',
-        nowOpen
-    );
-
-}
+        if (!span) return;
 
 
-function addCalcBoxRow(boxesWrap) {
+        new MutationObserver(function() {
 
-    const idx =
-        boxesWrap.children.length + 1;
+            ofRefreshAll();
 
-    const row =
-        document.createElement('div');
-
-    row.className =
-        'flex items-center gap-1.5';
-
-    row.innerHTML = `
-
-        <span
-            class="cake-calc-box-label text-[10px] text-stone-400 w-10 shrink-0">
-
-            第${idx}层
-
-        </span>
-
-        <input
-            type="number"
-            placeholder="MMK"
-            class="cake-calc-box-input flex-1 border border-stone-300 rounded p-1.5 text-xs bg-white outline-none focus:border-emerald-500"
-            oninput="recalcCakeTotal(this.closest('.item-row'))">
-
-        <button
-            type="button"
-            onclick="removeCalcBox(this)"
-            class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1 cursor-pointer">
-
-            ✕
-
-        </button>
-
-    `;
-
-    boxesWrap.appendChild(row);
-
-}
-
-
-function addCalcBox(btn) {
-
-    addCalcBoxRow(
-        btn
-            .closest('.item-row')
-            .querySelector('.cake-calc-boxes')
-    );
-
-}
-
-
-function removeCalcBox(btn) {
-
-    const itemRow =
-        btn.closest('.item-row');
-
-    btn.parentElement.remove();
-
-    renumberCalcBoxes(itemRow);
-
-    recalcCakeTotal(itemRow);
-
-}
-
-
-function renumberCalcBoxes(itemRow) {
-
-    const boxesWrap =
-        itemRow.querySelector(
-            '.cake-calc-boxes'
+        }).observe(
+            span,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
         );
-
-    Array.from(
-        boxesWrap.children
-    ).forEach((row, i) => {
-
-        const label =
-            row.querySelector(
-                '.cake-calc-box-label'
-            );
-
-        if (label) {
-
-            label.textContent =
-                `第${i + 1}层`;
-
-        }
 
     });
 
-}
+
+    [
+        'sourceHidden',
+        'dateHidden',
+        'timeHidden',
+        'paymentDateHidden'
+    ].forEach(function(id) {
+
+        const input =
+            document.getElementById(id);
+
+        if (!input) return;
 
 
-function recalcCakeTotal(itemRow) {
-
-    if (!itemRow) return;
-
-    let total = 0;
-
-    itemRow
-        .querySelectorAll(
-            '.cake-calc-box-input'
-        )
-        .forEach(inp => {
-
-            total +=
-                parseFloat(inp.value) || 0;
-
-        });
-
-
-    const priceInput =
-        itemRow.querySelector(
-            '.item-price-input'
+        input.addEventListener(
+            'change',
+            ofRefreshAll
         );
 
-    if (priceInput) {
-
-        priceInput.value =
-            total || '';
-
-    }
+    });
 
 
-    const totalLabel =
-        itemRow.querySelector(
-            '.cake-calc-total'
-        );
+    ofRefreshAll();
 
-    if (totalLabel) {
-
-        totalLabel.textContent =
-            `合计: ${total.toLocaleString()} MMK`;
-
-    }
-
-}
+});
 
 
-function closeCakeCalculator(btn) {
+/* =========================================================
+   ORDER ITEMS
+   ========================================================= */
 
-    const itemRow =
-        btn.closest('.item-row');
+function addOrderItem() {
 
-    itemRow
-        .querySelector('.cake-calc-panel')
-        .classList.add('hidden');
+    const container =
+        document.getElementById('orderItemsContainer');
 
-    const calcButton =
-        itemRow.querySelector(
-            '.of-item-icon-btn'
-        );
+    if (!container) return;
 
-    if (calcButton) {
 
-        calcButton.classList.remove(
-            'of-active'
-        );
+    const item =
+        document.createElement('div');
 
+    item.className =
+        'of-item order-item';
+
+
+    item.innerHTML = `
+
+        <div class="of-item-grid">
+
+            <input
+                type="text"
+                name="item_name[]"
+                class="of-item-input item-name"
+                placeholder="Cake name"
+                required
+            >
+
+            <select
+                name="item_size[]"
+                class="of-item-select item-size"
+            >
+                <option value="">Size</option>
+                <option value="6">6"</option>
+                <option value="8">8"</option>
+                <option value="10">10"</option>
+                <option value="12">12"</option>
+            </select>
+
+            <input
+                type="number"
+                name="item_price[]"
+                class="of-item-input of-price-input item-price"
+                placeholder="Price"
+                min="0"
+                required
+            >
+
+            <button
+                type="button"
+                class="of-remove-item"
+                onclick="removeOrderItem(this)"
+            >
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <path d="M6 6l12 12M18 6L6 18"/>
+                </svg>
+            </button>
+
+        </div>
+
+
+        <div class="of-item-extra">
+
+            <button
+                type="button"
+                class="of-mini-btn"
+                onclick="toggleCakeCalculator(this)"
+            >
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <path d="M4 20h16"/>
+                    <path d="M6 17V7h12v10"/>
+                    <path d="M9 11h6M9 14h6"/>
+                </svg>
+
+                Cake Calc
+            </button>
+
+
+            <button
+                type="button"
+                class="of-mini-btn"
+                onclick="toggleMorePanel(this)"
+            >
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <circle cx="5" cy="12" r="1"/>
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                </svg>
+
+                More
+            </button>
+
+        </div>
+
+
+        <div class="of-cake-calculator">
+
+            <div class="of-layer-container">
+
+                <div class="of-layer-row">
+
+                    <input
+                        type="text"
+                        placeholder="Layer"
+                        class="layer-name"
+                    >
+
+                    <input
+                        type="number"
+                        placeholder="Price"
+                        class="layer-price"
+                        min="0"
+                    >
+
+                    <button
+                        type="button"
+                        class="of-layer-remove"
+                        onclick="
+                            this.closest('.of-layer-row').remove();
+                            calculateCakeTotal(this)
+                        "
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="of-mini-btn"
+                onclick="addCakeLayer(this)"
+            >
+                + Add Layer
+            </button>
+
+
+            <div class="of-layer-total">
+
+                <span>Total</span>
+
+                <span class="cake-total-value">
+                    0
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="of-more-panel">
+
+            <div class="of-more-grid">
+
+                <textarea
+                    name="remarks[]"
+                    class="of-more-field"
+                    placeholder="Remarks"
+                    rows="2"
+                ></textarea>
+
+                <input
+                    type="file"
+                    name="cakeImage[]"
+                    class="of-more-field"
+                    accept="image/*"
+                >
+
+                <input
+                    type="file"
+                    name="flowerImage[]"
+                    class="of-more-field"
+                    accept="image/*"
+                >
+
+            </div>
+
+        </div>
+    `;
+
+
+    container.appendChild(item);
+
+
+    const name =
+        item.querySelector('.item-name');
+
+    if (name) {
+        name.focus();
     }
 
 }
@@ -1684,303 +2396,404 @@ function closeCakeCalculator(btn) {
    REMOVE ITEM
    ========================================================= */
 
-function removeItemRow(btn) {
-
-    const row =
-        btn.closest('.item-row');
+function removeOrderItem(button) {
 
     const container =
-        document.getElementById(
-            'itemsContainer'
-        );
+        document.getElementById('orderItemsContainer');
+
+    if (!container) return;
 
 
-    /*
-       Always keep at least one item row.
-    */
+    const items =
+        container.querySelectorAll('.order-item');
 
-    if (
-        container &&
-        container.querySelectorAll('.item-row').length <= 1
-    ) {
 
-        const inputs =
-            row.querySelectorAll('input');
+    if (items.length <= 1) {
 
-        inputs.forEach(input => {
+        const item =
+            button.closest('.order-item');
 
-            if (input.type === 'file') {
+        if (item) {
 
-                input.value = '';
+            item.querySelectorAll('input').forEach(
+                input => {
+                    input.value = '';
+                }
+            );
 
-            } else {
-
-                input.value = '';
-
-            }
-
-        });
+        }
 
         return;
-
     }
 
 
-    row.remove();
+    const item =
+        button.closest('.order-item');
+
+    if (item) {
+        item.remove();
+    }
 
 }
 
 
 /* =========================================================
-   ADD NEW ITEM
+   MORE PANEL
    ========================================================= */
 
-function addNewItemRow() {
+function toggleMorePanel(button) {
+
+    const item =
+        button.closest('.order-item');
+
+    if (!item) return;
+
+
+    const panel =
+        item.querySelector('.of-more-panel');
+
+    if (!panel) return;
+
+
+    panel.classList.toggle('show');
+
+}
+
+
+/* =========================================================
+   CAKE CALCULATOR
+   ========================================================= */
+
+function toggleCakeCalculator(button) {
+
+    const item =
+        button.closest('.order-item');
+
+    if (!item) return;
+
+
+    const calculator =
+        item.querySelector('.of-cake-calculator');
+
+    if (!calculator) return;
+
+
+    calculator.classList.toggle('show');
+
+}
+
+
+/* =========================================================
+   ADD CAKE LAYER
+   ========================================================= */
+
+function addCakeLayer(button) {
+
+    const calculator =
+        button.closest('.of-cake-calculator');
+
+    if (!calculator) return;
+
 
     const container =
-        document.getElementById(
-            'itemsContainer'
-        );
+        calculator.querySelector('.of-layer-container');
+
+    if (!container) return;
 
 
     const row =
         document.createElement('div');
 
     row.className =
-        'item-row of-item-card';
+        'of-layer-row';
 
 
     row.innerHTML = `
 
-        <div class="of-item-row-main">
+        <input
+            type="text"
+            placeholder="Layer"
+            class="layer-name"
+        >
 
-            <input
-                type="text"
-                name="item_name[]"
-                placeholder="商品名称"
-                class="of-item-input of-item-name-input">
+        <input
+            type="number"
+            placeholder="Price"
+            class="layer-price"
+            min="0"
+        >
 
-
-            <input
-                type="text"
-                name="size[]"
-                placeholder="尺寸"
-                class="of-item-input of-item-size-input">
-
-
-            <input
-                type="number"
-                name="item_price[]"
-                placeholder="金额"
-                class="of-item-input of-item-price-input item-price-input">
-
-
-            <button
-                type="button"
-                class="of-item-icon-btn"
-                onclick="toggleCakeCalculator(this)"
-                title="金额计算器">
-
-                🧮
-
-            </button>
-
-
-            <button
-                type="button"
-                class="of-item-icon-btn"
-                onclick="toggleItemMore(this)"
-                title="备注 / 图片">
-
-                🖼️
-
-            </button>
-
-
-            <button
-                type="button"
-                class="of-item-icon-btn of-item-remove-btn"
-                onclick="removeItemRow(this)"
-                title="删除商品">
-
-                ✕
-
-            </button>
-
-        </div>
-
-
-        <div class="cake-calc-panel hidden mt-2 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg space-y-1.5">
-
-            <div class="cake-calc-boxes space-y-1.5"></div>
-
-            <div class="flex items-center justify-between gap-2">
-
-                <button
-                    type="button"
-                    onclick="addCalcBox(this)"
-                    class="text-[10px] font-semibold text-emerald-700 cursor-pointer">
-
-                    ＋ 添加层
-
-                </button>
-
-                <button
-                    type="button"
-                    onclick="closeCakeCalculator(this)"
-                    class="text-[10px] font-semibold text-stone-500 cursor-pointer">
-
-                    ✕ 关闭
-
-                </button>
-
-            </div>
-
-            <div class="cake-calc-total text-[10px] text-emerald-700 font-bold text-right">
-
-                合计: 0 MMK
-
-            </div>
-
-        </div>
-
-
-        <div class="of-item-more-panel">
-
-            <div class="space-y-2">
-
-                <input
-                    type="text"
-                    name="remarks[]"
-                    placeholder="定制备注文字..."
-                    class="of-item-input w-full">
-
-
-                <div class="grid grid-cols-2 gap-2">
-
-                    <div>
-
-                        <label class="block text-stone-500 text-[9px] mb-1 font-semibold">
-                            🎂 蛋糕参考图
-                        </label>
-
-                        <input
-                            type="file"
-                            name="cakeImage[]"
-                            accept="image/*"
-                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer">
-
-                    </div>
-
-
-                    <div>
-
-                        <label class="block text-rose-600 text-[9px] mb-1 font-semibold">
-                            💐 花束参考图
-                        </label>
-
-                        <input
-                            type="file"
-                            name="flowerImage[]"
-                            accept="image/*"
-                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+        <button
+            type="button"
+            class="of-layer-remove"
+            onclick="
+                this.closest('.of-layer-row').remove();
+                calculateCakeTotal(this)
+            "
+        >
+            ×
+        </button>
     `;
 
 
     container.appendChild(row);
 
+
+    const price =
+        row.querySelector('.layer-price');
+
+    if (price) {
+        price.focus();
+    }
+
+
+    calculateCakeTotal(button);
+
 }
 
 
 /* =========================================================
+   CALCULATE CAKE TOTAL
+   ========================================================= */
+
+function calculateCakeTotal(element) {
+
+    const calculator =
+        element.closest('.of-cake-calculator')
+        ||
+        element.closest('.order-item')
+            ?.querySelector('.of-cake-calculator');
+
+
+    if (!calculator) return;
+
+
+    const prices =
+        calculator.querySelectorAll('.layer-price');
+
+
+    let total = 0;
+
+
+    prices.forEach(function(input) {
+
+        const value =
+            parseFloat(input.value);
+
+        if (!isNaN(value)) {
+            total += value;
+        }
+
+    });
+
+
+    const totalElement =
+        calculator.querySelector('.cake-total-value');
+
+
+    if (totalElement) {
+
+        totalElement.textContent =
+            total.toLocaleString();
+
+    }
+
+
+    /*
+       Put calculated total into the item's price field.
+    */
+
+    const item =
+        calculator.closest('.order-item');
+
+
+    if (item && total > 0) {
+
+        const priceInput =
+            item.querySelector('.item-price');
+
+        if (priceInput) {
+            priceInput.value = total;
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   LISTEN FOR LAYER PRICE CHANGES
+   ========================================================= */
+
+document.addEventListener('input', function(event) {
+
+    if (
+        event.target.classList.contains('layer-price')
+    ) {
+
+        calculateCakeTotal(event.target);
+
+    }
+
+});
+
+
+/* =========================================================
+   MODAL CLOSE
+   ========================================================= */
+
+function closeOrderFormModal() {
+
+    ofCloseQuickFields();
+
+    const modal =
+        document.getElementById('orderFormModal');
+
+    if (!modal) return;
+
+    modal.classList.remove('show');
+
+}
+
+
+/* =========================================================
+   MODAL OUTSIDE CLICK
+   ========================================================= */
+
+document.addEventListener('click', function(event) {
+
+    const modal =
+        document.getElementById('orderFormModal');
+
+    const section =
+        document.getElementById('orderFormSection');
+
+    if (!modal || !section) return;
+
+
+    if (
+        modal.classList.contains('show') &&
+        event.target === modal
+    ) {
+
+        closeOrderFormModal();
+
+    }
+
+});
+
+
+/* =========================================================
    FORM SUBMIT
+   Keeps your existing compression / return-query logic.
    ========================================================= */
 
 function handleFormSubmit(event) {
 
     event.preventDefault();
 
+
     const form =
         event.target;
 
 
-    const returnQsInput =
-        form.querySelector(
-            'input[name="return_qs"]'
+    /*
+       Keep existing return-query behavior if available.
+    */
+
+    try {
+
+        if (
+            typeof mcBuildReturnQS === 'function'
+        ) {
+
+            const returnInput =
+                document.getElementById('return_qs');
+
+            if (returnInput) {
+
+                returnInput.value =
+                    mcBuildReturnQS();
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            'Could not build return query:',
+            error
         );
-
-
-    if (returnQsInput) {
-
-        returnQsInput.value =
-            window.mcBuildReturnQS
-                ? window.mcBuildReturnQS()
-                : window.location.search.replace(/^\?/, '');
 
     }
 
+
+    /*
+       Keep existing client filter save behavior.
+    */
+
+    try {
+
+        if (
+            typeof mcSaveClientFilters === 'function'
+        ) {
+
+            mcSaveClientFilters();
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            'Could not save client filters:',
+            error
+        );
+
+    }
+
+
+    /*
+       Use your existing image compression/submission
+       function if it exists.
+    */
 
     if (
-        window.mcSaveClientFilters
+        typeof mcCompressAndSubmit === 'function'
     ) {
 
-        window.mcSaveClientFilters();
+        mcCompressAndSubmit(form);
 
+        return;
     }
 
 
-    const submitBtn =
-        form.querySelector(
-            'button[type="submit"]'
-        );
+    /*
+       Fallback.
+    */
 
-
-    if (submitBtn) {
-
-        submitBtn.disabled = true;
-
-        submitBtn.textContent =
-            '图片处理中，请稍候...';
-
-    }
-
-
-    mcCompressAndSubmit(form)
-        .catch((err) => {
-
-            console.error(
-                'Image compression failed, submitting originals:',
-                err
-            );
-
-            form.submit();
-
-        });
+    form.submit();
 
 }
 
 
 /* =========================================================
-   INITIALIZE
+   OPTIONAL — REFRESH AFTER PICKER FUNCTIONS FINISH
    ========================================================= */
 
-document.addEventListener(
-    'DOMContentLoaded',
-    function() {
+setInterval(function() {
 
-        ofRefreshChipStates();
+    if (
+        document.getElementById('orderFormModal')
+            ?.classList.contains('show')
+    ) {
+
+        ofRefreshSourceChip();
+        ofRefreshDateChip();
+        ofRefreshPaymentDateChip();
 
     }
-);
+
+}, 500);
 
 </script>
-```
