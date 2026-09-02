@@ -739,7 +739,7 @@
 
 
 /* =========================================================
-   FLOATING MENU
+   FLOATING MENU (iOS Liquid Glass Refinement)
    ========================================================= */
 
 .nav-drawer {
@@ -749,88 +749,60 @@
 
     width: 340px;
     max-width: calc(100vw - 28px);
-
     max-height: calc(100vh - 88px);
 
     display: flex;
     flex-direction: column;
-
     overflow: hidden;
 
     border-radius: 28px;
 
-    /* ===== TRUE LIQUID GLASS =====
-       Heavy blur + saturation boost is what actually sells the effect —
-       CSS blur alone looks like frosted plastic. Saturating what's behind
-       the glass (colors, images) is what makes it feel like real glass
-       refracting light, the way iOS does it. */
-    backdrop-filter: blur(40px) saturate(220%) brightness(1.08);
-    -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.08);
+    /* Authentic iOS Backdrop Blur & Saturation */
+    backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
+    -webkit-backdrop-filter: blur(30px) saturate(180%) brightness(1.05);
 
-    /* Faint tinted glass body — NOT solid white. Real glass barely tints
-       what's behind it. */
-    background: linear-gradient(
-        160deg,
-        rgba(255,255,255,.55) 0%,
-        rgba(255,255,255,.28) 40%,
-        rgba(255,255,255,.20) 100%
-    );
+    /* Semi-transparent iOS Light Glass Fill */
+    background: rgba(255, 255, 255, 0.65);
 
-    border: 1px solid rgba(255,255,255,.65);
+    /* Subtle hairline border for crisp edge refraction */
+    border: 1px solid rgba(255, 255, 255, 0.5);
 
-    box-shadow:
-        /* Bright inner rim — the "edge of the glass" catching light */
-        inset 0 1px 1px rgba(255,255,255,.9),
-        inset 0 0 0 1px rgba(255,255,255,.15),
-        /* Soft interior falloff so it doesn't look like a flat sheet */
-        inset 0 40px 60px -40px rgba(255,255,255,.5),
-        inset 0 -40px 60px -40px rgba(0,0,0,.06),
-        /* Floating drop shadow, diffuse like real glass */
-        0 20px 50px rgba(28,25,23,.22),
-        0 6px 18px rgba(28,25,23,.10);
+    /* iOS Precision Glass Rim & Floating Elevation Shadows */
+    box-shadow: 
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.9),  /* Top edge light reflection */
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.3), /* Bottom subtle highlight */
+        0 10px 30px rgba(0, 0, 0, 0.08),           /* Soft ambient shadow */
+        0 20px 40px rgba(0, 0, 0, 0.12);           /* Deep elevation shadow */
 
     opacity: 0;
     transform: translateY(-18px) scale(.96);
     transform-origin: top right;
     pointer-events: none;
 
-    transition:
+    transition: 
         opacity .22s ease,
-        transform .42s cubic-bezier(.16,1,.3,1);
+        transform .42s cubic-bezier(.16, 1, .3, 1);
 }
 
-/* Glossy top-band specular highlight — the bright curved streak you see
-   running along the top of iOS glass surfaces. */
+/* Optional specular top gradient — cleaned up so it doesn't obscure content */
 .nav-drawer::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    z-index: 1;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,.85) 0%,
-            rgba(255,255,255,.35) 12%,
-            rgba(255,255,255,0) 30%
-        );
+    z-index: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0) 25%
+    );
 }
 
-/* Secondary soft glow blob (kept from before, just repositioned above
-   the new ::before so it still peeks through) */
-.nav-drawer::after {
-    content: "";
-    position: absolute;
-    top: -60px;
-    right: -40px;
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(16,185,129,.12), transparent 68%);
-    pointer-events: none;
-    z-index: 0;
+/* Ensure inner content renders crisply above the specular layer */
+.nav-drawer > * {
+    position: relative;
+    z-index: 1;
 }
 
 .nav-drawer-overlay.active .nav-drawer {
