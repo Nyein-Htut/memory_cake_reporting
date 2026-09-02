@@ -1247,6 +1247,265 @@ body.nav-menu-open {
         inset 0 -6px 13px rgba(180,165,150,.44),
         0 14px 28px rgba(50,40,30,.22) !important;
 }
+
+/* =========================================================
+   MEMORY CAKE — FINAL LOGO + OPEN-NAV GLASS FIX
+   ========================================================= */
+
+/* ---------- HEADER ---------- */
+
+#mcTopNav {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 60 !important;
+
+    /* Transparent enough for backdrop-filter to be visible. */
+    background: rgba(255, 255, 255, 0.88) !important;
+
+    border-bottom: 1px solid rgba(231, 229, 228, 0.68) !important;
+
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        backdrop-filter 0.25s ease,
+        -webkit-backdrop-filter 0.25s ease;
+}
+
+
+/* ---------- CRYSTAL-CLEAR LOGO ---------- */
+
+/*
+ * static/favicon.ico is the actual logo source.
+ * Its native raster size is 48px, so the image itself is kept at
+ * 48x48 instead of being stretched to the 56px wrapper.
+ */
+.mc-logo-glass {
+    position: relative !important;
+
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    flex: 0 0 56px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border-radius: 14px !important;
+    overflow: hidden !important;
+
+    background: transparent !important;
+    border: 0 !important;
+
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,.22),
+        0 4px 14px rgba(80,55,35,.14),
+        0 0 18px rgba(255,255,255,.28) !important;
+
+    /* The logo must never inherit the header's blur. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+}
+
+.mc-logo-glass img {
+    position: relative !important;
+    z-index: 2 !important;
+
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+
+    display: block !important;
+
+    object-fit: contain !important;
+    object-position: center center !important;
+
+    border-radius: 12px !important;
+
+    opacity: 1 !important;
+    filter: none !important;
+
+    /* Normal interpolation looks better than pixelated/crisp-edges here. */
+    image-rendering: auto !important;
+
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+}
+
+
+/* ---------- OPEN NAV: REAL FROSTED HEADER ---------- */
+
+#mcTopNav.mc-nav-is-blurred {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 60 !important;
+
+    /*
+     * The old .52 white background was still too opaque.
+     * This lets the backdrop-filter actually show the page behind it.
+     */
+    background: rgba(255, 255, 255, 0.30) !important;
+
+    border-bottom-color: rgba(255,255,255,.62) !important;
+
+    /*
+     * Actual blur of content BEHIND the header.
+     */
+    backdrop-filter: blur(28px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(150%) !important;
+
+    box-shadow:
+        0 8px 30px rgba(40,30,20,.12),
+        inset 0 -1px 0 rgba(255,255,255,.62) !important;
+}
+
+
+/*
+ * Don't add another white overlay on top of the glass.
+ */
+#mcTopNav.mc-nav-is-blurred::before,
+#mcTopNav.mc-nav-is-blurred::after {
+    display: none !important;
+    content: none !important;
+}
+
+
+/*
+ * Header contents stay sharp. Only the header's background
+ * receives backdrop-filter.
+ */
+#mcTopNav.mc-nav-is-blurred > div {
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+
+/* ---------- LOGO REMAINS SHARP WHILE HEADER IS BLURRED ---------- */
+
+#mcTopNav.mc-nav-is-blurred .mc-logo-glass {
+    background: rgba(255,255,255,.90) !important;
+
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+}
+
+#mcTopNav.mc-nav-is-blurred .mc-logo-glass img {
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+
+/* ---------- BACKDROP LAYERING ---------- */
+
+/*
+ * Layer order:
+ *
+ *   page
+ *     ↓
+ *   nav backdrop  z-index 55
+ *     ↓
+ *   header        z-index 60
+ *     ↓
+ *   floating nav  z-index 70+
+ *
+ * This is important: the backdrop must NOT sit above the header.
+ */
+.nav-fan-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 55 !important;
+
+    background: rgba(255,255,255,.18) !important;
+
+    backdrop-filter: blur(10px) saturate(130%) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(130%) !important;
+
+    opacity: 0 !important;
+    pointer-events: none !important;
+
+    transition: opacity .22s ease !important;
+}
+
+.nav-fan-backdrop.active {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+
+/* ---------- FLOATING NAV ---------- */
+
+.nav-fanwrap {
+    z-index: 70 !important;
+    pointer-events: none !important;
+}
+
+.nav-fanwrap .nav-fan-btn {
+    pointer-events: none;
+}
+
+.nav-fanwrap.nav-fan-open .nav-fan-btn {
+    pointer-events: auto;
+}
+
+
+/* ---------- HAMBURGER STAYS CRISP ---------- */
+
+.nav-hamburger-btn {
+    z-index: 72 !important;
+    filter: none !important;
+}
+
+.nav-hamburger-btn svg {
+    filter: none !important;
+}
+
+
+/* ---------- PAGE LOCK WHILE NAV IS OPEN ---------- */
+
+body.nav-menu-open {
+    overflow: hidden !important;
+}
+
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 640px) {
+    .mc-logo-glass {
+        width: 54px !important;
+        height: 54px !important;
+        min-width: 54px !important;
+        min-height: 54px !important;
+        flex-basis: 54px !important;
+    }
+
+    .mc-logo-glass img {
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        min-height: 46px !important;
+        max-width: 46px !important;
+        max-height: 46px !important;
+    }
+}
+
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+    #mcTopNav,
+    .nav-fan-backdrop {
+        transition: none !important;
+    }
+}
+
 </style>
 
 </head>
@@ -3131,7 +3390,7 @@ async function mcCompressAndSubmit(form) {
      MEMORY CAKE TOP NAV
      ========================================================= -->
 
-<nav id="mcTopNav" class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
+<nav id="mcTopNav" class="border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-center justify-between h-20 sm:h-24">
@@ -3143,6 +3402,10 @@ async function mcCompressAndSubmit(form) {
                     <img
                         src="{{ url_for('static', filename='favicon.ico') }}"
                         alt="Memory Cake Logo"
+                        width="48"
+                        height="48"
+                        decoding="async"
+                        draggable="false"
                         onerror="this.style.display='none';"
                     >
                 </div>
@@ -3344,7 +3607,10 @@ document.addEventListener('DOMContentLoaded', function () {
         hamburger.setAttribute('aria-expanded', 'true');
         hamburger.setAttribute('aria-label', 'Close navigation');
 
-        if (topNav) topNav.classList.add('mc-nav-is-blurred');
+        // Blur the header background while the navigation is open.
+        if (topNav) {
+            topNav.classList.add('mc-nav-is-blurred');
+        }
         document.body.classList.add('nav-menu-open');
         document.addEventListener('keydown', escHandler);
     }
@@ -3356,7 +3622,10 @@ document.addEventListener('DOMContentLoaded', function () {
         hamburger.setAttribute('aria-expanded', 'false');
         hamburger.setAttribute('aria-label', 'Open navigation');
 
-        if (topNav) topNav.classList.remove('mc-nav-is-blurred');
+        // Restore the normal header when the navigation closes.
+        if (topNav) {
+            topNav.classList.remove('mc-nav-is-blurred');
+        }
         document.body.classList.remove('nav-menu-open');
         document.removeEventListener('keydown', escHandler);
     }
