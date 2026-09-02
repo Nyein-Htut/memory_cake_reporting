@@ -992,6 +992,223 @@
         inset 0 -1px 4px rgba(255,255,255,.4),
         0 6px 14px rgba(4, 90, 65, 0.3);
 }
+
+        /* =========================================================
+           MEMORY CAKE — GLOBAL GLOSSY GLASS CONTROLS
+           ========================================================= */
+
+        :root {
+            --mc-glass-size: 56px;
+            --mc-glass-bg:
+                radial-gradient(
+                    circle at 50% 30%,
+                    rgba(255,255,255,.96) 0%,
+                    rgba(253,250,246,.78) 48%,
+                    rgba(242,237,230,.84) 100%
+                );
+            --mc-glass-border: rgba(255,255,255,.92);
+            --mc-glass-shadow:
+                inset 0 3px 5px rgba(255,255,255,1),
+                inset 0 -5px 10px rgba(195,185,175,.50),
+                inset 0 -1px 3px rgba(140,125,110,.35),
+                0 10px 24px rgba(50,40,30,.18),
+                0 3px 8px rgba(0,0,0,.08);
+        }
+
+        /* Header becomes visibly frosted while the nav fan is open.
+           The header stays above the backdrop so the hamburger remains
+           clickable, while its translucent surface lets the blur show. */
+        #mcTopNav {
+            transition:
+                background-color .25s ease,
+                border-color .25s ease,
+                box-shadow .25s ease,
+                backdrop-filter .25s ease;
+        }
+
+        #mcTopNav.mc-nav-is-blurred {
+            background: rgba(255,255,255,.52) !important;
+            border-bottom-color: rgba(255,255,255,.62) !important;
+            box-shadow:
+                0 8px 30px rgba(50,40,30,.08),
+                inset 0 -1px 0 rgba(255,255,255,.65);
+            backdrop-filter: blur(18px) saturate(150%);
+            -webkit-backdrop-filter: blur(18px) saturate(150%);
+        }
+
+        /* Logo: exactly the same 56px circular footprint as the
+           navigation/filter FABs, with the same glossy construction. */
+        .mc-logo-glass {
+            position: relative;
+            width: var(--mc-glass-size);
+            height: var(--mc-glass-size);
+            min-width: var(--mc-glass-size);
+            min-height: var(--mc-glass-size);
+            border-radius: 50%;
+            overflow: hidden;
+            isolation: isolate;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--mc-glass-bg);
+            border: 1px solid var(--mc-glass-border);
+            box-shadow: var(--mc-glass-shadow);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+        }
+
+        .mc-logo-glass img {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .mc-logo-glass::before {
+            content: "";
+            position: absolute;
+            z-index: 2;
+            width: 76%;
+            height: 42%;
+            left: 12%;
+            top: 4%;
+            border-radius: 50%;
+            background: linear-gradient(
+                180deg,
+                rgba(255,255,255,.96) 0%,
+                rgba(255,255,255,.48) 45%,
+                rgba(255,255,255,0) 100%
+            );
+            pointer-events: none;
+        }
+
+        .mc-logo-glass::after {
+            content: "";
+            position: absolute;
+            z-index: 2;
+            left: 12%;
+            bottom: 3%;
+            width: 76%;
+            height: 28%;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(255,255,255,.24) 0%,
+                rgba(255,255,255,0) 72%
+            );
+            filter: blur(2px);
+            pointer-events: none;
+        }
+
+        /* CSV / PDF export controls on child pages.
+           ID selectors intentionally override their older Tailwind
+           background/border/shadow classes without changing markup. */
+        #csvExportBtn,
+        #monthlyPdfBtn,
+        [id*="csvExportBtn"],
+        [id*="PdfBtn"] {
+            position: relative !important;
+            overflow: hidden !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 42px;
+            border-radius: 9999px !important;
+            border: 1px solid rgba(255,255,255,.88) !important;
+            background: var(--mc-glass-bg) !important;
+            color: #292524 !important;
+            box-shadow: var(--mc-glass-shadow) !important;
+            backdrop-filter: blur(12px) saturate(175%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(175%) !important;
+            transition:
+                transform .2s cubic-bezier(.34,1.56,.64,1),
+                box-shadow .2s ease,
+                background .2s ease !important;
+        }
+
+        #csvExportBtn::before,
+        #monthlyPdfBtn::before,
+        [id*="csvExportBtn"]::before,
+        [id*="PdfBtn"]::before {
+            content: "";
+            position: absolute;
+            width: 78%;
+            height: 48%;
+            left: 11%;
+            top: 3%;
+            border-radius: 50%;
+            background: linear-gradient(
+                180deg,
+                rgba(255,255,255,.96) 0%,
+                rgba(255,255,255,.52) 45%,
+                rgba(255,255,255,0) 100%
+            );
+            pointer-events: none;
+        }
+
+        #csvExportBtn:hover,
+        #monthlyPdfBtn:hover,
+        [id*="csvExportBtn"]:hover,
+        [id*="PdfBtn"]:hover {
+            transform: translateY(-1px);
+            background:
+                radial-gradient(
+                    circle at 50% 27%,
+                    rgba(255,255,255,1) 0%,
+                    rgba(255,252,248,.88) 58%,
+                    rgba(245,238,230,.92) 100%
+                ) !important;
+            box-shadow:
+                inset 0 4px 7px rgba(255,255,255,1),
+                inset 0 -6px 13px rgba(180,165,150,.44),
+                0 14px 28px rgba(50,40,30,.22) !important;
+        }
+
+        #csvExportBtn:active,
+        #monthlyPdfBtn:active,
+        [id*="csvExportBtn"]:active,
+        [id*="PdfBtn"]:active {
+            transform: scale(.96);
+        }
+
+        #csvExportBtn:disabled,
+        #monthlyPdfBtn:disabled,
+        [id*="csvExportBtn"]:disabled,
+        [id*="PdfBtn"]:disabled {
+            opacity: .65;
+            cursor: wait;
+            transform: none;
+        }
+
+        /* Make text/icons sit above the glass shine. */
+        #csvExportBtn > *,
+        #monthlyPdfBtn > *,
+        [id*="csvExportBtn"] > *,
+        [id*="PdfBtn"] > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* The fan backdrop must intercept clicks only when open. */
+        .nav-fan-backdrop {
+            pointer-events: none;
+        }
+        .nav-fan-backdrop.active {
+            pointer-events: auto;
+        }
+
+        @media (max-width: 639px) {
+            .mc-logo-glass {
+                width: 56px;
+                height: 56px;
+                min-width: 56px;
+                min-height: 56px;
+            }
+        }
+
     </style>
 </head>
     <!-- Wheel Picker: Time (Hour / Minute) -->
@@ -2875,7 +3092,7 @@ async function mcCompressAndSubmit(form) {
      MEMORY CAKE TOP NAV
      ========================================================= -->
 
-<nav class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
+<nav id="mcTopNav" class="bg-white border-b border-stone-200/60 shadow-xs no-print sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-center justify-between h-20 sm:h-24">
@@ -2883,12 +3100,13 @@ async function mcCompressAndSubmit(form) {
             <!-- BRAND -->
             <div class="flex items-center gap-3">
 
-                <img
-                    src="/static/logo.jpg"
-                    class="h-12 w-12 sm:h-14 sm:w-14 object-contain rounded-md"
-                    alt="Memory Cake Logo"
-                    onerror="this.src='https://placehold.co/100x100?text=MC';"
-                >
+                <div class="mc-logo-glass" aria-label="Memory Cake Logo">
+                    <img
+                        src="/static/logo.jpg"
+                        alt="Memory Cake Logo"
+                        onerror="this.src='https://placehold.co/100x100?text=MC';"
+                    >
+                </div>
 
                 <div class="flex flex-col">
 
@@ -3030,47 +3248,69 @@ document.addEventListener('DOMContentLoaded', function () {
     const hamburger = document.getElementById('navHamburgerBtn');
     const wrap = document.getElementById('navFanWrap');
     const backdrop = document.getElementById('navFanBackdrop');
+    const topNav = document.getElementById('mcTopNav');
 
     if (!hamburger || !wrap || !backdrop) return;
 
-    // Move to <body> so no ancestor transform/overflow can trap the
-    // fixed-position fan (same trick as the Daily Records filter FAB).
+    /* Move the floating fan/backdrop directly under <body>.
+       This prevents sticky/fixed ancestors from creating a stacking
+       context that can steal clicks after the first open. */
     if (wrap.parentNode !== document.body) document.body.appendChild(wrap);
     if (backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
 
-    function positionNavFanWrap() {
-        const rect = hamburger.getBoundingClientRect();
-        wrap.style.top = rect.top + 'px';
-        wrap.style.left = rect.left + 'px';
-        wrap.style.width = rect.width + 'px';
-        wrap.style.height = rect.height + 'px';
+    const hamburgerIcon = {
+        open: `
+            <path d="M6 6l12 12"/>
+            <path d="M18 6L6 18"/>
+        `,
+        closed: `<path d="M4 6h16M4 12h16M4 18h16"/>`
+    };
+
+    function setHamburgerIcon(isOpen) {
+        const svg = hamburger.querySelector('svg');
+        if (!svg) return;
+        svg.innerHTML = isOpen ? hamburgerIcon.open : hamburgerIcon.closed;
+        svg.setAttribute('aria-hidden', 'true');
     }
 
-    // Arc sweeps down and to the left of the hamburger button (185°→275°,
-    // where 0°=right / 90°=up), so bubbles never run off the right edge.
+    function positionNavFanWrap() {
+        const rect = hamburger.getBoundingClientRect();
+
+        /* Use viewport coordinates because wrap is now a direct child of body. */
+        wrap.style.top = Math.round(rect.top) + 'px';
+        wrap.style.left = Math.round(rect.left) + 'px';
+        wrap.style.width = Math.round(rect.width) + 'px';
+        wrap.style.height = Math.round(rect.height) + 'px';
+    }
+
     function layoutNavFan() {
         const buttons = Array.from(wrap.querySelectorAll('.nav-fan-btn'));
         const n = buttons.length;
         if (!n) return;
 
         const cs = getComputedStyle(wrap);
-        const readPx = (name, fb) => {
+
+        const readPx = (name, fallback) => {
             const v = parseFloat(cs.getPropertyValue(name));
-            return Number.isFinite(v) ? v : fb;
+            return Number.isFinite(v) ? v : fallback;
         };
+
         const gap = Math.max(0, readPx('--fan-gap', 10));
         let radius = Math.max(0, readPx('--fan-radius', 82));
 
+        /* offsetWidth/Height are NOT affected by the initial scale(.25). */
         const btnW = buttons[0].offsetWidth || 46;
         const btnH = buttons[0].offsetHeight || 46;
         const btnDia = Math.max(btnW, btnH);
 
-        const startDeg = 185, endDeg = 275;
+        const startDeg = 185;
+        const endDeg = 275;
         const sweepDeg = endDeg - startDeg;
 
         if (n > 1) {
             const stepRad = (sweepDeg / (n - 1)) * Math.PI / 180;
             const sinHalf = Math.sin(stepRad / 2);
+
             if (sinHalf > 0.000001) {
                 const minRadius = (btnDia + gap) / (2 * sinHalf);
                 radius = Math.max(radius, minRadius);
@@ -3078,52 +3318,116 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         buttons.forEach((btn, i) => {
-            const thetaDeg = n > 1 ? startDeg + (i * sweepDeg / (n - 1)) : (startDeg + endDeg) / 2;
+            const thetaDeg =
+                n > 1
+                    ? startDeg + (i * sweepDeg / (n - 1))
+                    : (startDeg + endDeg) / 2;
+
             const thetaRad = thetaDeg * Math.PI / 180;
             const x = radius * Math.cos(thetaRad);
             const y = -radius * Math.sin(thetaRad);
+
             btn.style.setProperty('--fan-tx', x.toFixed(2) + 'px');
             btn.style.setProperty('--fan-ty', y.toFixed(2) + 'px');
         });
     }
 
+    function lockPage() {
+        if (typeof wpLockBody === 'function') {
+            wpLockBody();
+        } else {
+            document.body.classList.add('mc-nav-locked');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function unlockPage() {
+        if (typeof wpUnlockBody === 'function') {
+            wpUnlockBody();
+        } else {
+            document.body.classList.remove('mc-nav-locked');
+            document.body.style.overflow = '';
+        }
+    }
+
     function openNavFan() {
+        /* Recalculate every time — fixes reopen/resize/first-open issues. */
         positionNavFanWrap();
         layoutNavFan();
+
         wrap.classList.add('nav-fan-open');
+        backdrop.classList.add('active');
         hamburger.classList.add('is-open');
         hamburger.setAttribute('aria-expanded', 'true');
-        backdrop.classList.add('active');
-        if (typeof wpLockBody === 'function') wpLockBody(); else document.body.style.overflow = 'hidden';
+        hamburger.setAttribute('aria-label', 'Close navigation');
+        setHamburgerIcon(true);
+
+        if (topNav) topNav.classList.add('mc-nav-is-blurred');
+
+        lockPage();
         document.addEventListener('keydown', escHandler);
     }
 
     function closeNavFan() {
+        /* Do NOT early-return here. A stale class/state should never
+           prevent the hamburger from recovering on a later click. */
         wrap.classList.remove('nav-fan-open');
+        backdrop.classList.remove('active');
         hamburger.classList.remove('is-open');
         hamburger.setAttribute('aria-expanded', 'false');
-        backdrop.classList.remove('active');
-        if (typeof wpUnlockBody === 'function') wpUnlockBody(); else document.body.style.overflow = '';
+        hamburger.setAttribute('aria-label', 'Open navigation');
+        setHamburgerIcon(false);
+
+        if (topNav) topNav.classList.remove('mc-nav-is-blurred');
+
+        unlockPage();
         document.removeEventListener('keydown', escHandler);
     }
-    window.closeNavFan = closeNavFan;
 
-    function escHandler(e) { if (e.key === 'Escape') closeNavFan(); }
+    function toggleNavFan() {
+        if (wrap.classList.contains('nav-fan-open')) {
+            closeNavFan();
+        } else {
+            openNavFan();
+        }
+    }
 
+    function escHandler(e) {
+        if (e.key === 'Escape') closeNavFan();
+    }
+
+    /* One click listener only. This survives every open/close cycle. */
     hamburger.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        wrap.classList.contains('nav-fan-open') ? closeNavFan() : openNavFan();
+        toggleNavFan();
     });
+
+    /* Clicking the frosted area closes the fan. */
+    backdrop.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeNavFan();
+    });
+
+    window.closeNavFan = closeNavFan;
+    window.openNavFan = openNavFan;
+    window.toggleNavFan = toggleNavFan;
 
     let resizeTimer = null;
     window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            if (wrap.classList.contains('nav-fan-open')) { positionNavFanWrap(); layoutNavFan(); }
-        }, 150);
+            if (wrap.classList.contains('nav-fan-open')) {
+                positionNavFanWrap();
+                layoutNavFan();
+            }
+        }, 120);
     });
 
+    /* Initial state is explicitly reset in case the page was restored
+       from the browser's back/forward cache. */
+    closeNavFan();
 });
 </script>
 
