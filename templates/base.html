@@ -649,7 +649,6 @@
         /* =========================================================
    MEMORY CAKE — FLOATING NAV MENU
    ========================================================= */
-
 /* ---------- Hamburger button ---------- */
 
 .nav-hamburger-btn {
@@ -709,11 +708,6 @@
 
     z-index: 300;
 
-    /*
-       Almost invisible.
-       We don't want the whole screen to become a giant
-       dark overlay anymore.
-    */
     background: rgba(28, 25, 23, .035);
 
     backdrop-filter: blur(0px);
@@ -739,7 +733,7 @@
 
 
 /* =========================================================
-   AUTHENTIC iOS LIQUID GLASS (BUG-FREE STACKING)
+   AUTHENTIC iOS LIQUID GLASS CONTAINER
    ========================================================= */
 
 .nav-drawer {
@@ -756,14 +750,12 @@
     overflow: hidden;
 
     border-radius: 32px;
-
-    /* Hardware acceleration & isolation combined */
     isolation: isolate;
 
-    /* Outer glass float shadow */
+    /* Deep floating elevation shadow */
     box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.15),
-        0 6px 16px rgba(0, 0, 0, 0.08);
+        0 24px 60px rgba(0, 0, 0, 0.22),
+        0 8px 24px rgba(0, 0, 0, 0.12);
 
     opacity: 0;
     transform: translate3d(0, -18px, 0) scale(0.96);
@@ -775,7 +767,7 @@
         transform .42s cubic-bezier(.16, 1, .3, 1);
 }
 
-/* 1. SEPARATE GLASS BACKDROP LAYER */
+/* 1. GLASS BACKDROP LAYER (Prevents transform/blur rendering bugs) */
 .nav-drawer::before {
     content: "";
     position: absolute;
@@ -783,46 +775,45 @@
     border-radius: inherit;
     z-index: -1;
 
-    /* High blur + high saturation backdrop */
-    backdrop-filter: blur(40px) saturate(220%) brightness(1.05);
-    -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.05);
+    /* High blur + saturation boost */
+    backdrop-filter: blur(50px) saturate(240%) brightness(0.98);
+    -webkit-backdrop-filter: blur(50px) saturate(240%) brightness(0.98);
 
-    /* Low-opacity tinted glass sheet */
+    /* Translucent glass tint */
     background: linear-gradient(
         140deg,
-        rgba(255, 255, 255, 0.50) 0%,
-        rgba(255, 255, 255, 0.25) 40%,
-        rgba(255, 255, 255, 0.15) 100%
+        rgba(255, 255, 255, 0.75) 0%,
+        rgba(255, 255, 255, 0.52) 50%,
+        rgba(255, 255, 255, 0.38) 100%
     );
 
-    /* Rim reflection border */
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    /* Rim border */
+    border: 1px solid rgba(255, 255, 255, 0.75);
 
-    /* Crisp top light stroke */
+    /* Signature iOS glass specular highlights */
     box-shadow: 
         inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 -1px 1px 0 rgba(255, 255, 255, 0.3);
+        inset 0 -1px 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* 2. SPECULAR TOP LIGHT SHINE */
+/* 2. SPECULAR TOP GLOSS SHINE */
 .nav-drawer::after {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 40%;
+    height: 38%;
     border-radius: 32px 32px 100% 100% / 32px 32px 40px 40px;
     background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0.5) 0%,
         rgba(255, 255, 255, 0) 100%
     );
     pointer-events: none;
     z-index: 0;
 }
 
-/* Make inner menu text and items sit cleanly on top */
 .nav-drawer > * {
     position: relative;
     z-index: 1;
@@ -835,18 +826,6 @@
     pointer-events: auto;
 }
 
-/* =========================================================
-   ACTIVE MENU ITEM (Matching iOS Active Pill)
-   ========================================================= */
-
-.nav-drawer .menu-item.active {
-    background: rgba(0, 0, 0, 0.75);
-    color: #ffffff;
-    border-radius: 20px;
-    box-shadow: 
-        inset 0 1px 1px rgba(255, 255, 255, 0.2),
-        0 4px 12px rgba(0, 0, 0, 0.15);
-}
 
 /* =========================================================
    HEADER
@@ -861,7 +840,7 @@
 
     padding: 19px 18px 16px;
 
-    border-bottom: 1px solid rgba(231,229,228,.65);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Brand area */
@@ -880,7 +859,7 @@
 
     letter-spacing: -.02em;
 
-    color: #292524;
+    color: #1c1917; /* High contrast header title */
 }
 
 /* Cake logo circle */
@@ -899,18 +878,18 @@
     background:
         linear-gradient(
             135deg,
-            #f5f5f4,
-            #e7e5e4
+            #ffffff,
+            #f5f5f4
         );
 
-    color: #57534e;
+    color: #44403c;
 
     font-family: serif;
     font-size: 17px;
 
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.9),
-        0 3px 10px rgba(28,25,23,.06);
+        inset 0 1px 0 rgba(255,255,255,1),
+        0 3px 10px rgba(0,0,0,.08);
 
     transition:
         transform .45s cubic-bezier(.34,1.56,.64,1),
@@ -920,6 +899,7 @@
 .nav-drawer-overlay.active .nav-drawer-header-title::before {
     transform: rotate(-8deg) scale(1.05);
 }
+
 
 /* =========================================================
    ROLE BADGE
@@ -943,13 +923,13 @@
     letter-spacing: .1em;
     text-transform: uppercase;
 
-    background: rgba(236,253,245,.8);
+    background: rgba(209, 250, 229, 0.9);
     color: #047857;
 
-    border: 1px solid rgba(167,243,208,.8);
+    border: 1px solid rgba(167, 243, 208, 0.9);
 
     box-shadow:
-        0 2px 8px rgba(16,185,129,.06);
+        0 2px 8px rgba(16,185,129,.1);
 }
 
 .nav-drawer-role-badge::before {
@@ -963,16 +943,18 @@
     background: #10b981;
 
     box-shadow:
-        0 0 0 3px rgba(16,185,129,.10);
+        0 0 0 3px rgba(16,185,129,.15);
 
     animation: menu-status-pulse 2s ease-in-out infinite;
 }
 
 @keyframes menu-status-pulse {
+
     0%, 100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(.72);
         opacity: .65;
@@ -980,14 +962,15 @@
 }
 
 .nav-drawer-role-badge.role-staff {
-    background: rgba(239,246,255,.85);
+    background: rgba(239, 246, 255, 0.85);
     color: #1d4ed8;
-    border-color: rgba(191,219,254,.85);
+    border-color: rgba(191, 219, 254, 0.85);
 }
 
 .nav-drawer-role-badge.role-staff::before {
     background: #3b82f6;
 }
+
 
 /* =========================================================
    CLOSE BUTTON
@@ -1003,10 +986,10 @@
 
     border-radius: 12px;
 
-    background: rgba(245,245,244,.8);
-    color: #78716c;
+    background: rgba(255, 255, 255, 0.6);
+    color: #44403c;
 
-    border: 1px solid rgba(231,229,228,.6);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 
     cursor: pointer;
 
@@ -1017,8 +1000,8 @@
 }
 
 .nav-drawer-close-btn:hover {
-    background: #f0efed;
-    color: #292524;
+    background: #ffffff;
+    color: #1c1917;
 
     transform: rotate(90deg);
 }
@@ -1027,8 +1010,9 @@
     transform: rotate(90deg) scale(.9);
 }
 
+
 /* =========================================================
-   BODY
+   BODY (FROSTED GLASS LAYER FOR HIGH LEGIBILITY)
    ========================================================= */
 
 .nav-drawer-body {
@@ -1036,12 +1020,18 @@
 
     overflow-y: auto;
 
-    padding: 12px;
+    padding: 10px;
+    margin: 8px;
 
     display: flex;
     flex-direction: column;
 
-    gap: 4px;
+    gap: 6px;
+
+    /* Frosted glass inner backing plate */
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 24px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 
     scrollbar-width: none;
 }
@@ -1052,7 +1042,7 @@
 
 
 /* =========================================================
-   MENU ITEMS
+   MENU LINKS / ITEMS
    ========================================================= */
 
 .nav-drawer-link {
@@ -1065,22 +1055,21 @@
 
     min-height: 49px;
 
-    padding: 10px 12px;
+    padding: 10px 14px;
 
-    border-radius: 15px;
+    border-radius: 16px;
 
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
 
-    color: #57534e;
+    /* High contrast text with white drop-shadow */
+    color: #1c1917;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 
     text-decoration: none;
 
     overflow: hidden;
 
-    /*
-       Initial animation state
-    */
     opacity: 0;
 
     transform:
@@ -1095,98 +1084,52 @@
 }
 
 
-/*
-   Stagger the menu items
-*/
-
+/* Stagger menu entry animation */
 .nav-drawer-overlay.active .nav-drawer-link {
-    animation:
-        menu-item-in .45s cubic-bezier(.16,1,.3,1) forwards;
+    animation: menu-item-in .45s cubic-bezier(.16,1,.3,1) forwards;
 }
 
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(1) {
-    animation-delay: .04s;
-}
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(2) {
-    animation-delay: .075s;
-}
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(3) {
-    animation-delay: .11s;
-}
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(4) {
-    animation-delay: .145s;
-}
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(5) {
-    animation-delay: .18s;
-}
-
-.nav-drawer-overlay.active .nav-drawer-link:nth-child(6) {
-    animation-delay: .215s;
-}
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(1) { animation-delay: .04s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(2) { animation-delay: .075s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(3) { animation-delay: .11s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(4) { animation-delay: .145s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(5) { animation-delay: .18s; }
+.nav-drawer-overlay.active .nav-drawer-link:nth-child(6) { animation-delay: .215s; }
 
 @keyframes menu-item-in {
-
     from {
         opacity: 0;
-        transform:
-            translateY(-8px)
-            scale(.97);
+        transform: translateY(-8px) scale(.97);
     }
-
     to {
         opacity: 1;
-        transform:
-            translateY(0)
-            scale(1);
+        transform: translateY(0) scale(1);
     }
 }
 
-
-/*
-   Hover
-*/
-
+/* Hover */
 .nav-drawer-link:hover {
-    background: rgba(245,245,244,.85);
-
-    color: #292524;
-
-    transform:
-        translateX(3px);
+    background: rgba(255, 255, 255, 0.55);
+    color: #000000;
+    transform: translateX(3px);
 }
 
-
-/*
-   Little shine effect
-*/
-
+/* Top specular shine on hover */
 .nav-drawer-link::after {
     content: "";
-
     position: absolute;
-
     top: 0;
     left: -100%;
-
     width: 60%;
     height: 100%;
-
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(255,255,255,.55),
-            transparent
-        );
-
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.55),
+        transparent
+    );
     transform: skewX(-18deg);
-
     transition: left .5s ease;
-
     pointer-events: none;
 }
 
@@ -1200,149 +1143,97 @@
    ========================================================= */
 
 .nav-drawer-link svg {
-
     width: 20px;
     height: 20px;
-
     flex-shrink: 0;
-
-    stroke-width: 1.7;
+    stroke-width: 2;
+    color: #292524;
 
     transition:
         transform .35s cubic-bezier(.34,1.56,.64,1),
         color .2s ease;
 }
 
-
-/*
-   Icon movement
-*/
-
 .nav-drawer-link:hover svg {
-    transform:
-        scale(1.12)
-        rotate(-4deg);
+    transform: scale(1.12) rotate(-4deg);
 }
 
 
 /* =========================================================
-   ACTIVE ITEM
+   ACTIVE MENU PILL (iOS DARK GLASS STYLE)
    ========================================================= */
 
 .nav-drawer-link.active {
-    color: #fff;
+    color: #ffffff;
+    text-shadow: none;
 
-    background:
-        linear-gradient(
-            135deg,
-            #292524,
-            #1c1917
-        );
+    background: #1c1917;
 
     box-shadow:
-        0 7px 18px rgba(28,25,23,.15),
-        inset 0 1px 0 rgba(255,255,255,.08);
+        0 6px 18px rgba(0, 0, 0, 0.18),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
 
     transform: translateX(0);
 }
 
-
-/*
-   Active indicator
-*/
+.nav-drawer-link.active svg {
+    color: #ffffff;
+}
 
 .nav-drawer-link.active::before {
     content: "";
-
     position: absolute;
-
-    left: 5px;
+    left: 6px;
     top: 50%;
-
-    width: 3px;
-    height: 22px;
-
+    width: 4px;
+    height: 20px;
     border-radius: 999px;
-
-    background: rgba(255,255,255,.9);
-
-    transform:
-        translateY(-50%);
-
-    box-shadow:
-        0 0 12px rgba(255,255,255,.35);
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px rgba(255,255,255,.5);
 }
 
-
-/*
-   Staff active color
-*/
-
 .nav-drawer-link.active.role-staff {
-    background:
-        linear-gradient(
-            135deg,
-            #047857,
-            #065f46
-        );
-
-    box-shadow:
-        0 7px 18px rgba(4,120,87,.18);
+    background: #047857;
+    box-shadow: 0 6px 18px rgba(4, 120, 87, 0.25);
 }
 
 
 /* =========================================================
-   FOOTER
+   FOOTER & STATUS
    ========================================================= */
 
 .nav-drawer-footer {
-    padding: 11px 12px calc(12px + env(safe-area-inset-bottom));
-
-    border-top: 1px solid rgba(231,229,228,.65);
-
+    padding: 11px 16px calc(14px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
-
     gap: 6px;
 }
-
-
-/* =========================================================
-   CONNECTION STATUS
-   ========================================================= */
 
 .nav-drawer-status {
     display: flex;
     align-items: center;
     gap: 7px;
-
-    padding: 4px 8px 6px;
-
-    font-size: 9px;
-
-    color: #a8a29e;
-
+    padding: 4px 4px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #57534e;
     text-transform: uppercase;
-
     letter-spacing: .13em;
 }
 
 .nav-drawer-status::before {
     content: "";
-
     width: 6px;
     height: 6px;
-
     border-radius: 50%;
-
     background: #10b981;
-
     box-shadow:
-        0 0 0 3px rgba(16,185,129,.08),
-        0 0 10px rgba(16,185,129,.3);
+        0 0 0 3px rgba(16,185,129,.12),
+        0 0 10px rgba(16,185,129,.4);
 
-    animation:
-        menu-status-pulse 2s ease-in-out infinite;
+    animation: menu-status-pulse 2s ease-in-out infinite;
 }
 
 
@@ -1352,27 +1243,22 @@
 
 .nav-drawer-link.logout-link {
     color: #dc2626;
-
+    text-shadow: none;
     min-height: 44px;
 }
 
-.nav-drawer-link.logout-link:hover {
-    background: rgba(254,242,242,.8);
+.nav-drawer-link.logout-link svg {
+    color: #dc2626;
+}
 
+.nav-drawer-link.logout-link:hover {
+    background: rgba(254, 242, 242, 0.9);
     color: #b91c1c;
 }
 
-.nav-drawer-link.logout-link svg {
-    transition:
-        transform .3s cubic-bezier(.34,1.56,.64,1);
-}
-
 .nav-drawer-link.logout-link:hover svg {
-    transform:
-        translateX(3px);
+    transform: translateX(3px);
 }
-
-
 /* =========================================================
    MOBILE
    ========================================================= */
