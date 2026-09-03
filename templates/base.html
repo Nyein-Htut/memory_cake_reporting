@@ -644,12 +644,12 @@
 }
 
 /* =========================================================
-   NAV MENU — HORIZONTAL "SHOOT-OUT" BAR
-   Buttons live in a row anchored under the header, right-
-   aligned under the hamburger, so they never sit over the
-   logo/title. Each one animates in with a staggered slide-
-   from-the-hamburger + scale pop — like the hamburger fired
-   them out sideways.
+   NAV MENU — VERTICAL "DROP-DOWN" COLUMN
+   Buttons live in a column anchored below the hamburger,
+   right-aligned under it, so they never sit over the
+   logo/title. Each one animates in with a staggered drop-
+   from-the-hamburger + scale pop — like the hamburger
+   dropped them out downward.
    ========================================================= */
 
 .nav-fanwrap {
@@ -657,15 +657,16 @@
     z-index: 10000;
 
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
     gap: 9px;
 
-    max-width: calc(100vw - 20px);
-    padding: 6px 2px;
+    max-height: calc(100vh - 110px);
+    padding: 2px 6px;
 
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 
@@ -724,10 +725,12 @@
 
     overflow: hidden;
 
-    /* Start "docked" under the hamburger: shifted right, tiny, invisible */
-    transform: translateX(34px) scale(.35) rotate(-12deg);
+    /* Start "docked" under the hamburger: shifted up, tiny, invisible */
+    transform: translateY(-34px) scale(.35) rotate(-12deg);
     opacity: 0;
     pointer-events: none;
+
+    transform-origin: center center;
 
     transition:
         transform .46s cubic-bezier(.19,1.5,.32,1),
@@ -764,23 +767,23 @@
     stroke-width: 2;
 }
 
-/* Fired out: land in place, full size, no rotation */
+/* Dropped out: land in place, full size, no rotation */
 .nav-fanwrap.nav-fan-open .nav-fan-btn {
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(0) scale(1) rotate(0deg);
+    transform: translateY(0) scale(1) rotate(0deg);
 }
 
-/* Stagger — the button nearest the hamburger (highest fan-pos index,
-   rightmost in the row) fires first; each one further left follows a
-   beat later, like they were shot out in sequence. */
-.nav-fan-btn.fan-pos-6 { transition-delay: .02s; }
-.nav-fan-btn.fan-pos-5 { transition-delay: .05s; }
-.nav-fan-btn.fan-pos-4 { transition-delay: .08s; }
+/* Stagger — the button nearest the hamburger (top of the column, lowest
+   fan-pos index) fires first; each one further down follows a beat later,
+   like they were dropped out in sequence. */
+.nav-fan-btn.fan-pos-0 { transition-delay: .02s; }
+.nav-fan-btn.fan-pos-1 { transition-delay: .05s; }
+.nav-fan-btn.fan-pos-2 { transition-delay: .08s; }
 .nav-fan-btn.fan-pos-3 { transition-delay: .11s; }
-.nav-fan-btn.fan-pos-2 { transition-delay: .14s; }
-.nav-fan-btn.fan-pos-1 { transition-delay: .17s; }
-.nav-fan-btn.fan-pos-0 { transition-delay: .20s; }
+.nav-fan-btn.fan-pos-4 { transition-delay: .14s; }
+.nav-fan-btn.fan-pos-5 { transition-delay: .17s; }
+.nav-fan-btn.fan-pos-6 { transition-delay: .20s; }
 
 .nav-fanwrap:not(.nav-fan-open) .nav-fan-btn { transition-delay: 0s; }
 
@@ -798,7 +801,7 @@
 }
 
 .nav-fan-btn:active {
-    transform: translateX(0) scale(.9) rotate(0deg);
+    transform: translateY(0) scale(.9) rotate(0deg);
 }
 
 .nav-fan-btn.active {
