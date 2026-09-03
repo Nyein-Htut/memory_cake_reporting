@@ -2012,17 +2012,18 @@ def _build_balance_ledger():
             'label': f.remarks or '',
             'sort_key': (f.date, 0, f.id),
         })
-    for e in staff_expenses:
-        cat_label = e.category.name_zh if e.category else '未分类'
-        if e.subcategory:
-            cat_label += f" · {e.subcategory.name_zh}"
+        for e in staff_expenses:
         entries.append({
             'kind': 'expense',
             'id': e.id,
             'date': e.date,
             'type': 'out',
             'amount': e.price or 0,
-            'label': cat_label + (f"（{e.remarks}）" if e.remarks else ''),
+            'category_name_zh': e.category.name_zh if e.category else '未分类',
+            'category_name_mm': e.category.name_mm if e.category else 'အမျိုးအစားမရှိ',
+            'subcategory_name_zh': e.subcategory.name_zh if e.subcategory else '',
+            'subcategory_name_mm': e.subcategory.name_mm if e.subcategory else '',
+            'remarks': e.remarks or '',
             'sort_key': (e.date, 1, e.id),
         })
 
