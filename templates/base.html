@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+<head>nav-fan-backdrop
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Memory Cake Data Hub{% endblock %}</title>
@@ -3415,10 +3415,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!hamburger || !wrap || !backdrop) return;
 
+    // Corrects for the mobile "visual viewport vs layout viewport" offset
+    // that appears when the page is pinch-zoomed or the browser's toolbar
+    // is mid-collapse — without this, getBoundingClientRect() and the
+    // position:fixed coordinate space can disagree, and the fan renders
+    // shifted away from the real hamburger position.
     function positionNavFanWrap() {
         const rect = hamburger.getBoundingClientRect();
-        wrap.style.top = Math.round(rect.top) + 'px';
-        wrap.style.left = Math.round(rect.left) + 'px';
+        const vv = window.visualViewport;
+        const offsetLeft = vv ? vv.offsetLeft : 0;
+        const offsetTop = vv ? vv.offsetTop : 0;
+
+        wrap.style.top = Math.round(rect.top + offsetTop) + 'px';
+        wrap.style.left = Math.round(rect.left + offsetLeft) + 'px';
         wrap.style.width = Math.round(rect.width) + 'px';
         wrap.style.height = Math.round(rect.height) + 'px';
     }
@@ -3459,10 +3468,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function openNavFan() {
+        // Measure immediately so there's no flash of wrong position...
         positionNavFanWrap();
         layoutNavFan();
 
-        // Add the open state BEFORE anything else visual happens.
         wrap.classList.add('nav-fan-open');
         backdrop.classList.add('active');
         hamburger.classList.add('is-open');
@@ -3472,6 +3481,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (topNav) topNav.classList.add('mc-nav-is-blurred');
         document.body.classList.add('nav-menu-open');
         document.addEventListener('keydown', escHandler);
+
+        // ...then re-measure a couple frames later, after the sticky header
+        // / blur class change has fully settled, to correct any drift from
+        // a stale rect taken mid-reflow.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                positionNavFanWrap();
+                layoutNavFan();
+            });
+        });
     }
 
     function closeNavFan() {
@@ -3503,12 +3522,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.key === 'Escape') closeNavFan();
     }
 
-    // Use click on the real hamburger button.
-    // This gives one activation per user click/tap and avoids pointerup
-    // + synthetic mouse/touch event double-firing.
     hamburger.addEventListener('click', toggleNavFan);
 
-    // Close only when the user clicks the backdrop itself.
     backdrop.addEventListener('click', function (e) {
         if (e.target === backdrop) {
             closeNavFan();
@@ -3525,6 +3540,22 @@ document.addEventListener('DOMContentLoaded', function () {
             layoutNavFan();
         }
     });
+
+    // Keep the fan glued to the hamburger while open, even if the mobile
+    // browser's toolbar collapses/expands or the page is pinch-zoomed.
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+            if (wrap.classList.contains('nav-fan-open')) {
+                positionNavFanWrap();
+                layoutNavFan();
+            }
+        });
+        window.visualViewport.addEventListener('scroll', function () {
+            if (wrap.classList.contains('nav-fan-open')) {
+                positionNavFanWrap();
+            }
+        });
+    }
 
     // Always initialize closed.
     closeNavFan();
