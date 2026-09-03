@@ -1,393 +1,170 @@
+{# Staff order entry form - Ultra Compact Quick-Action Edition (same design as manager form, no price/payment) #}
+
 <style>
 
 /* =========================================================
-   ORDER MODAL — STAFF
+   MODAL / PAPER ANIMATION
    ========================================================= */
 
 .of-modal-overlay {
-    transition: opacity .25s ease;
     opacity: 0;
+    transition: opacity .28s ease;
 }
 
 .of-modal-overlay.pm-active {
     opacity: 1;
 }
 
-
-/* =========================================================
-   PAPER OPEN / CLOSE ANIMATION
-   ========================================================= */
-
 .of-modal-card {
+    position: relative;
+
+    transform-origin:
+        calc(100% - 28px)
+        calc(100% - 28px);
+
     transform:
-        perspective(1400px)
-        rotateX(-14deg)
-        translateY(46px)
-        scale(.92);
+        perspective(1600px)
+        translate(0, 180px)
+        scale(.055)
+        rotate(-7deg)
+        rotateX(-18deg);
 
     opacity: 0;
 
-    transform-origin: top center;
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #fffefa 100%
+        );
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 2px 5px rgba(28,25,23,.05);
 
     transition:
-        transform .5s cubic-bezier(.19,1.2,.35,1),
-        opacity .35s ease,
-        box-shadow .5s ease;
+        transform .62s cubic-bezier(.16,1.25,.28,1),
+        opacity .20s ease,
+        box-shadow .55s ease;
+
+    will-change: transform, opacity;
 }
 
 .of-modal-card.pm-in {
+    transform-origin:
+        calc(100% - 28px)
+        calc(100% - 28px);
+
     transform:
-        perspective(1400px)
-        rotateX(0deg)
-        translateY(0)
-        scale(1);
+        perspective(1600px)
+        translate(0,0)
+        scale(1)
+        rotate(0deg)
+        rotateX(0deg);
 
     opacity: 1;
 
     box-shadow:
-        0 30px 80px rgba(28,25,23,.28),
-        0 10px 30px rgba(28,25,23,.12);
+        0 35px 90px rgba(28,25,23,.24),
+        0 12px 30px rgba(28,25,23,.12);
 }
 
 .of-modal-card.pm-out {
+    transform-origin:
+        calc(100% - 28px)
+        calc(100% - 28px);
+
     transform:
-        perspective(1400px)
-        rotateX(10deg)
-        translateY(30px)
-        scale(.94);
+        perspective(1600px)
+        translate(0,150px)
+        scale(.07)
+        rotate(-6deg)
+        rotateX(-15deg);
 
     opacity: 0;
 
-    transition:
-        transform .22s ease,
-        opacity .18s ease;
-}
-
-
-/* =========================================================
-   CHIP ROW
-   ========================================================= */
-
-.of-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 9px;
-}
-
-.of-chip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    padding: 11px 15px;
-
-    border-radius: 9999px;
-
-    border: 1.5px solid #e7e5e4;
-    background: #fff;
-
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #57534e;
-
-    cursor: pointer;
-
-    transition:
-        all .2s ease;
-
-    user-select: none;
-}
-
-.of-chip:hover {
-    border-color: #a8a29e;
-}
-
-.of-chip-icon {
-    font-size: 16px;
-    line-height: 1;
-}
-
-.of-chip-dot {
-    width: 6px;
-    height: 6px;
-
-    border-radius: 50%;
-
-    background: #059669;
-
-    display: none;
-}
-
-.of-chip.of-filled {
-    border-color: #a7f3d0;
-    background: #ecfdf5;
-    color: #047857;
-}
-
-.of-chip.of-filled .of-chip-dot {
-    display: inline-block;
-}
-
-.of-chip.of-open {
-    border-color: #1c1917;
-    background: #1c1917;
-    color: #fff;
-}
-
-.of-chip.of-open .of-chip-dot {
-    background: #fff;
-}
-
-
-/* =========================================================
-   INDIVIDUAL FIELD PANELS
-   ========================================================= */
-
-.of-panel {
-    overflow: hidden;
-
-    max-height: 0;
-    opacity: 0;
-
-    margin-top: 0;
-
-    transition:
-        max-height .32s cubic-bezier(.2,.8,.2,1),
-        opacity .25s ease,
-        margin-top .3s ease;
-}
-
-.of-panel.of-panel-open {
-    max-height: 260px;
-    opacity: 1;
-
-    margin-top: 10px;
-}
-
-.of-panel-inner {
-    background: #fafaf9;
-
-    border: 1px solid #f0efed;
-
-    border-radius: 14px;
-
-    padding: 14px 15px;
-}
-
-.of-panel-label {
-    font-size: 10.5px;
-    font-weight: 700;
-
-    letter-spacing: .05em;
-    text-transform: uppercase;
-
-    color: #a8a29e;
-
-    margin-bottom: 7px;
-
-    display: block;
-}
-
-
-/* =========================================================
-   FIELD INPUTS
-   ========================================================= */
-
-.of-panel input[type="text"] {
-    transition:
-        border-color .18s ease,
-        box-shadow .18s ease,
-        transform .18s ease;
-}
-
-.of-panel input[type="text"]:focus {
-    border-color: #1c1917;
-
     box-shadow:
-        0 0 0 3px rgba(16,185,129,.08);
-}
-
-
-/* =========================================================
-   ITEM CARD
-   ========================================================= */
-
-.of-item-card {
-    background: #fff;
-
-    border: 1px solid #e7e5e4;
-
-    border-radius: 16px;
-
-    padding: 12px;
-
-    position: relative;
+        0 2px 5px rgba(28,25,23,.05);
 
     transition:
-        border-color .2s ease,
-        box-shadow .2s ease,
-        transform .2s ease;
+        transform .36s cubic-bezier(.55,0,.85,.35),
+        opacity .20s ease;
 }
 
-.of-item-card:hover {
-    border-color: #d6d3d1;
+.of-modal-card::before {
+    content: "";
 
-    box-shadow:
-        0 5px 16px rgba(28,25,23,.05);
-}
+    position: absolute;
+    inset: 0;
 
-.of-item-row-main {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
+    pointer-events: none;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.78),
+            transparent 32%
+        );
+
+    opacity: .55;
+
+    z-index: 100;
 }
 
 
 /* =========================================================
-   ITEM INPUTS
+   BACKDROP
    ========================================================= */
 
-.of-item-input {
-    border: 1px solid #d6d3d1;
+.of-modal-overlay {
+    background:
+        rgba(6,78,59,.18) !important;
 
-    border-radius: 9px;
-
-    padding: 9px 11px;
-
-    font-size: 12.5px;
-
-    background: #fff;
-
-    outline: none;
-
-    transition:
-        border-color .18s ease,
-        box-shadow .18s ease;
-}
-
-.of-item-input:focus {
-    border-color: #1c1917;
-
-    box-shadow:
-        0 0 0 3px rgba(16,185,129,.08);
-}
-
-.of-item-name-input {
-    flex: 2;
-    min-width: 110px;
-}
-
-.of-item-size-input {
-    width: 78px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 
 /* =========================================================
-   ITEM ICON BUTTONS
-   ========================================================= */
-
-.of-item-icon-btn {
-    width: 34px;
-    height: 34px;
-
-    border-radius: 9999px;
-
-    border: 1px solid #e7e5e4;
-
-    background: #fafaf9;
-
-    color: #78716c;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    cursor: pointer;
-
-    font-size: 14px;
-
-    flex-shrink: 0;
-
-    transition:
-        all .15s ease;
-}
-
-.of-item-icon-btn:hover {
-    background: #f0efed;
-}
-
-.of-item-icon-btn.of-active {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #047857;
-}
-
-
-/* =========================================================
-   REMOVE BUTTON
-   ========================================================= */
-
-.of-item-remove-btn {
-    color: #e11d48;
-
-    border-color: #ffe4e6;
-
-    background: #fff1f2;
-}
-
-.of-item-remove-btn:hover {
-    background: #ffe4e6;
-}
-
-
-/* =========================================================
-   MORE PANEL
-   DEFAULT = OPEN
-   ========================================================= */
-
-.of-item-more-panel {
-    margin-top: 10px;
-
-    padding-top: 10px;
-
-    border-top: 1px dashed #e7e5e4;
-
-    display: block;
-}
-
-/*
- * Clicking the 🖼️ button can still collapse
- * the remarks/photo area.
- */
-.of-item-more-panel.of-collapsed {
-    display: none;
-}
-
-
-/* =========================================================
-   ADD ORDER FAB
+   ADD ORDER FAB — PERFECT CIRCLE
    ========================================================= */
 
 .add-order-fab {
     position: fixed;
 
-    right: max(1.1rem, env(safe-area-inset-right));
+    right:
+        max(
+            1.1rem,
+            env(safe-area-inset-right)
+        );
 
-    bottom: max(
-        1.1rem,
-        calc(env(safe-area-inset-bottom) + .5rem)
-    );
+    bottom:
+        max(
+            1.1rem,
+            calc(
+                env(safe-area-inset-bottom)
+                + .5rem
+            )
+        );
 
     z-index: 40;
 
     width: 56px;
     height: 56px;
 
-    /* FULL CIRCLE */
-    border-radius: 50%;
+    min-width: 56px;
+    min-height: 56px;
 
-    border: 1px solid rgba(255,255,255,.7);
+    padding: 0;
+
+    border-radius: 50% !important;
+
+    border:
+        1px solid
+        rgba(255,255,255,.72);
 
     background:
         linear-gradient(
@@ -405,8 +182,10 @@
     cursor: pointer;
 
     box-shadow:
-        0 12px 30px rgba(5,150,105,.25),
-        0 4px 10px rgba(28,25,23,.12);
+        0 12px 30px
+        rgba(5,150,105,.25),
+        0 4px 10px
+        rgba(28,25,23,.12);
 
     transition:
         transform .25s cubic-bezier(.2,1.3,.3,1),
@@ -416,15 +195,604 @@
 .add-order-fab:hover {
     transform:
         translateY(-3px)
-        scale(1.03);
+        scale(1.05);
 
     box-shadow:
-        0 16px 34px rgba(5,150,105,.30),
-        0 5px 12px rgba(28,25,23,.14);
+        0 16px 36px
+        rgba(5,150,105,.30),
+        0 6px 15px
+        rgba(28,25,23,.14);
 }
 
 .add-order-fab:active {
-    transform: scale(.93);
+    transform: scale(.92);
+}
+
+
+/* FAB becomes X while paper is open */
+
+body.of-order-open .add-order-fab {
+    transform:
+        rotate(45deg)
+        scale(.82);
+
+    border-radius: 50% !important;
+
+    box-shadow:
+        0 5px 15px
+        rgba(5,150,105,.18);
+}
+
+body.of-order-open .add-order-fab:hover {
+    transform:
+        rotate(45deg)
+        scale(.87);
+}
+
+
+/* =========================================================
+   QUICK ACTION AREA
+   ========================================================= */
+
+.of-quick-wrap {
+    position: relative;
+    z-index: 100;
+}
+
+.of-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.of-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    height: 36px;
+    padding: 0 11px;
+
+    border-radius: 9999px;
+
+    border: 1px solid #e7e5e4;
+    background: #fff;
+
+    font-size: 11.5px;
+    font-weight: 700;
+
+    color: #57534e;
+
+    cursor: pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease,
+        transform .15s ease,
+        box-shadow .15s ease;
+
+    user-select: none;
+    white-space: nowrap;
+}
+
+.of-chip:hover {
+    border-color: #a8a29e;
+    background: #fafaf9;
+}
+
+.of-chip:active {
+    transform: scale(.97);
+}
+
+.of-chip-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.of-chip-dot {
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #059669;
+
+    display: none;
+
+    margin-left: 1px;
+}
+
+.of-chip.of-filled {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.of-chip.of-filled .of-chip-dot {
+    display: inline-block;
+}
+
+.of-chip.of-open {
+    background: #1c1917;
+    border-color: #1c1917;
+    color: #fff;
+
+    box-shadow:
+        0 5px 14px
+        rgba(28,25,23,.16);
+}
+
+.of-chip.of-open .of-chip-dot {
+    background: #fff;
+}
+
+
+/* =========================================================
+   FLOATING FIELDS
+   ========================================================= */
+
+.of-floating-field {
+    position: absolute;
+
+    left: 0;
+    top: 70px;
+
+    width:
+        min(
+            430px,
+            calc(100vw - 48px)
+        );
+
+    padding: 8px;
+
+    background:
+        rgba(255,255,255,.98);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border:
+        1px solid
+        rgba(231,229,228,.95);
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 20px 45px
+        rgba(28,25,23,.20),
+        0 5px 15px
+        rgba(28,25,23,.08);
+
+    opacity: 0;
+
+    transform:
+        translateY(-5px)
+        scale(.98);
+
+    pointer-events: none;
+
+    transition:
+        opacity .17s ease,
+        transform .17s ease;
+}
+
+.of-floating-field.of-show {
+    opacity: 1;
+
+    transform:
+        translateY(0)
+        scale(1);
+
+    pointer-events: auto;
+}
+
+.of-floating-label {
+    display: block;
+
+    padding:
+        2px 5px 5px;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: .06em;
+    text-transform: uppercase;
+
+    color: #a8a29e;
+}
+
+.of-floating-input {
+    width: 100%;
+    height: 38px;
+
+    border:
+        1px solid
+        #d6d3d1;
+
+    border-radius: 10px;
+
+    padding:
+        0 11px;
+
+    font-size: 12px;
+
+    background: #fff;
+    color: #292524;
+
+    outline: none;
+
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease;
+}
+
+.of-floating-input:focus {
+    border-color: #059669;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(16,185,129,.08);
+}
+
+
+/* =========================================================
+   BACKGROUND BLUR
+   ========================================================= */
+
+.of-form-background {
+    position: relative;
+
+    transition:
+        filter .22s ease,
+        opacity .22s ease,
+        transform .22s ease;
+}
+
+.of-form-background.of-background-blur {
+    filter: blur(5px);
+
+    opacity: .30;
+
+    transform:
+        scale(.995);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   PICKER PROXIES
+   ========================================================= */
+
+.of-picker-proxy {
+    position: absolute !important;
+
+    width: 1px !important;
+    height: 1px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    opacity: 0 !important;
+
+    overflow: hidden !important;
+
+    pointer-events: none !important;
+
+    border: 0 !important;
+}
+
+
+/* =========================================================
+   ITEMS
+   ========================================================= */
+
+.of-items-section {
+    border-top:
+        1px solid
+        #f0efed;
+
+    padding-top: 12px;
+}
+
+.of-items-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+}
+
+.of-items-title {
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: .09em;
+    text-transform: uppercase;
+
+    color: #78716c;
+}
+
+.of-add-item-btn {
+    height: 29px;
+
+    padding:
+        0 10px;
+
+    border-radius: 9px;
+
+    border:
+        1px solid
+        #e7e5e4;
+
+    background:
+        #fafaf9;
+
+    color:
+        #44403c;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        all .15s ease;
+}
+
+.of-add-item-btn:hover {
+    background:
+        #f0efed;
+}
+
+
+/* =========================================================
+   ITEM CARD
+   ========================================================= */
+
+.of-item-card {
+    background: #fff;
+
+    border:
+        1px solid
+        #e7e5e4;
+
+    border-radius: 12px;
+
+    padding:
+        7px 8px;
+
+    position: relative;
+}
+
+.of-items-container {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.of-item-row-main {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+}
+
+.of-item-input {
+    height: 32px;
+
+    border:
+        1px solid
+        #ddd9d6;
+
+    border-radius: 8px;
+
+    padding:
+        0 8px;
+
+    font-size: 11px;
+
+    background: #fff;
+
+    outline: none;
+}
+
+.of-item-input:focus {
+    border-color:
+        #059669;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(16,185,129,.07);
+}
+
+.of-item-name-input {
+    flex:
+        1 1 auto;
+
+    min-width:
+        100px;
+}
+
+.of-item-size-input {
+    width:
+        78px;
+
+    flex:
+        0 0 78px;
+}
+
+
+/* =========================================================
+   ITEM BUTTONS
+   ========================================================= */
+
+.of-item-icon-btn {
+    width: 31px;
+    height: 31px;
+
+    flex:
+        0 0 31px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        #e7e5e4;
+
+    background:
+        #fafaf9;
+
+    color:
+        #78716c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    transition:
+        all .15s ease;
+}
+
+.of-item-icon-btn:hover {
+    background:
+        #f0efed;
+}
+
+.of-item-icon-btn.of-active {
+    background:
+        #ecfdf5;
+
+    border-color:
+        #a7f3d0;
+
+    color:
+        #047857;
+}
+
+.of-item-remove-btn {
+    color:
+        #e11d48;
+
+    border-color:
+        #ffe4e6;
+
+    background:
+        #fff1f2;
+}
+
+.of-item-remove-btn:hover {
+    background:
+        #ffe4e6;
+}
+
+
+/* =========================================================
+   MORE PANEL — OPEN BY DEFAULT
+   ========================================================= */
+
+.of-item-more-panel {
+    margin-top: 6px;
+
+    padding-top: 6px;
+
+    border-top:
+        1px dashed
+        #e7e5e4;
+
+    display: block;
+}
+
+.of-item-more-panel.of-collapsed {
+    display: none;
+}
+
+.of-item-more-panel
+.of-item-input {
+    height: 31px;
+}
+
+
+/* =========================================================
+   BOTTOM ACTIONS
+   ========================================================= */
+
+.of-bottom-actions {
+    display: flex;
+
+    justify-content:
+        flex-end;
+
+    align-items:
+        center;
+
+    gap: 6px;
+
+    padding-top: 10px;
+
+    border-top:
+        1px solid
+        #f0efed;
+}
+
+.of-cancel-btn,
+.of-save-btn {
+    height: 38px;
+
+    border-radius: 10px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: .04em;
+
+    cursor: pointer;
+
+    transition:
+        all .15s ease;
+}
+
+.of-cancel-btn {
+    padding:
+        0 18px;
+
+    background:
+        #f5f5f4;
+
+    color:
+        #57534e;
+}
+
+.of-cancel-btn:hover {
+    background:
+        #e7e5e4;
+}
+
+.of-save-btn {
+    padding:
+        0 22px;
+
+    background:
+        #059669;
+
+    color:
+        white;
+
+    box-shadow:
+        0 4px 10px
+        rgba(5,150,105,.15);
+}
+
+.of-save-btn:hover {
+    background:
+        #047857;
 }
 
 
@@ -434,35 +802,30 @@
 
 @media (max-width: 640px) {
 
-    .of-modal-overlay {
-        padding: 10px !important;
-    }
-
-    .of-modal-card {
-        max-height: 94vh;
-        border-radius: 22px !important;
-    }
-
     .of-chip-row {
-        gap: 7px;
+        gap: 5px;
     }
 
     .of-chip {
-        padding: 9px 12px;
-        font-size: 11.5px;
-    }
+        height: 34px;
 
-    .of-chip-icon {
-        font-size: 15px;
+        padding:
+            0 9px;
+
+        font-size:
+            10.5px;
     }
 
     .of-item-row-main {
-        gap: 6px;
+        flex-wrap: wrap;
     }
 
     .of-item-name-input {
-        width: 100%;
-        flex: none;
+        min-width:
+            calc(100% - 5px);
+
+        flex-basis:
+            100%;
     }
 
     .of-item-size-input {
@@ -470,13 +833,117 @@
         width: auto;
     }
 
-      .add-order-fab {
-        width: 56px;
-        height: 56px;
-
-        /* FULL CIRCLE ON MOBILE TOO */
-        border-radius: 50%;
+    .of-floating-field {
+        width:
+            calc(100vw - 40px);
     }
+
+    .of-bottom-actions {
+        flex-direction: row;
+    }
+
+    .of-cancel-btn,
+    .of-save-btn {
+        flex: 1;
+    }
+
+
+    /* PERFECT CIRCLE ON MOBILE TOO */
+
+    .add-order-fab {
+        width: 52px;
+        height: 52px;
+
+        min-width: 52px;
+        min-height: 52px;
+
+        border-radius: 50% !important;
+    }
+
+
+    /* Mobile paper origin */
+
+    .of-modal-card {
+        transform-origin:
+            calc(100% - 25px)
+            calc(100% - 25px);
+
+        transform:
+            perspective(1200px)
+            translate(0,130px)
+            scale(.065)
+            rotate(-6deg)
+            rotateX(-15deg);
+    }
+
+    .of-modal-card.pm-in {
+        transform:
+            perspective(1200px)
+            translate(0,0)
+            scale(1)
+            rotate(0)
+            rotateX(0);
+    }
+
+    .of-modal-card.pm-out {
+        transform:
+            perspective(1200px)
+            translate(0,120px)
+            scale(.075)
+            rotate(-5deg)
+            rotateX(-12deg);
+    }
+
+}
+
+
+/* =========================================================
+   SHORT SCREEN
+   ========================================================= */
+
+@media (max-height: 760px) {
+
+    .of-modal-card {
+        max-height:
+            94vh !important;
+    }
+
+    .of-modal-card > form {
+        padding:
+            14px !important;
+    }
+
+    .of-chip {
+        height:
+            32px;
+    }
+
+    .of-item-input {
+        height:
+            29px;
+    }
+
+    .of-item-icon-btn {
+        width:
+            29px;
+
+        height:
+            29px;
+
+        flex-basis:
+            29px;
+    }
+
+    .of-items-section {
+        padding-top:
+            9px;
+    }
+
+    .of-bottom-actions {
+        padding-top:
+            7px;
+    }
+
 }
 
 </style>
@@ -488,25 +955,27 @@
 
 <div
     id="orderFormModal"
-    class="fixed inset-0 z-50 hidden bg-emerald-950/40 backdrop-blur-sm no-print flex items-center justify-center p-4 sm:p-6 of-modal-overlay"
+    class="fixed inset-0 z-50 hidden bg-emerald-950/40 backdrop-blur-sm no-print flex items-center justify-center p-3 sm:p-5 of-modal-overlay"
 >
 
     <section
         id="orderFormSection"
-        class="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-stone-200 relative of-modal-card"
+        class="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl border border-stone-200 relative of-modal-card"
     >
 
-        <!-- =================================================
-             HEADER
-             ================================================= -->
+        <!-- HEADER -->
 
         <div
-            class="sticky top-0 bg-white/95 backdrop-blur-md z-20 px-6 py-5 border-b border-stone-100 flex items-center justify-between"
+            class="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-3 border-b border-stone-100 flex items-center justify-between"
         >
 
-            <h2 class="section-title text-emerald-850 text-lg font-bold flex items-center gap-2">
+            <h2
+                class="section-title text-emerald-800 text-sm font-bold flex items-center gap-2"
+            >
 
-                <span class="p-1.5 bg-emerald-100 rounded-xl text-lg">
+                <span
+                    class="p-1 bg-emerald-100 rounded-lg text-sm"
+                >
                     📝
                 </span>
 
@@ -518,19 +987,19 @@
             <button
                 type="button"
                 onclick="closeOrderModal()"
-                class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer"
+                class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer"
             >
-                <span class="text-lg font-bold">
+
+                <span class="text-sm font-bold">
                     ✕
                 </span>
+
             </button>
 
         </div>
 
 
-        <!-- =================================================
-             FORM
-             ================================================= -->
+        <!-- FORM -->
 
         <form
             id="orderEntryForm"
@@ -538,7 +1007,7 @@
             method="POST"
             enctype="multipart/form-data"
             onsubmit="handleFormSubmit(event)"
-            class="p-6 space-y-6 text-sm font-sans"
+            class="p-4 space-y-3 text-sm font-sans"
         >
 
             <input
@@ -550,408 +1019,456 @@
 
 
             <!-- =================================================
-                 CHIP ROW
-                 ================================================= -->
-
-            <div class="of-chip-row">
-
-                <button
-                    type="button"
-                    class="of-chip"
-                    data-field="source"
-                    onclick="ofToggleField('source')"
-                >
-                    <span class="of-chip-icon">🏷️</span>
-                    <span>အော်ဒါလာသည့်နေရာ</span>
-                    <span class="of-chip-dot"></span>
-                </button>
-
-
-                <button
-                    type="button"
-                    class="of-chip"
-                    data-field="customer"
-                    onclick="ofToggleField('customer')"
-                >
-                    <span class="of-chip-icon">👤</span>
-                    <span>ဖောက်သည်</span>
-                    <span class="of-chip-dot"></span>
-                </button>
-
-
-                <button
-                    type="button"
-                    class="of-chip"
-                    data-field="address"
-                    onclick="ofToggleField('address')"
-                >
-                    <span class="of-chip-icon">📍</span>
-                    <span>လိပ်စာ</span>
-                    <span class="of-chip-dot"></span>
-                </button>
-
-
-                <button
-                    type="button"
-                    class="of-chip"
-                    data-field="date"
-                    onclick="ofToggleField('date')"
-                >
-                    <span class="of-chip-icon">📅</span>
-                    <span>ရက်စွဲ/အချိန်</span>
-                    <span class="of-chip-dot"></span>
-                </button>
-
-
-                <button
-                    type="button"
-                    class="of-chip"
-                    data-field="fee"
-                    onclick="ofToggleField('fee')"
-                >
-                    <span class="of-chip-icon">🚗</span>
-                    <span>ကားခ</span>
-                    <span class="of-chip-dot"></span>
-                </button>
-
-            </div>
-
-
-            <!-- =================================================
-                 SOURCE
+                 QUICK ACTIONS
                  ================================================= -->
 
             <div
-                class="of-panel"
-                id="ofPanel-source"
+                class="of-quick-wrap"
+                id="ofQuickWrap"
             >
 
-                <div class="of-panel-inner">
-
-                    <span class="of-panel-label">
-                        အော်ဒါလာသည့်နေရာ
-                    </span>
+                <div class="of-chip-row">
 
 
-                    <input
-                        type="hidden"
-                        name="source"
-                        id="sourceHidden"
-                        value=""
-                    >
-
+                    <!-- SOURCE -->
 
                     <button
                         type="button"
-                        id="sourceTriggerBtn"
-                        class="wp-trigger wp-empty text-sm"
-                        onclick="openSourcePicker(
-                            'sourceTriggerBtn',
-                            'sourceHidden',
-                            'အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)'
-                        )"
+                        class="of-chip"
+                        data-field="source"
+                        onclick="ofQuickAction('source')"
                     >
 
-                        <span class="text-stone-400">
-                            အော်ဒါလာသည့်နေရာ ရွေးပါ
+                        <span class="of-chip-icon">
+                            🏷️
                         </span>
 
-                        <svg
-                            class="w-4 h-4 text-stone-400"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
+                        <span>
+                            နေရာ
+                        </span>
+
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- CUSTOMER -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="customer"
+                        onclick="ofQuickAction('customer')"
+                    >
+
+                        <span class="of-chip-icon">
+                            👤
+                        </span>
+
+                        <span>
+                            ဖောက်သည်
+                        </span>
+
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- ADDRESS -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="address"
+                        onclick="ofQuickAction('address')"
+                    >
+
+                        <span class="of-chip-icon">
+                            📍
+                        </span>
+
+                        <span>
+                            လိပ်စာ
+                        </span>
+
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- DATE -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="date"
+                        onclick="ofQuickAction('date')"
+                    >
+
+                        <span class="of-chip-icon">
+                            📅
+                        </span>
+
+                        <span>
+                            ရက်စွဲ
+                        </span>
+
+                        <span class="of-chip-dot"></span>
+
+                    </button>
+
+
+                    <!-- DELIVERY FEE -->
+
+                    <button
+                        type="button"
+                        class="of-chip"
+                        data-field="fee"
+                        onclick="ofQuickAction('fee')"
+                    >
+
+                        <span class="of-chip-icon">
+                            🚗
+                        </span>
+
+                        <span>
+                            ကားခ
+                        </span>
+
+                        <span class="of-chip-dot"></span>
 
                     </button>
 
                 </div>
 
-            </div>
 
+                <!-- =================================================
+                     CUSTOMER
+                     ================================================= -->
 
-            <!-- =================================================
-                 CUSTOMER
-                 ================================================= -->
+                <div
+                    id="ofFloat-customer"
+                    class="of-floating-field"
+                >
 
-            <div
-                class="of-panel"
-                id="ofPanel-customer"
-            >
-
-                <div class="of-panel-inner">
-
-                    <span class="of-panel-label">
-                        ဖောက်သည်အမည်
+                    <span class="of-floating-label">
+                        ဖောက်သည်အမည် · Customer
                     </span>
 
                     <input
                         type="text"
                         name="customer"
-                        placeholder="အမည်"
-                        class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10"
+                        id="ofCustomerInput"
+                        class="of-floating-input"
+                        placeholder="ဖောက်သည်အမည် ရေးပါ..."
+                        autocomplete="off"
                         oninput="ofRefreshChipStates()"
                     >
 
                 </div>
 
-            </div>
 
+                <!-- =================================================
+                     ADDRESS
+                     ================================================= -->
 
-            <!-- =================================================
-                 ADDRESS
-                 ================================================= -->
+                <div
+                    id="ofFloat-address"
+                    class="of-floating-field"
+                >
 
-            <div
-                class="of-panel"
-                id="ofPanel-address"
-            >
-
-                <div class="of-panel-inner">
-
-                    <span class="of-panel-label">
-                        လိပ်စာ &amp; ဆက်သွယ်ရန်
+                    <span class="of-floating-label">
+                        လိပ်စာ · Address
                     </span>
 
                     <input
                         type="text"
                         name="address"
-                        placeholder="ပို့ဆောင်ရန် လိပ်စာ အသေးစိတ် နှင့် ဖုန်းနံပါတ်"
-                        class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10"
+                        id="ofAddressInput"
+                        class="of-floating-input"
+                        placeholder="ပို့ဆောင်ရန် လိပ်စာ / ဖုန်းနံပါတ် ရေးပါ..."
+                        autocomplete="off"
                         oninput="ofRefreshChipStates()"
                     >
 
                 </div>
 
-            </div>
 
+                <!-- =================================================
+                     DELIVERY FEE
+                     ================================================= -->
 
-            <!-- =================================================
-                 DATE
-                 ================================================= -->
+                <div
+                    id="ofFloat-fee"
+                    class="of-floating-field"
+                >
 
-            <div
-                class="of-panel"
-                id="ofPanel-date"
-            >
-
-                <div class="of-panel-inner">
-
-                    <span class="of-panel-label">
-                        ပေးပို့မည့် ရက်စွဲ &amp; အချိန်
-                    </span>
-
-
-                    <input
-                        type="hidden"
-                        name="date"
-                        id="dateHidden"
-                        value=""
-                    >
-
-                    <input
-                        type="hidden"
-                        name="time"
-                        id="timeHidden"
-                        value=""
-                    >
-
-
-                    <button
-                        type="button"
-                        id="deliveryTriggerBtn"
-                        class="wp-trigger wp-empty text-sm"
-                        onclick="openDeliveryDateWheelPicker(
-                            'deliveryTriggerBtn',
-                            'dateHidden',
-                            'timeHidden'
-                        )"
-                    >
-
-                        <span class="text-stone-400">
-                            ရက်စွဲ နှင့် အချိန် ရွေးပါ
-                        </span>
-
-                        <svg
-                            class="w-4 h-4 text-stone-400"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <rect
-                                x="3"
-                                y="5"
-                                width="18"
-                                height="16"
-                                rx="2"
-                            />
-
-                            <path d="M3 10h18M8 3v4M16 3v4"/>
-                        </svg>
-
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 DELIVERY FEE
-                 ================================================= -->
-
-            <div
-                class="of-panel"
-                id="ofPanel-fee"
-            >
-
-                <div class="of-panel-inner">
-
-                    <span class="of-panel-label">
-                        ကားခ
+                    <span class="of-floating-label">
+                        ကားခ · Delivery Fee
                     </span>
 
                     <input
                         type="text"
                         name="delivery_fee"
-                        placeholder="ကားခ မှတ်ချက် (ဥပမာ 15,000)"
-                        class="w-full border border-stone-300 rounded-xl p-3 text-sm outline-none focus:border-stone-950 focus:ring-2 focus:ring-emerald-500/10"
+                        id="ofFeeInput"
+                        class="of-floating-input"
+                        inputmode="numeric"
+                        placeholder="ကားခ ပမာဏ ရေးပါ..."
                         oninput="ofRefreshChipStates()"
                     >
 
                 </div>
 
+
+                <!-- =================================================
+                     SOURCE PICKER TRIGGER
+                     DO NOT REMOVE
+                     ================================================= -->
+
+                <input
+                    type="hidden"
+                    name="source"
+                    id="sourceHidden"
+                    value=""
+                >
+
+
+                <button
+                    type="button"
+                    id="sourceTriggerBtn"
+                    class="wp-trigger wp-empty of-picker-proxy"
+                    onclick="
+                        openSourcePicker(
+                            'sourceTriggerBtn',
+                            'sourceHidden',
+                            'အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)'
+                        )
+                    "
+                >
+
+                    <span class="text-stone-400">
+                        Select Source
+                    </span>
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+
+                        <path
+                            d="M6 9l6 6 6-6"
+                        />
+
+                    </svg>
+
+                </button>
+
+
+                <!-- =================================================
+                     DELIVERY DATE PICKER TRIGGER
+                     DO NOT REMOVE
+                     ================================================= -->
+
+                <input
+                    type="hidden"
+                    name="date"
+                    id="dateHidden"
+                    value=""
+                >
+
+                <input
+                    type="hidden"
+                    name="time"
+                    id="timeHidden"
+                    value=""
+                >
+
+
+                <button
+                    type="button"
+                    id="deliveryTriggerBtn"
+                    class="wp-trigger wp-empty of-picker-proxy"
+                    onclick="
+                        openDeliveryDateWheelPicker(
+                            'deliveryTriggerBtn',
+                            'dateHidden',
+                            'timeHidden'
+                        )
+                    "
+                >
+
+                    <span class="text-stone-400">
+                        ရက်စွဲ/အချိန်
+                    </span>
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+
+                        <path
+                            d="M6 9l6 6 6-6"
+                        />
+
+                    </svg>
+
+                </button>
+
             </div>
 
 
-            <!-- =================================================
-                 ITEMS
-                 ================================================= -->
+            <!-- =====================================================
+                 BACKGROUND
+                 ===================================================== -->
 
-            <div class="border-t border-stone-100 pt-6">
-
-                <div class="flex justify-between items-center mb-4">
-
-                    <h3 class="text-xs font-bold tracking-widest uppercase text-stone-500">
-                        ကုန်ပစ္စည်းစာရင်း အသေးစိတ်
-                    </h3>
+            <div
+                id="ofFormBackground"
+                class="of-form-background"
+            >
 
 
-                    <button
-                        type="button"
-                        onclick="addNewItemRow()"
-                        class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold py-1.5 px-4 rounded-xl transition-all"
+                <!-- =================================================
+                     ITEMS
+                     ================================================= -->
+
+                <div class="of-items-section">
+
+                    <div class="of-items-header">
+
+                        <span class="of-items-title">
+                            ကုန်ပစ္စည်းစာရင်း · Voucher Items
+                        </span>
+
+
+                        <button
+                            type="button"
+                            onclick="addNewItemRow()"
+                            class="of-add-item-btn"
+                        >
+
+                            ＋ ပစ္စည်းအသစ်ထည့်ရန်
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="itemsContainer"
+                        class="of-items-container"
                     >
-                        ➕ ပစ္စည်းအသစ်ထည့်ရန်
-                    </button>
 
-                </div>
+                        <!-- =================================================
+                             FIRST ITEM
+                             MORE PANEL IS OPEN BY DEFAULT
+                             ================================================= -->
 
+                        <div
+                            class="item-row of-item-card"
+                        >
 
-                <div
-                    id="itemsContainer"
-                    class="space-y-3"
-                >
-
-                    <!-- =================================================
-                         FIRST ITEM
-                         MORE SECTION IS OPEN BY DEFAULT
-                         ================================================= -->
-
-                    <div class="item-row of-item-card">
-
-                        <div class="of-item-row-main">
-
-                            <input
-                                type="text"
-                                name="item_name[]"
-                                placeholder="ကိတ်မုန့် / ဖယောင်းတိုင် / အချိုပွဲ"
-                                class="of-item-input of-item-name-input"
+                            <div
+                                class="of-item-row-main"
                             >
-
-
-                            <input
-                                type="text"
-                                name="size[]"
-                                placeholder="6in"
-                                class="of-item-input of-item-size-input"
-                            >
-
-
-                            <button
-                                type="button"
-                                class="of-item-icon-btn"
-                                onclick="toggleItemMore(this)"
-                                title="မှတ်ချက် / ပုံ ဖျောက်ရန်"
-                            >
-                                🖼️
-                            </button>
-
-
-                            <button
-                                type="button"
-                                class="of-item-icon-btn of-item-remove-btn"
-                                onclick="removeItemRow(this)"
-                                title="ဖျက်ရန်"
-                            >
-                                ✕
-                            </button>
-
-                        </div>
-
-
-                        <!-- MORE — VISIBLE BY DEFAULT -->
-
-                        <div class="of-item-more-panel">
-
-                            <div class="space-y-2">
 
                                 <input
                                     type="text"
-                                    name="remarks[]"
-                                    placeholder="ရေးသားချက် လိုအပ်ချက်..."
-                                    class="of-item-input w-full"
+                                    name="item_name[]"
+                                    placeholder="ကိတ်မုန့် / ဖယောင်းတိုင် / အချိုပွဲ"
+                                    class="of-item-input of-item-name-input"
                                 >
 
 
-                                <div class="grid grid-cols-2 gap-2">
-
-                                    <div>
-
-                                        <label class="block text-stone-500 text-[10px] mb-1 font-semibold">
-                                            🎂 ကိတ်မုန့် ကိုးကားပုံ
-                                        </label>
-
-                                        <input
-                                            type="file"
-                                            name="cakeImage[]"
-                                            accept="image/*"
-                                            class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer"
-                                        >
-
-                                    </div>
+                                <input
+                                    type="text"
+                                    name="size[]"
+                                    placeholder="6in"
+                                    class="of-item-input of-item-size-input"
+                                >
 
 
-                                    <div>
+                                <button
+                                    type="button"
+                                    class="of-item-icon-btn"
+                                    onclick="toggleItemMore(this)"
+                                    title="မှတ်ချက် / ပုံ"
+                                >
+                                    🖼️
+                                </button>
 
-                                        <label class="block text-rose-600 text-[10px] mb-1 font-semibold">
-                                            💐 ပန်းစည်း ကိုးကားပုံ
-                                        </label>
 
-                                        <input
-                                            type="file"
-                                            name="flowerImage[]"
-                                            accept="image/*"
-                                            class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer"
-                                        >
+                                <button
+                                    type="button"
+                                    class="of-item-icon-btn of-item-remove-btn"
+                                    onclick="removeItemRow(this)"
+                                    title="ဖျက်ရန်"
+                                >
+                                    ✕
+                                </button>
+
+                            </div>
+
+
+                            <!-- MORE — OPEN BY DEFAULT -->
+
+                            <div
+                                class="of-item-more-panel"
+                            >
+
+                                <div class="space-y-2">
+
+                                    <input
+                                        type="text"
+                                        name="remarks[]"
+                                        placeholder="ရေးသားချက် လိုအပ်ချက်..."
+                                        class="of-item-input w-full"
+                                    >
+
+
+                                    <div
+                                        class="grid grid-cols-2 gap-2"
+                                    >
+
+                                        <div>
+
+                                            <label
+                                                class="block text-stone-500 text-[9px] mb-1 font-semibold"
+                                            >
+                                                🎂 ကိတ်မုန့် ကိုးကားပုံ
+                                            </label>
+
+
+                                            <input
+                                                type="file"
+                                                name="cakeImage[]"
+                                                accept="image/*"
+                                                class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer"
+                                            >
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <label
+                                                class="block text-rose-600 text-[9px] mb-1 font-semibold"
+                                            >
+                                                💐 ပန်းစည်း ကိုးကားပုံ
+                                            </label>
+
+
+                                            <input
+                                                type="file"
+                                                name="flowerImage[]"
+                                                accept="image/*"
+                                                class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer"
+                                            >
+
+                                        </div>
 
                                     </div>
 
@@ -965,30 +1482,30 @@
 
                 </div>
 
-            </div>
+
+                <!-- =================================================
+                     BOTTOM ACTIONS
+                     ================================================= -->
+
+                <div class="of-bottom-actions">
+
+                    <button
+                        type="button"
+                        onclick="closeOrderModal()"
+                        class="of-cancel-btn"
+                    >
+                        ပယ်ဖျက်
+                    </button>
 
 
-            <!-- =================================================
-                 BOTTOM ACTIONS
-                 ================================================= -->
+                    <button
+                        type="submit"
+                        class="of-save-btn"
+                    >
+                        ✓ အော်ဒါသိမ်းမည်
+                    </button>
 
-            <div class="flex justify-end pt-4 border-t border-stone-100 gap-3">
-
-                <button
-                    type="button"
-                    onclick="closeOrderModal()"
-                    class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-8 rounded-xl transition-all"
-                >
-                    ပယ်ဖျက်မည်
-                </button>
-
-
-                <button
-                    type="submit"
-                    class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-xs uppercase tracking-widest font-semibold py-3.5 px-10 rounded-xl transition-all shadow-md"
-                >
-                    အော်ဒါ သိမ်းဆည်းမည်
-                </button>
+                </div>
 
             </div>
 
@@ -1000,22 +1517,15 @@
 
 
 <!-- =========================================================
-     ADD ORDER FAB
+     ADD ORDER BUTTON
      ========================================================= -->
 
 <button
     type="button"
     id="fabAddOrderBtn"
     onclick="openOrderModal()"
-    aria-label="အော်ဒါအသစ် ထည့်ရန်"
+    aria-label="Add new order"
     class="no-print add-order-fab"
-    style="
-        right: max(1.1rem, env(safe-area-inset-right));
-        bottom: max(
-            1.1rem,
-            calc(env(safe-area-inset-bottom) + 0.5rem)
-        );
-    "
 >
 
     <svg
@@ -1027,7 +1537,10 @@
         stroke-linecap="round"
         stroke-linejoin="round"
     >
-        <path d="M12 5v14M5 12h14"/>
+
+        <path d="M12 5v14"/>
+        <path d="M5 12h14"/>
+
     </svg>
 
 </button>
@@ -1036,182 +1549,452 @@
 <script>
 
 /* =========================================================
-   OPEN MODAL
+   OPEN ORDER MODAL
    ========================================================= */
 
 function openOrderModal() {
 
     const modal =
-        document.getElementById('orderFormModal');
+        document.getElementById(
+            'orderFormModal'
+        );
 
     const card =
-        document.getElementById('orderFormSection');
+        document.getElementById(
+            'orderFormSection'
+        );
 
     if (!modal || !card) return;
 
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    document.body.classList.add(
+        'of-order-open'
+    );
 
-    document.body.style.overflow = 'hidden';
+
+    modal.classList.remove(
+        'hidden'
+    );
+
+    modal.classList.add(
+        'flex'
+    );
+
+
+    document.body.style.overflow =
+        'hidden';
+
+
+    card.classList.remove(
+        'pm-in'
+    );
+
+    card.classList.remove(
+        'pm-out'
+    );
 
 
     requestAnimationFrame(() => {
 
-        modal.classList.add('pm-active');
+        modal.classList.add(
+            'pm-active'
+        );
+
 
         requestAnimationFrame(() => {
 
-            card.classList.remove('pm-out');
-
-            card.classList.add('pm-in');
+            card.classList.add(
+                'pm-in'
+            );
 
         });
 
     });
 
+
+    ofRefreshChipStates();
+
 }
 
 
 /* =========================================================
-   CLOSE MODAL
+   CLOSE ORDER MODAL
    ========================================================= */
 
 function closeOrderModal() {
 
+    closeAllQuickFields();
+
+
     const modal =
-        document.getElementById('orderFormModal');
+        document.getElementById(
+            'orderFormModal'
+        );
 
     const card =
-        document.getElementById('orderFormSection');
+        document.getElementById(
+            'orderFormSection'
+        );
+
 
     if (!modal || !card) return;
 
 
-    card.classList.remove('pm-in');
+    card.classList.remove(
+        'pm-in'
+    );
 
-    card.classList.add('pm-out');
+    card.classList.add(
+        'pm-out'
+    );
 
-    modal.classList.remove('pm-active');
+    modal.classList.remove(
+        'pm-active'
+    );
 
 
     setTimeout(() => {
 
-        modal.classList.add('hidden');
+        modal.classList.add(
+            'hidden'
+        );
 
-        modal.classList.remove('flex');
+        modal.classList.remove(
+            'flex'
+        );
 
-        card.classList.remove('pm-out');
+        card.classList.remove(
+            'pm-out'
+        );
 
-        document.body.style.overflow = '';
 
-    }, 220);
+        document.body.classList.remove(
+            'of-order-open'
+        );
+
+
+        document.body.style.overflow =
+            '';
+
+    }, 360);
 
 }
 
 
 /* =========================================================
-   CLICK OUTSIDE MODAL
+   OUTSIDE CLICK
    ========================================================= */
 
 document
-    .getElementById('orderFormModal')
-    .addEventListener('click', function(e) {
+    .getElementById(
+        'orderFormModal'
+    )
+    ?.addEventListener(
+        'click',
+        function(e) {
 
-        if (e.target === this) {
+            if (
+                e.target === this
+            ) {
 
-            closeOrderModal();
+                closeOrderModal();
+
+            }
 
         }
-
-    });
+    );
 
 
 /* =========================================================
-   CHIP FIELD ACCORDION
+   ESCAPE
    ========================================================= */
 
-function ofToggleField(key) {
+document.addEventListener(
+    'keydown',
+    function(e) {
 
-    const panel =
-        document.getElementById('ofPanel-' + key);
+        if (
+            e.key === 'Escape'
+        ) {
 
-    if (!panel) return;
+            closeAllQuickFields();
 
+        }
 
-    const wasOpen =
-        panel.classList.contains('of-panel-open');
-
-
-    /*
-     * Close all other fields
-     */
-
-    document
-        .querySelectorAll('.of-panel.of-panel-open')
-        .forEach(p => {
-
-            p.classList.remove('of-panel-open');
-
-        });
+    }
+);
 
 
-    /*
-     * Remove active chip
-     */
+/* =========================================================
+   CLOSE ALL QUICK FIELDS
+   ========================================================= */
+
+function closeAllQuickFields() {
 
     document
-        .querySelectorAll('.of-chip.of-open')
-        .forEach(c => {
+        .querySelectorAll(
+            '.of-floating-field.of-show'
+        )
+        .forEach(
+            el => {
 
-            c.classList.remove('of-open');
+                el.classList.remove(
+                    'of-show'
+                );
 
-        });
+            }
+        );
 
 
-    /*
-     * Open selected field
-     */
+    document
+        .querySelectorAll(
+            '.of-chip.of-open'
+        )
+        .forEach(
+            el => {
 
-    if (!wasOpen) {
+                el.classList.remove(
+                    'of-open'
+                );
 
-        panel.classList.add('of-panel-open');
+            }
+        );
+
+
+    const background =
+        document.getElementById(
+            'ofFormBackground'
+        );
+
+
+    if (background) {
+
+        background.classList.remove(
+            'of-background-blur'
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLOSE ONE QUICK FIELD
+   ========================================================= */
+
+function closeQuickField(
+    key
+) {
+
+    const field =
+        document.getElementById(
+            'ofFloat-' + key
+        );
+
+
+    const chip =
+        document.querySelector(
+            `.of-chip[data-field="${key}"]`
+        );
+
+
+    if (field) {
+
+        field.classList.remove(
+            'of-show'
+        );
+
+    }
+
+
+    if (chip) {
+
+        chip.classList.remove(
+            'of-open'
+        );
+
+    }
+
+
+    const background =
+        document.getElementById(
+            'ofFormBackground'
+        );
+
+
+    if (
+        background &&
+        !document.querySelector(
+            '.of-floating-field.of-show'
+        )
+    ) {
+
+        background.classList.remove(
+            'of-background-blur'
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   QUICK ACTION
+   ========================================================= */
+
+function ofQuickAction(
+    key
+) {
+
+
+    /* SOURCE */
+
+    if (
+        key === 'source'
+    ) {
+
+        closeAllQuickFields();
 
 
         const chip =
             document.querySelector(
-                `.of-chip[data-field="${key}"]`
+                '.of-chip[data-field="source"]'
             );
 
 
         if (chip) {
 
-            chip.classList.add('of-open');
+            chip.classList.add(
+                'of-open'
+            );
 
         }
 
 
-        /*
-         * Focus normal text field
-         */
+        openSourcePicker(
+            'sourceTriggerBtn',
+            'sourceHidden',
+            'အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)'
+        );
 
-        const inp =
-            panel.querySelector(
-                'input[type="text"]'
+
+        return;
+
+    }
+
+
+    /* DATE */
+
+    if (
+        key === 'date'
+    ) {
+
+        closeAllQuickFields();
+
+
+        const chip =
+            document.querySelector(
+                '.of-chip[data-field="date"]'
             );
 
 
-        if (inp) {
+        if (chip) {
 
-            setTimeout(() => {
-
-                inp.focus();
-
-            }, 260);
+            chip.classList.add(
+                'of-open'
+            );
 
         }
 
+
+        openDeliveryDateWheelPicker(
+            'deliveryTriggerBtn',
+            'dateHidden',
+            'timeHidden'
+        );
+
+
+        return;
+
     }
+
+
+    /* FLOATING FIELD */
+
+    const field =
+        document.getElementById(
+            'ofFloat-' + key
+        );
+
+
+    const chip =
+        document.querySelector(
+            `.of-chip[data-field="${key}"]`
+        );
+
+
+    if (!field || !chip) return;
+
+
+    const wasOpen =
+        field.classList.contains(
+            'of-show'
+        );
+
+
+    closeAllQuickFields();
+
+
+    if (wasOpen) {
+
+        return;
+
+    }
+
+
+    field.classList.add(
+        'of-show'
+    );
+
+    chip.classList.add(
+        'of-open'
+    );
+
+
+    /* BLUR EVERYTHING BEHIND */
+
+    const background =
+        document.getElementById(
+            'ofFormBackground'
+        );
+
+
+    if (background) {
+
+        background.classList.add(
+            'of-background-blur'
+        );
+
+    }
+
+
+    /* FOCUS FIELD */
+
+    setTimeout(() => {
+
+        const input =
+            field.querySelector(
+                'input:not([type="hidden"]):not([type="checkbox"]), textarea, select'
+            );
+
+
+        if (input) {
+
+            input.focus();
+
+        }
+
+    }, 80);
 
 }
 
@@ -1220,12 +2003,16 @@ function ofToggleField(key) {
    CHIP FILLED STATE
    ========================================================= */
 
-function ofSetFilled(key, filled) {
+function ofSetFilled(
+    key,
+    filled
+) {
 
     const chip =
         document.querySelector(
             `.of-chip[data-field="${key}"]`
         );
+
 
     if (chip) {
 
@@ -1245,83 +2032,77 @@ function ofSetFilled(key, filled) {
 
 function ofRefreshChipStates() {
 
-    /* SOURCE */
+    const source =
+        document.getElementById(
+            'sourceHidden'
+        );
 
-    const sourceHidden =
-        document.getElementById('sourceHidden');
 
     ofSetFilled(
         'source',
         !!(
-            sourceHidden &&
-            sourceHidden.value
+            source &&
+            source.value
         )
     );
 
 
-    /* CUSTOMER */
-
-    const customerInput =
-        document.querySelector(
-            '#ofPanel-customer [name="customer"]'
+    const customer =
+        document.getElementById(
+            'ofCustomerInput'
         );
+
 
     ofSetFilled(
         'customer',
         !!(
-            customerInput &&
-            customerInput.value.trim()
+            customer &&
+            customer.value.trim()
         )
     );
 
 
-    /* ADDRESS */
-
-    const addressInput =
-        document.querySelector(
-            '#ofPanel-address [name="address"]'
+    const address =
+        document.getElementById(
+            'ofAddressInput'
         );
+
 
     ofSetFilled(
         'address',
         !!(
-            addressInput &&
-            addressInput.value.trim()
+            address &&
+            address.value.trim()
         )
     );
 
 
-    /* DATE */
+    const date =
+        document.getElementById(
+            'dateHidden'
+        );
 
-    const dateHidden =
-        document.getElementById('dateHidden');
-
-    const timeHidden =
-        document.getElementById('timeHidden');
 
     ofSetFilled(
         'date',
         !!(
-            dateHidden &&
-            dateHidden.value &&
-            timeHidden &&
-            timeHidden.value
+            date &&
+            date.value
         )
     );
 
 
-    /* FEE */
-
-    const feeInput =
-        document.querySelector(
-            '#ofPanel-fee [name="delivery_fee"]'
+    const fee =
+        document.getElementById(
+            'ofFeeInput'
         );
+
 
     ofSetFilled(
         'fee',
         !!(
-            feeInput &&
-            feeInput.value.trim()
+            fee &&
+            fee.value.trim()
         )
     );
 
@@ -1329,7 +2110,38 @@ function ofRefreshChipStates() {
 
 
 /* =========================================================
-   WATCH PICKER LABELS
+   CLICK OUTSIDE QUICK AREA
+   ========================================================= */
+
+document.addEventListener(
+    'click',
+    function(e) {
+
+        const wrap =
+            document.getElementById(
+                'ofQuickWrap'
+            );
+
+
+        if (!wrap) return;
+
+
+        if (
+            !wrap.contains(
+                e.target
+            )
+        ) {
+
+            closeAllQuickFields();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   PICKER OBSERVERS
    ========================================================= */
 
 document.addEventListener(
@@ -1339,32 +2151,72 @@ document.addEventListener(
         [
             'sourceTriggerBtn',
             'deliveryTriggerBtn'
-        ].forEach(id => {
+        ]
+        .forEach(
+            function(id) {
 
-            const btn =
-                document.getElementById(id);
-
-            if (!btn) return;
-
-
-            const span =
-                btn.querySelector('span');
-
-            if (!span) return;
+                const btn =
+                    document.getElementById(
+                        id
+                    );
 
 
-            new MutationObserver(
-                ofRefreshChipStates
-            ).observe(
-                span,
-                {
-                    childList: true,
-                    characterData: true,
-                    subtree: true
-                }
-            );
+                if (!btn) return;
 
-        });
+
+                const span =
+                    btn.querySelector(
+                        'span'
+                    );
+
+
+                if (!span) return;
+
+
+                new MutationObserver(
+                    function() {
+
+                        ofRefreshChipStates();
+
+                    }
+                )
+                .observe(
+                    span,
+                    {
+                        childList: true,
+                        characterData: true,
+                        subtree: true
+                    }
+                );
+
+            }
+        );
+
+
+        [
+            'sourceHidden',
+            'dateHidden',
+            'timeHidden'
+        ]
+        .forEach(
+            function(id) {
+
+                const input =
+                    document.getElementById(
+                        id
+                    );
+
+
+                if (!input) return;
+
+
+                input.addEventListener(
+                    'change',
+                    ofRefreshChipStates
+                );
+
+            }
+        );
 
 
         ofRefreshChipStates();
@@ -1379,21 +2231,32 @@ document.addEventListener(
 
 function getLocalISODate() {
 
-    const d = new Date();
+    const d =
+        new Date();
 
-    return `${d.getFullYear()}-${
-        String(d.getMonth() + 1).padStart(2, '0')
-    }-${
-        String(d.getDate()).padStart(2, '0')
-    }`;
+
+    return (
+        d.getFullYear()
+        + '-'
+        + String(
+            d.getMonth() + 1
+        ).padStart(2, '0')
+        + '-'
+        + String(
+            d.getDate()
+        ).padStart(2, '0')
+    );
 
 }
 
 
-(function initDefaultDeliveryDate() {
+(function() {
 
     const dateHidden =
-        document.getElementById('dateHidden');
+        document.getElementById(
+            'dateHidden'
+        );
+
 
     if (
         dateHidden &&
@@ -1403,43 +2266,24 @@ function getLocalISODate() {
         dateHidden.value =
             getLocalISODate();
 
-
-        const span =
-            document.querySelector(
-                '#deliveryTriggerBtn span'
-            );
-
-
-        if (
-            span &&
-            typeof wpShortDayLabel === 'function'
-        ) {
-
-            span.textContent =
-                `${wpShortDayLabel(dateHidden.value)} · --:--`;
-
-
-            document
-                .getElementById('deliveryTriggerBtn')
-                .classList
-                .remove('wp-empty');
-
-        }
-
     }
 
 })();
 
 
 /* =========================================================
-   ITEM MORE PANEL
-   DEFAULT = OPEN
+   ITEM MORE
    ========================================================= */
 
-function toggleItemMore(btn) {
+function toggleItemMore(
+    btn
+) {
 
     const itemRow =
-        btn.closest('.item-row');
+        btn.closest(
+            '.item-row'
+        );
+
 
     if (!itemRow) return;
 
@@ -1449,21 +2293,20 @@ function toggleItemMore(btn) {
             '.of-item-more-panel'
         );
 
+
     if (!panel) return;
 
 
     /*
-     * Since the panel is visible by default,
-     * clicking the image button now COLLAPSES it.
+     * The panel is visible by default here, so clicking the
+     * image button toggles it collapsed / open.
      */
 
     const isCollapsed =
-        panel.classList.toggle('of-collapsed');
+        panel.classList.toggle(
+            'of-collapsed'
+        );
 
-
-    /*
-     * Active means the panel is currently visible.
-     */
 
     btn.classList.toggle(
         'of-active',
@@ -1477,39 +2320,53 @@ function toggleItemMore(btn) {
    REMOVE ITEM
    ========================================================= */
 
-function removeItemRow(btn) {
+function removeItemRow(
+    btn
+) {
+
+    const row =
+        btn.closest(
+            '.item-row'
+        );
+
 
     const container =
-        document.getElementById('itemsContainer');
+        document.getElementById(
+            'itemsContainer'
+        );
+
+
+    if (!container) return;
+
 
     const rows =
-        container.querySelectorAll('.item-row');
+        container.querySelectorAll(
+            '.item-row'
+        );
 
 
-    /*
-     * Keep one row minimum.
-     */
+    if (
+        rows.length <= 1
+    ) {
 
-    if (rows.length <= 1) {
+        row
+            .querySelectorAll(
+                'input'
+            )
+            .forEach(
+                input => {
 
-        const row = rows[0];
+                    if (
+                        input.type !== 'file'
+                    ) {
 
-        row.querySelectorAll(
-            'input[type="text"]'
-        ).forEach(input => {
+                        input.value =
+                            '';
 
-            input.value = '';
+                    }
 
-        });
-
-
-        row.querySelectorAll(
-            'input[type="file"]'
-        ).forEach(input => {
-
-            input.value = '';
-
-        });
+                }
+            );
 
 
         const more =
@@ -1517,12 +2374,8 @@ function removeItemRow(btn) {
                 '.of-item-more-panel'
             );
 
-        if (more) {
 
-            /*
-             * Keep remarks/photos OPEN
-             * when resetting the only row.
-             */
+        if (more) {
 
             more.classList.remove(
                 'of-collapsed'
@@ -1536,6 +2389,7 @@ function removeItemRow(btn) {
                 '.of-item-icon-btn'
             );
 
+
         if (moreBtn) {
 
             moreBtn.classList.remove(
@@ -1544,18 +2398,20 @@ function removeItemRow(btn) {
 
         }
 
+
         return;
 
     }
 
 
-    btn.closest('.item-row').remove();
+    row.remove();
 
 }
 
 
 /* =========================================================
-   ADD NEW ITEM
+   ADD ITEM
+   MORE PANEL OPEN BY DEFAULT
    ========================================================= */
 
 function addNewItemRow() {
@@ -1566,8 +2422,13 @@ function addNewItemRow() {
         );
 
 
+    if (!container) return;
+
+
     const row =
-        document.createElement('div');
+        document.createElement(
+            'div'
+        );
 
 
     row.className =
@@ -1596,10 +2457,11 @@ function addNewItemRow() {
                 type="button"
                 class="of-item-icon-btn"
                 onclick="toggleItemMore(this)"
-                title="မှတ်ချက် / ပုံ ဖျောက်ရန်"
+                title="မှတ်ချက် / ပုံ"
             >
                 🖼️
             </button>
+
 
             <button
                 type="button"
@@ -1613,12 +2475,7 @@ function addNewItemRow() {
         </div>
 
 
-        <!--
-             IMPORTANT:
-             No "of-collapsed" class here.
-             Therefore every NEW item opens
-             with remarks + photos visible.
-        -->
+        <!-- MORE PANEL — OPEN BY DEFAULT -->
 
         <div class="of-item-more-panel">
 
@@ -1627,24 +2484,29 @@ function addNewItemRow() {
                 <input
                     type="text"
                     name="remarks[]"
-                    placeholder="မှတ်ချက် လိုအပ်ချက်"
+                    placeholder="ရေးသားချက် လိုအပ်ချက်..."
                     class="of-item-input w-full"
                 >
 
 
-                <div class="grid grid-cols-2 gap-2">
+                <div
+                    class="grid grid-cols-2 gap-2"
+                >
 
                     <div>
 
-                        <label class="block text-stone-500 text-[10px] mb-1 font-semibold">
+                        <label
+                            class="block text-stone-500 text-[9px] mb-1 font-semibold"
+                        >
                             🎂 ကိတ်မုန့် ကိုးကားပုံ
                         </label>
+
 
                         <input
                             type="file"
                             name="cakeImage[]"
                             accept="image/*"
-                            class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer"
+                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 cursor-pointer"
                         >
 
                     </div>
@@ -1652,15 +2514,18 @@ function addNewItemRow() {
 
                     <div>
 
-                        <label class="block text-rose-600 text-[10px] mb-1 font-semibold">
+                        <label
+                            class="block text-rose-600 text-[9px] mb-1 font-semibold"
+                        >
                             💐 ပန်းစည်း ကိုးကားပုံ
                         </label>
+
 
                         <input
                             type="file"
                             name="flowerImage[]"
                             accept="image/*"
-                            class="w-full text-[11px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer"
+                            class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer"
                         >
 
                     </div>
@@ -1674,7 +2539,22 @@ function addNewItemRow() {
     `;
 
 
-    container.appendChild(row);
+    container.appendChild(
+        row
+    );
+
+
+    const nameInput =
+        row.querySelector(
+            '.of-item-name-input'
+        );
+
+
+    if (nameInput) {
+
+        nameInput.focus();
+
+    }
 
 }
 
@@ -1683,7 +2563,9 @@ function addNewItemRow() {
    FORM SUBMIT
    ========================================================= */
 
-function handleFormSubmit(event) {
+function handleFormSubmit(
+    event
+) {
 
     event.preventDefault();
 
@@ -1700,22 +2582,56 @@ function handleFormSubmit(event) {
 
     if (returnQsInput) {
 
-        returnQsInput.value =
-            window.mcBuildReturnQS
+        try {
 
-                ? window.mcBuildReturnQS()
+            if (
+                typeof mcBuildReturnQS ===
+                'function'
+            ) {
 
-                : window.location.search
-                    .replace(/^\?/, '');
+                returnQsInput.value =
+                    mcBuildReturnQS();
+
+            } else {
+
+                returnQsInput.value =
+                    window.location.search
+                        .replace(
+                            /^\?/,
+                            ''
+                        );
+
+            }
+
+        } catch (err) {
+
+            console.warn(
+                'Could not build return query:',
+                err
+            );
+
+        }
 
     }
 
 
-    if (
-        window.mcSaveClientFilters
-    ) {
+    try {
 
-        window.mcSaveClientFilters();
+        if (
+            typeof mcSaveClientFilters ===
+            'function'
+        ) {
+
+            mcSaveClientFilters();
+
+        }
+
+    } catch (err) {
+
+        console.warn(
+            'Could not save client filters:',
+            err
+        );
 
     }
 
@@ -1728,35 +2644,23 @@ function handleFormSubmit(event) {
 
     if (submitBtn) {
 
-        submitBtn.disabled = true;
+        submitBtn.disabled =
+            true;
 
         submitBtn.textContent =
-            'လုပ်ဆောင်နေသည်...';
+            'ပုံများ လုပ်ဆောင်နေသည်...';
 
     }
 
-
-    /*
-     * Keep your existing image
-     * compression system.
-     */
 
     if (
         typeof mcCompressAndSubmit ===
         'function'
     ) {
 
-        mcCompressAndSubmit(form)
-            .catch((err) => {
-
-                console.error(
-                    'Image compression failed, submitting originals:',
-                    err
-                );
-
-                form.submit();
-
-            });
+        mcCompressAndSubmit(
+            form
+        );
 
     } else {
 
