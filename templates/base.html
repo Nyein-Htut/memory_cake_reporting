@@ -536,8 +536,7 @@
 
         /* ===== Source Picker (bottom-sheet option list, matches wheel-picker language) ===== */
         .wp-source-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; max-height: 320px; overflow-y: auto; padding-right: 2px; }
-        .wp-source-item {
-            display: flex; align-items: center; justify-content: space-between;
+        .wp-source-item { display: flex; align-items: center; justify-content: space-between;
             padding: 13px 16px; border: 1.5px solid #e7e5e4; border-radius: 12px;
             font-size: 14px; font-weight: 600; color: #44403c; background: #fff;
             cursor: pointer; transition: all .15s ease; user-select: none;
@@ -645,20 +644,34 @@
 }
 
 /* =========================================================
-   NAV SPEED-DIAL (glossy glass orbit, same language as the
-   Daily Records filter FAB)
+   NAV MENU — HORIZONTAL "SHOOT-OUT" BAR
+   Buttons live in a row anchored under the header, right-
+   aligned under the hamburger, so they never sit over the
+   logo/title. Each one animates in with a staggered slide-
+   from-the-hamburger + scale pop — like the hamburger fired
+   them out sideways.
    ========================================================= */
 
 .nav-fanwrap {
     position: fixed;
-    z-index: 401;
-    width: 44px;
-    height: 44px;
+    z-index: 10000;
 
-    --fan-radius: 82px;
-    --fan-btn-size: 46px;
-    --fan-gap: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+
+    max-width: calc(100vw - 20px);
+    padding: 6px 2px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    pointer-events: none;
 }
+.nav-fanwrap::-webkit-scrollbar { display: none; }
 
 .nav-fan-backdrop {
     position: fixed;
@@ -674,9 +687,8 @@
 .nav-fan-backdrop.active { display: block; }
 
 .nav-fan-btn {
-    position: absolute;
-    left: -1px;
-    top: -1px;
+    position: relative;
+    flex: 0 0 auto;
 
     width: 46px;
     height: 46px;
@@ -687,7 +699,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
 
     text-decoration: none;
     color: #1c1917;
@@ -713,14 +724,14 @@
 
     overflow: hidden;
 
-    transform: translate(0, 0) scale(.25) rotate(-18deg);
+    /* Start "docked" under the hamburger: shifted right, tiny, invisible */
+    transform: translateX(34px) scale(.35) rotate(-12deg);
     opacity: 0;
     pointer-events: none;
-    transform-origin: center center;
 
     transition:
-        transform .46s cubic-bezier(.22, 1.35, .36, 1),
-        opacity .2s ease,
+        transform .46s cubic-bezier(.19,1.5,.32,1),
+        opacity .22s ease,
         background .2s ease,
         box-shadow .2s ease;
 
@@ -753,19 +764,24 @@
     stroke-width: 2;
 }
 
+/* Fired out: land in place, full size, no rotation */
 .nav-fanwrap.nav-fan-open .nav-fan-btn {
     opacity: 1;
     pointer-events: auto;
-    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(1) rotate(0deg);
+    transform: translateX(0) scale(1) rotate(0deg);
 }
 
-.nav-fan-btn.fan-pos-0 { transition-delay: .02s; }
-.nav-fan-btn.fan-pos-1 { transition-delay: .05s; }
-.nav-fan-btn.fan-pos-2 { transition-delay: .08s; }
+/* Stagger — the button nearest the hamburger (highest fan-pos index,
+   rightmost in the row) fires first; each one further left follows a
+   beat later, like they were shot out in sequence. */
+.nav-fan-btn.fan-pos-6 { transition-delay: .02s; }
+.nav-fan-btn.fan-pos-5 { transition-delay: .05s; }
+.nav-fan-btn.fan-pos-4 { transition-delay: .08s; }
 .nav-fan-btn.fan-pos-3 { transition-delay: .11s; }
-.nav-fan-btn.fan-pos-4 { transition-delay: .14s; }
-.nav-fan-btn.fan-pos-5 { transition-delay: .17s; }
-.nav-fan-btn.fan-pos-6 { transition-delay: .20s; }
+.nav-fan-btn.fan-pos-2 { transition-delay: .14s; }
+.nav-fan-btn.fan-pos-1 { transition-delay: .17s; }
+.nav-fan-btn.fan-pos-0 { transition-delay: .20s; }
+
 .nav-fanwrap:not(.nav-fan-open) .nav-fan-btn { transition-delay: 0s; }
 
 .nav-fan-btn:hover {
@@ -782,10 +798,9 @@
 }
 
 .nav-fan-btn:active {
-    transform: translate(var(--fan-tx, 0px), var(--fan-ty, 0px)) scale(.9) rotate(0deg);
+    transform: translateX(0) scale(.9) rotate(0deg);
 }
 
-/* Current page = filled dark, like the .of-open state elsewhere */
 .nav-fan-btn.active {
     background: radial-gradient(circle at 50% 35%, #292524 0%, #1c1917 100%);
     color: #fff;
@@ -795,7 +810,6 @@
     background: radial-gradient(circle at 50% 35%, #047857 0%, #065f46 100%);
 }
 
-/* Logout tile — rose tint */
 .nav-fan-btn.logout {
     background: radial-gradient(circle at 50% 35%, #fee2e2 0%, #fecaca 100%);
     color: #dc2626;
@@ -1353,7 +1367,7 @@ body.nav-menu-open {
 }
 
 .nav-fanwrap .nav-fan-btn {
-    position: absolute;
+    position: relative;
     z-index: 10001 !important;
 }
 
@@ -3415,62 +3429,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!hamburger || !wrap || !backdrop) return;
 
-    // Corrects for the mobile "visual viewport vs layout viewport" offset
-    // that appears when the page is pinch-zoomed or the browser's toolbar
-    // is mid-collapse — without this, getBoundingClientRect() and the
-    // position:fixed coordinate space can disagree, and the fan renders
-    // shifted away from the real hamburger position.
+    // Anchors the bar directly under the header, right edge aligned with
+    // the hamburger — never over the logo/title — and corrects for the
+    // mobile visual-viewport offset (pinch zoom / toolbar collapse) so it
+    // never drifts away from the real button position.
     function positionNavFanWrap() {
         const rect = hamburger.getBoundingClientRect();
         const vv = window.visualViewport;
         const offsetLeft = vv ? vv.offsetLeft : 0;
         const offsetTop = vv ? vv.offsetTop : 0;
+        const gapBelow = 10;
 
-        wrap.style.top = Math.round(rect.top + offsetTop) + 'px';
-        wrap.style.left = Math.round(rect.left + offsetLeft) + 'px';
-        wrap.style.width = Math.round(rect.width) + 'px';
-        wrap.style.height = Math.round(rect.height) + 'px';
-    }
-
-    function layoutNavFan() {
-        const buttons = Array.from(wrap.querySelectorAll('.nav-fan-btn'));
-        const n = buttons.length;
-        if (!n) return;
-
-        const cs = getComputedStyle(wrap);
-        const gap = Math.max(0, parseFloat(cs.getPropertyValue('--fan-gap')) || 10);
-        let radius = Math.max(0, parseFloat(cs.getPropertyValue('--fan-radius')) || 82);
-
-        const btnW = buttons[0].offsetWidth || 46;
-        const btnH = buttons[0].offsetHeight || 46;
-        const btnDia = Math.max(btnW, btnH);
-
-        const startDeg = 185;
-        const endDeg = 275;
-        const sweepDeg = endDeg - startDeg;
-
-        if (n > 1) {
-            const stepRad = (sweepDeg / (n - 1)) * Math.PI / 180;
-            const sinHalf = Math.sin(stepRad / 2);
-            if (sinHalf > 0.000001) {
-                radius = Math.max(radius, (btnDia + gap) / (2 * sinHalf));
-            }
-        }
-
-        buttons.forEach((btn, i) => {
-            const deg = n > 1
-                ? startDeg + (i * sweepDeg / (n - 1))
-                : (startDeg + endDeg) / 2;
-            const rad = deg * Math.PI / 180;
-            btn.style.setProperty('--fan-tx', (radius * Math.cos(rad)).toFixed(2) + 'px');
-            btn.style.setProperty('--fan-ty', (-radius * Math.sin(rad)).toFixed(2) + 'px');
-        });
+        wrap.style.top = Math.round(rect.bottom + offsetTop + gapBelow) + 'px';
+        wrap.style.left = 'auto';
+        wrap.style.right = Math.round(window.innerWidth - (rect.right + offsetLeft)) + 'px';
     }
 
     function openNavFan() {
-        // Measure immediately so there's no flash of wrong position...
         positionNavFanWrap();
-        layoutNavFan();
 
         wrap.classList.add('nav-fan-open');
         backdrop.classList.add('active');
@@ -3482,13 +3458,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.add('nav-menu-open');
         document.addEventListener('keydown', escHandler);
 
-        // ...then re-measure a couple frames later, after the sticky header
-        // / blur class change has fully settled, to correct any drift from
-        // a stale rect taken mid-reflow.
+        // Re-measure a couple frames later in case the sticky header /
+        // blur class shifted layout after the first measurement.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 positionNavFanWrap();
-                layoutNavFan();
             });
         });
     }
@@ -3510,12 +3484,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             e.stopPropagation();
         }
-
-        if (wrap.classList.contains('nav-fan-open')) {
-            closeNavFan();
-        } else {
-            openNavFan();
-        }
+        wrap.classList.contains('nav-fan-open') ? closeNavFan() : openNavFan();
     }
 
     function escHandler(e) {
@@ -3525,9 +3494,7 @@ document.addEventListener('DOMContentLoaded', function () {
     hamburger.addEventListener('click', toggleNavFan);
 
     backdrop.addEventListener('click', function (e) {
-        if (e.target === backdrop) {
-            closeNavFan();
-        }
+        if (e.target === backdrop) closeNavFan();
     });
 
     window.openNavFan = openNavFan;
@@ -3535,29 +3502,18 @@ document.addEventListener('DOMContentLoaded', function () {
     window.toggleNavFan = toggleNavFan;
 
     window.addEventListener('resize', function () {
-        if (wrap.classList.contains('nav-fan-open')) {
-            positionNavFanWrap();
-            layoutNavFan();
-        }
+        if (wrap.classList.contains('nav-fan-open')) positionNavFanWrap();
     });
 
-    // Keep the fan glued to the hamburger while open, even if the mobile
-    // browser's toolbar collapses/expands or the page is pinch-zoomed.
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', function () {
-            if (wrap.classList.contains('nav-fan-open')) {
-                positionNavFanWrap();
-                layoutNavFan();
-            }
+            if (wrap.classList.contains('nav-fan-open')) positionNavFanWrap();
         });
         window.visualViewport.addEventListener('scroll', function () {
-            if (wrap.classList.contains('nav-fan-open')) {
-                positionNavFanWrap();
-            }
+            if (wrap.classList.contains('nav-fan-open')) positionNavFanWrap();
         });
     }
 
-    // Always initialize closed.
     closeNavFan();
 });
 </script>
