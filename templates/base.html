@@ -1178,8 +1178,9 @@ body.nav-menu-open {
 
 #mcTopNav {
     position: sticky !important;
-    top: 0;
-    z-index: 60 !important;
+    top: 0 !important;
+    z-index: 9500 !important;
+    background: rgba(255,255,255,.88) !important;
 }
 
 .nav-fanwrap {
@@ -1373,7 +1374,7 @@ body.nav-menu-open {
 body.nav-menu-open {
     overflow: hidden !important;
 }
-
+    
 </style>
 
 </head>
@@ -3268,13 +3269,13 @@ async function mcCompressAndSubmit(form) {
 
                 <div class="mc-logo-glass" aria-label="Memory Cake Logo">
                     <img
-                        src="{{ url_for('static', filename='favicon.ico') }}"
+                        src="{{ url_for('static', filename='logo.jpg') }}"
                         alt="Memory Cake Logo"
                         width="48"
                         height="48"
                         decoding="async"
                         draggable="false"
-                        onerror="this.style.display='none';"
+                        onerror="this.src='{{ url_for('static', filename='favicon.ico') }}';"
                     >
                 </div>
 
