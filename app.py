@@ -2012,7 +2012,7 @@ def _build_balance_ledger():
             'label': f.remarks or '',
             'sort_key': (f.date, 0, f.id),
         })
-        for e in staff_expenses:
+    for e in staff_expenses:
         entries.append({
             'kind': 'expense',
             'id': e.id,
