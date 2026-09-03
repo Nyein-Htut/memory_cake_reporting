@@ -112,22 +112,31 @@
             </h3>
         </div>
         <div class="divide-y divide-stone-50">
-            {% for entry in entries %}
-            <div class="flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-stone-50/60 transition-colors">
-                <span class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+        {% for entry in entries %}
+            <div class="flex items-start gap-3 px-4 sm:px-5 py-3.5 hover:bg-stone-50/60 transition-colors">
+                <span class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mt-0.5
                     {% if entry.type == 'in' %}bg-emerald-50 text-emerald-600{% else %}bg-rose-50 text-rose-600{% endif %}">
                     {{ '+' if entry.type == 'in' else '−' }}
                 </span>
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-semibold text-stone-900 truncate">
+                    <div class="text-sm font-semibold text-stone-900 break-words">
                         {% if entry.kind == 'funding' %}
                             {% if is_staff %}မန်နေဂျာက ငွေပေးအပ်ခြင်း{% else %}管理员发放现金{% endif %}
                             {% if entry.label %}<span class="text-stone-400 font-normal"> · {{ entry.label }}</span>{% endif %}
                         {% else %}
-                            {{ entry.label }}
+                            {% if is_staff %}
+                                {{ entry.category_name_mm }}{% if entry.subcategory_name_mm %} <span class="text-stone-400 font-normal">· {{ entry.subcategory_name_mm }}</span>{% endif %}
+                            {% else %}
+                                {{ entry.category_name_zh }}{% if entry.subcategory_name_zh %} <span class="text-stone-400 font-normal">· {{ entry.subcategory_name_zh }}</span>{% endif %}
+                            {% endif %}
                         {% endif %}
                     </div>
-                    <div class="text-[11px] text-stone-400 font-numeric">{{ entry.date }}</div>
+                    {% if entry.kind == 'expense' and entry.remarks %}
+                    <div class="text-xs text-stone-500 break-words mt-1 leading-relaxed">
+                        {{ entry.remarks }}
+                    </div>
+                    {% endif %}
+                    <div class="text-[11px] text-stone-400 font-numeric mt-1">{{ entry.date }}</div>
                 </div>
                 <div class="text-right shrink-0 font-numeric">
                     <div class="text-sm font-bold {% if entry.type == 'in' %}text-emerald-700{% else %}text-rose-600{% endif %}">
