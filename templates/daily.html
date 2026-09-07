@@ -155,66 +155,23 @@
      const dailyExportParams = {{ export_params | tojson | safe }};
      let dailyExportLabel = {{ period_value | tojson | safe }};
 
-      function getDailyPaymentStatus() {
-          // The Paid / Unpaid filter is client-side, so read its current
-          // state and pass it to the server-side PDF export.
-          const elements = Array.from(document.querySelectorAll(
-              '[data-payment-status], [data-status], button, [role="button"]'
-          ));
-
-          // Prefer an explicitly marked status element.
-          for (const el of elements) {
-              const raw = (
-                  el.getAttribute('data-payment-status') ||
-                  el.getAttribute('data-status') ||
-                  ''
-              ).trim().toLowerCase();
-
-              if (raw === 'paid' || raw === 'unpaid') {
-                  const active =
-                      el.getAttribute('aria-pressed') === 'true' ||
-                      el.classList.contains('active') ||
-                      el.classList.contains('selected') ||
-                      el.classList.contains('bg-stone-950') ||
-                      el.classList.contains('bg-emerald-700');
-
-                  if (active) return raw;
-              }
-          }
-
-          // Fallback for a normal Paid / Unpaid button toggle.
-          const activeElements = elements.filter(el => {
-              const active =
-                  el.getAttribute('aria-pressed') === 'true' ||
-                  el.classList.contains('active') ||
-                  el.classList.contains('selected');
-
-              if (!active) return false;
-
-              const text = (el.textContent || '').trim().toLowerCase();
-              return text === 'paid' || text === 'unpaid';
-          });
-
-          for (const el of activeElements) {
-              const text = (el.textContent || '').trim().toLowerCase();
-              if (text === 'paid' || text === 'unpaid') return text;
-          }
-
-          return '';
-      }
-
-
-     async function runDailyPdfExport() {
+      async function runDailyPdfExport() {
         const btn = document.getElementById('pdfExportBtn');
         const original = btn.textContent;
         btn.disabled = true;
         btn.textContent = '加载中…';
         try {
             const exportParams = { ...dailyExportParams };
-            const paymentStatus = getDailyPaymentStatus();
-            if (paymentStatus) {
-                exportParams.status = paymentStatus;
+
+            // Paid/Unpaid is a client-side filter in daily_records.html.
+            // Use its actual state directly instead of trying to infer it from
+            // button classes/text.
+            if (typeof dailyPaidFilter !== 'undefined' && dailyPaidFilter !== 'all') {
+                exportParams.status = dailyPaidFilter;
+            } else {
+                delete exportParams.status;
             }
+
             const data = await fetchOrdersForExport(exportParams);
             await renderOrderCardsPDF({
                 ordersByDay: data.orders_by_day,
