@@ -303,7 +303,7 @@ def _group_query_by_day(query):
 
     return orders_by_day
 
-def _fetch_orders_for_period(mode, value, source=None):
+def _fetch_orders_for_period(mode, value, source=None, payment_status=None):
     """Fetches orders scoped to a single day, a whole month, or a whole
     year, grouped by day. Shared by the on-page Daily Records dashboard
     and the /api/export_orders PDF-export feed, so the two can never drift
@@ -324,6 +324,11 @@ def _fetch_orders_for_period(mode, value, source=None):
 
     if source:
         query = query.filter(Order.source == source)
+
+    if payment_status == 'paid':
+        query = query.filter(Order.is_paid == True)
+    elif payment_status == 'unpaid':
+        query = query.filter(Order.is_paid == False)
 
     return _group_query_by_day(query)
 
@@ -533,6 +538,9 @@ def api_export_orders():
     year = (request.args.get('year') or '').strip()
     view = (request.args.get('view') or '').strip()
     source = (request.args.get('source') or '').strip()
+    payment_status = (request.args.get('status') or '').strip().lower()
+    if payment_status not in ('paid', 'unpaid'):
+        payment_status = ''
 
     if day:
         mode, value = 'day', day
@@ -543,7 +551,11 @@ def api_export_orders():
     else:
         mode, value = 'all', ''
 
-    groups = _fetch_orders_for_period(mode, value, source=source or None)
+    groups = _fetch_orders_for_period(
+        mode, value,
+        source=source or None,
+        payment_status=payment_status or None
+    )
     total_orders = sum(g['order_count'] for g in groups)
     total_revenue = sum(g['day_total'] for g in groups)
 
@@ -551,6 +563,7 @@ def api_export_orders():
         'mode': mode,
         'value': value,
         'source': source,
+        'status': payment_status,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
         'orders_by_day': [
@@ -2135,4 +2148,3 @@ def health():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
