@@ -1875,10 +1875,72 @@ def add_expense():
     flash('支出已记录。/ Expense recorded.')
     return redirect(url_for('expenses_view'))
 
+def _expenses_redirect(return_qs=None):
+    """Back to the expenses page, preserving the day/month/year filter."""
+    target = url_for('expenses_view')
+    qs = (return_qs or '').strip().lstrip('?')
+    if qs:
+        target = f"{target}?{qs}"
+    return redirect(target)
+
+def _can_modify_expense(expense):
+    """Managers can change any expense; staff only the ones entered under
+    the staff login (which is all the staff Expenses page ever shows)."""
+    return _is_manager() or (expense.created_by_role == 'staff')
+
+@app.route('/expenses/edit/<int:expense_id>', methods=['POST'])
+@login_required
+def edit_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    return_qs = request.form.get('return_qs', '')
+
+    if not _can_modify_expense(expense):
+        flash('无权修改此支出记录。/ You cannot edit this expense.', 'error')
+        db.session.remove()
+        return _expenses_redirect(return_qs)
+
+    try:
+        expense.date = request.form.get('date') or expense.date
+
+        category_id = request.form.get('category_id') or None
+        subcategory_id = request.form.get('subcategory_id') or None
+        category = ExpenseCategory.query.get(int(category_id)) if category_id else None
+        sub = ExpenseSubCategory.query.get(int(subcategory_id)) if subcategory_id else None
+        # A sub-category only counts if it actually belongs to the chosen category.
+        if sub and (not category or sub.category_id != category.id):
+            sub = None
+
+        expense.category_id = category.id if category else None
+        expense.subcategory_id = sub.id if sub else None
+        expense.remarks = (request.form.get('remarks') or '').strip()
+
+        try:
+            expense.price = int(request.form.get('price') or 0)
+        except (ValueError, TypeError):
+            pass  # keep the existing price if the new value is unusable
+
+        db.session.commit()
+        flash('支出已更新。/ Expense updated.')
+    except Exception as e:
+        db.session.rollback()
+        print("EDIT EXPENSE ERROR:", e)
+        flash('更新失败，请重试。/ Failed to update expense.', 'error')
+    finally:
+        db.session.remove()
+
+    return _expenses_redirect(return_qs)
+
 @app.route('/expenses/delete/<int:expense_id>', methods=['GET', 'POST'])
 @login_required
 def delete_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
+    return_qs = request.values.get('return_qs', '')
+
+    if not _can_modify_expense(expense):
+        flash('无权删除此支出记录。/ You cannot delete this expense.', 'error')
+        db.session.remove()
+        return _expenses_redirect(return_qs)
+
     try:
         db.session.delete(expense)
         db.session.commit()
@@ -1889,7 +1951,7 @@ def delete_expense(expense_id):
         flash('删除失败，请重试。/ Failed to delete expense.', 'error')
     finally:
         db.session.remove()
-    return redirect(url_for('expenses_view'))
+    return _expenses_redirect(return_qs)
 
 @app.route('/expense_report')
 @manager_required
