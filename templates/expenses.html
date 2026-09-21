@@ -3,6 +3,41 @@
 {% block title %}{% if readonly %}အသုံးစရိတ်မှတ်တမ်း{% else %}支出记录{% endif %} — Memory Cake{% endblock %}
 
 {% block content %}
+<style>
+    /* ===== Expense card action bar (matches the order-card action buttons) ===== */
+    .exp-card {
+        background: #fff;
+        border: 1px solid #e7e5e4;
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(28,25,23,.04);
+        transition: box-shadow .25s ease;
+    }
+    .exp-card:hover { box-shadow: 0 10px 24px rgba(28,25,23,.08); }
+    .exp-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 10px 14px;
+        background: rgba(250,250,249,.7);
+        border-top: 1px solid #f5f5f4;
+    }
+    .exp-actions .oc-action-btn { justify-content: center; }
+    @media (max-width: 480px) {
+        .exp-actions { padding: 10px 12px; }
+        .exp-actions .oc-action-btn {
+            flex: 1;
+            min-height: 42px;
+            font-size: 13px;
+            border-radius: 11px;
+        }
+        .exp-actions .oc-action-btn svg { width: 16px; height: 16px; }
+    }
+    @media print { .exp-actions { display: none !important; } }
+</style>
+
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
 
     <header class="space-y-1">
@@ -152,27 +187,54 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {% for exp in day_group.expenses %}
-                <div class="bg-white border border-stone-200 rounded-xl p-4 flex justify-between items-start gap-3 shadow-xs">
-                    <div class="min-w-0 space-y-1">
-                        <div class="text-sm font-semibold text-stone-900">
-                            {% if exp.category %}
-                                {{ exp.category.name_mm if readonly else exp.category.name_zh }}
-                                {% if exp.subcategory %}
-                                    <span class="text-stone-400 font-normal"> · {{ exp.subcategory.name_mm if readonly else exp.subcategory.name_zh }}</span>
+                {% set exp_label = ((exp.category.name_mm if readonly else exp.category.name_zh) if exp.category else ('အမျိုးအစားမရှိ' if readonly else '未分类')) %}
+                {% if exp.category and exp.subcategory %}
+                    {% set exp_label = exp_label ~ ' · ' ~ (exp.subcategory.name_mm if readonly else exp.subcategory.name_zh) %}
+                {% endif %}
+                <div class="exp-card" id="expense-card-{{ exp.id }}"
+                    data-exp-id="{{ exp.id }}"
+                    data-cat-id="{{ exp.category_id or '' }}"
+                    data-sub-id="{{ exp.subcategory_id or '' }}"
+                    data-price="{{ exp.price }}"
+                    data-remarks="{{ exp.remarks or '' }}"
+                    data-date="{{ exp.date }}"
+                    data-label="{{ exp_label }}">
+
+                    <div class="p-4 flex justify-between items-start gap-3">
+                        <div class="min-w-0 space-y-1">
+                            <div class="text-sm font-semibold text-stone-900">
+                                {% if exp.category %}
+                                    {{ exp.category.name_mm if readonly else exp.category.name_zh }}
+                                    {% if exp.subcategory %}
+                                        <span class="text-stone-400 font-normal"> · {{ exp.subcategory.name_mm if readonly else exp.subcategory.name_zh }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-stone-400 font-normal">{% if readonly %}အမျိုးအစားမရှိ{% else %}未分类{% endif %}</span>
                                 {% endif %}
-                            {% else %}
-                                <span class="text-stone-400 font-normal">{% if readonly %}အမျိုးအစားမရှိ{% else %}未分类{% endif %}</span>
+                            </div>
+                            {% if exp.remarks %}
+                            <div class="text-xs text-stone-400 break-words">{{ exp.remarks }}</div>
                             {% endif %}
                         </div>
-                        {% if exp.remarks %}
-                        <div class="text-xs text-stone-400 break-words">{{ exp.remarks }}</div>
-                        {% endif %}
+                        <div class="text-right shrink-0">
+                            <div class="text-sm font-bold text-stone-950 font-numeric whitespace-nowrap">{{ "{:,}".format(exp.price) }} MMK</div>
+                        </div>
                     </div>
-                    <div class="text-right shrink-0 space-y-1.5">
-                        <div class="text-sm font-bold text-stone-950 font-numeric whitespace-nowrap">{{ "{:,}".format(exp.price) }} MMK</div>
-                        <button type="button" onclick="confirmDeleteExpense('{{ exp.id }}')"
-                            class="text-[11px] text-rose-500 hover:text-rose-700 font-semibold cursor-pointer">
-                            {% if readonly %}ဖျက်ရန်{% else %}删除{% endif %}
+
+                    <div class="exp-actions no-print">
+                        <button type="button" class="oc-action-btn oc-action-edit exp-edit-btn"
+                            title="{% if readonly %}ပြင်ဆင်ရန်{% else %}编辑支出{% endif %}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            <span>{% if readonly %}ပြင်ဆင်{% else %}编辑{% endif %}</span>
+                        </button>
+                        <button type="button" class="oc-action-btn oc-action-delete exp-delete-btn"
+                            title="{% if readonly %}ဖျက်ရန်{% else %}删除支出{% endif %}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 01-1-1h-4a1 1 0 01-1 1v3M4 7h16" />
+                            </svg>
+                            <span>{% if readonly %}ဖျက်ရန်{% else %}删除{% endif %}</span>
                         </button>
                     </div>
                 </div>
@@ -187,16 +249,17 @@
     </div>
 </div>
 
-<!-- ==================== ADD EXPENSE (both roles) ==================== -->
+<!-- ==================== ADD / EDIT EXPENSE (both roles) ==================== -->
 <div id="addExpenseModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden max-h-[90vh] flex flex-col">
         <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100 shrink-0">
-            <h3 class="text-base font-bold text-stone-900">
+            <h3 class="text-base font-bold text-stone-900" id="expenseModalTitle">
                 {% if readonly %}အသုံးစရိတ် အသစ်ထည့်ရန်{% else %}添加支出{% endif %}
             </h3>
             <button type="button" onclick="closeAddExpenseModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
         </div>
-        <form method="POST" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto" onsubmit="return validateExpenseForm(event)">
+        <form method="POST" id="expenseForm" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto" onsubmit="return validateExpenseForm(event)">
+            <input type="hidden" name="return_qs" id="expReturnQs" value="">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}အမျိုးအစား{% else %}主类别{% endif %}
@@ -222,14 +285,14 @@
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}ဈေးနှုန်း (MMK){% else %}金额 (MMK){% endif %}
                 </label>
-                <input type="number" name="price" required
+                <input type="number" name="price" id="expPriceInput" required
                     class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}မှတ်ချက်{% else %}备注{% endif %}
                 </label>
-                <input type="text" name="remarks"
+                <input type="text" name="remarks" id="expRemarksInput"
                     class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
             </div>
             <div>
@@ -253,6 +316,55 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ==================== DELETE EXPENSE CONFIRMATION (both roles) ==================== -->
+<div id="expDeleteModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
+    <div class="bg-white max-w-md w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden p-6 space-y-5 transform scale-95 transition-transform duration-200" id="expDeleteCard">
+        <div class="flex items-start gap-4">
+            <div class="bg-rose-50 p-2 rounded-full text-rose-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <div class="space-y-1">
+                {% if readonly %}
+                <h3 class="text-base font-semibold text-stone-900 font-sans">အသုံးစရိတ် မှတ်တမ်း ဖျက်ရန် သေချာပါသလား?</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">အတည်ပြု ဖျက်ရန်</h4>
+                {% else %}
+                <h3 class="text-base font-semibold text-stone-900 font-sans">确认删除此支出记录？</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">Confirm Expense Deletion?</h4>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-stone-50 border border-stone-200/60 rounded-lg p-3.5 text-xs text-stone-600 space-y-1 font-sans">
+            {% if readonly %}
+            <p>ဤအသုံးစရိတ် မှတ်တမ်းကို အပြီးတိုင် ဖျက်ရန် ဖြစ်ပါသည်။ ဤလုပ်ဆောင်ချက်ကို နောက်ပြန်လှည့်၍ မရပါ။</p>
+            {% else %}
+            <p>您正在尝试永久删除这笔支出记录，此操作不可逆。</p>
+            <p class="text-stone-400 italic">This expense will be permanently deleted. This action cannot be undone.</p>
+            {% endif %}
+            <div class="pt-2 mt-2 border-t border-stone-200/60 font-numeric text-stone-800 space-y-1">
+                <div class="flex justify-between gap-3">
+                    <strong id="expDeleteLabel" class="font-semibold text-stone-950 break-words min-w-0"></strong>
+                    <strong id="expDeleteAmount" class="font-bold text-stone-950 whitespace-nowrap"></strong>
+                </div>
+                <div id="expDeleteDate" class="text-stone-400"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-1">
+            <button type="button" onclick="closeDeleteExpenseModal()"
+                class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-5 rounded-lg transition-all font-sans order-2 sm:order-1 cursor-pointer">
+                {% if readonly %}ပယ်ဖျက်{% else %}取消 / Cancel{% endif %}
+            </button>
+            <a id="expDeleteConfirmBtn" href="#"
+                class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-6 rounded-lg transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">
+                {% if readonly %}အတည်ပြု ဖျက်မည်{% else %}确认删除 / Delete{% endif %}
+            </a>
+        </div>
     </div>
 </div>
 
@@ -338,32 +450,97 @@
 const EXP_CATEGORIES = {{ categories_json | tojson | safe }};
 const EXP_READONLY = {{ readonly | tojson | safe }};
 
-/* ===== Add Expense modal ===== */
-function openAddExpenseModal() {
+const EXP_TXT = {
+    addTitle: EXP_READONLY ? 'အသုံးစရိတ် အသစ်ထည့်ရန်' : '添加支出',
+    editTitle: EXP_READONLY ? 'အသုံးစရိတ် ပြင်ဆင်ရန်' : '编辑支出',
+    pick: EXP_READONLY ? 'ရွေးပါ' : '请选择',
+    pickFirst: EXP_READONLY ? 'အရင်ဆုံး အမျိုးအစား ရွေးပါ' : '请先选择主类别'
+};
+
+/* ===== Add / Edit Expense modal (one shared sheet) ===== */
+function _showExpenseModal() {
     const modal = document.getElementById('addExpenseModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+
+function openAddExpenseModal() {
+    document.getElementById('expenseModalTitle').textContent = EXP_TXT.addTitle;
+    document.getElementById('expenseForm').setAttribute('action', '/expenses/add');
+    document.getElementById('expPriceInput').value = '';
+    document.getElementById('expRemarksInput').value = '';
+
     const dateHidden = document.getElementById('expDateHidden');
-    if (!dateHidden.value) {
-        dateHidden.value = wpIsoForOffset(0);
-        document.getElementById('expDateTriggerBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
-        document.getElementById('expDateTriggerBtn').classList.remove('wp-empty');
-    }
+    dateHidden.value = wpIsoForOffset(0);
+    document.getElementById('expDateTriggerBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
+    document.getElementById('expDateTriggerBtn').classList.remove('wp-empty');
 
     // Reset the category/subcategory pickers to a blank state every time
     // the modal is (re)opened, so a stale selection from a previous entry
     // never carries over silently.
     const catBtn = document.getElementById('expCategoryTriggerBtn');
     document.getElementById('expCategoryHidden').value = '';
-    catBtn.querySelector('span').textContent = EXP_READONLY ? 'ရွေးပါ' : '请选择';
+    catBtn.querySelector('span').textContent = EXP_TXT.pick;
     catBtn.classList.add('wp-empty');
 
     const subBtn = document.getElementById('expSubcategoryTriggerBtn');
     document.getElementById('expSubcategoryHidden').value = '';
     subBtn.disabled = true;
     subBtn.classList.add('opacity-50', 'cursor-not-allowed', 'wp-empty');
-    subBtn.querySelector('span').textContent = EXP_READONLY ? 'အရင်ဆုံး အမျိုးအစား ရွေးပါ' : '请先选择主类别';
+    subBtn.querySelector('span').textContent = EXP_TXT.pickFirst;
+
+    _showExpenseModal();
 }
+
+function openEditExpenseModal(card) {
+    const d = card.dataset;
+
+    document.getElementById('expenseModalTitle').textContent = EXP_TXT.editTitle;
+    document.getElementById('expenseForm').setAttribute('action', `/expenses/edit/${d.expId}`);
+    document.getElementById('expPriceInput').value = d.price || '';
+    document.getElementById('expRemarksInput').value = d.remarks || '';
+
+    // Date
+    const dateHidden = document.getElementById('expDateHidden');
+    const dateBtn = document.getElementById('expDateTriggerBtn');
+    dateHidden.value = d.date || wpIsoForOffset(0);
+    dateBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dateHidden.value);
+    dateBtn.classList.remove('wp-empty');
+
+    // Category
+    const catBtn = document.getElementById('expCategoryTriggerBtn');
+    const catHidden = document.getElementById('expCategoryHidden');
+    const cat = EXP_CATEGORIES.find(c => String(c.id) === String(d.catId));
+    if (cat) {
+        catHidden.value = cat.id;
+        catBtn.querySelector('span').textContent = EXP_READONLY ? cat.name_mm : cat.name_zh;
+        catBtn.classList.remove('wp-empty');
+        resetExpSubcategoryPicker(cat.id);
+
+        // Sub-category (optional)
+        const sub = (cat.subcategories || []).find(s => String(s.id) === String(d.subId));
+        if (sub) {
+            const subBtn = document.getElementById('expSubcategoryTriggerBtn');
+            document.getElementById('expSubcategoryHidden').value = sub.id;
+            subBtn.querySelector('span').textContent = EXP_READONLY ? sub.name_mm : sub.name_zh;
+            subBtn.classList.remove('wp-empty');
+        }
+    } else {
+        // Uncategorized / category was deleted — the user has to pick one.
+        catHidden.value = '';
+        catBtn.querySelector('span').textContent = EXP_TXT.pick;
+        catBtn.classList.add('wp-empty');
+
+        const subBtn = document.getElementById('expSubcategoryTriggerBtn');
+        document.getElementById('expSubcategoryHidden').value = '';
+        subBtn.disabled = true;
+        subBtn.classList.add('opacity-50', 'cursor-not-allowed', 'wp-empty');
+        subBtn.querySelector('span').textContent = EXP_TXT.pickFirst;
+    }
+
+    _showExpenseModal();
+}
+
 function closeAddExpenseModal() {
     const modal = document.getElementById('addExpenseModal');
     modal.classList.add('hidden');
@@ -380,6 +557,9 @@ function validateExpenseForm(e) {
         alert(EXP_READONLY ? 'အမျိုးအစား ရွေးပေးပါ (Please select a category)' : '请选择主类别 (Please select a category)');
         return false;
     }
+    // Remember which day/month/year filter is on screen so the page comes
+    // back to the same view after saving.
+    document.getElementById('expReturnQs').value = window.location.search.replace(/^\?/, '');
     return true;
 }
 
@@ -398,7 +578,7 @@ function openExpDateEntryPicker() {
     });
 }
 
-/* ===== Category / Subcategory pickers for the Add Expense form =====
+/* ===== Category / Subcategory pickers for the Add/Edit Expense form =====
    Styled and behaved exactly like the order-source picker (the same
    bottom-sheet + emerald "selected" state), instead of native <select>
    dropdowns. Reuses the shared #wpSourceOverlay defined in base.html. */
@@ -423,11 +603,13 @@ function openExpCategoryPicker() {
         item.className = 'wp-source-item' + (String(hidden.value) === String(cat.id) ? ' wp-source-selected' : '');
         item.innerHTML = `<span>${label}</span><span class="wp-source-check">✓</span>`;
         item.addEventListener('click', () => {
+            const changed = String(hidden.value) !== String(cat.id);
             hidden.value = cat.id;
             span.textContent = label;
             btn.classList.remove('wp-empty');
             closeWheelOverlay('wpSourceOverlay');
-            resetExpSubcategoryPicker(cat.id);
+            // Only clear the sub-category if the main category actually changed.
+            if (changed) resetExpSubcategoryPicker(cat.id);
         });
         listEl.appendChild(item);
     });
@@ -491,6 +673,65 @@ function openExpSubcategoryPicker() {
     wpLockBody();
     document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
 }
+
+/* ===== Delete expense confirmation modal ===== */
+const expDeleteOverlay = document.getElementById('expDeleteModal');
+const expDeleteCard = document.getElementById('expDeleteCard');
+
+function openDeleteExpenseModal(card) {
+    const d = card.dataset;
+    document.getElementById('expDeleteLabel').textContent = d.label || '';
+    document.getElementById('expDeleteAmount').textContent = Number(d.price || 0).toLocaleString() + ' MMK';
+    document.getElementById('expDeleteDate').textContent = d.date || '';
+
+    const qs = window.location.search.replace(/^\?/, '');
+    document.getElementById('expDeleteConfirmBtn').setAttribute(
+        'href',
+        `/expenses/delete/${d.expId}${qs ? '?return_qs=' + encodeURIComponent(qs) : ''}`
+    );
+
+    expDeleteOverlay.classList.remove('hidden');
+    expDeleteOverlay.classList.add('flex');
+    setTimeout(() => {
+        expDeleteCard.classList.remove('scale-95');
+        expDeleteCard.classList.add('scale-100');
+    }, 10);
+}
+
+function closeDeleteExpenseModal() {
+    expDeleteCard.classList.remove('scale-100');
+    expDeleteCard.classList.add('scale-95');
+    setTimeout(() => {
+        expDeleteOverlay.classList.remove('flex');
+        expDeleteOverlay.classList.add('hidden');
+    }, 150);
+}
+
+expDeleteOverlay.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteExpenseModal();
+});
+
+/* ===== Delegated click handling for every expense card's edit / delete
+   button. The card carries its own data-* attributes, so nothing user-typed
+   (remarks etc.) is ever spliced into inline onclick="" strings. ===== */
+document.getElementById('expensesRoot').addEventListener('click', function(e) {
+    const editBtn = e.target.closest('.exp-edit-btn');
+    if (editBtn) {
+        const card = editBtn.closest('.exp-card');
+        if (card) openEditExpenseModal(card);
+        return;
+    }
+    const delBtn = e.target.closest('.exp-delete-btn');
+    if (delBtn) {
+        const card = delBtn.closest('.exp-card');
+        if (card) openDeleteExpenseModal(card);
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    if (!expDeleteOverlay.classList.contains('hidden')) closeDeleteExpenseModal();
+});
 
 {% if not readonly %}
 /* ===== Category fold/unfold (collapsed by default) ===== */
@@ -640,13 +881,6 @@ document.getElementById('categoryListWrap').addEventListener('click', function(e
     }
 });
 {% endif %}
-
-function confirmDeleteExpense(id) {
-    const msg = EXP_READONLY ? 'ဤအသုံးစရိတ်ကို ဖျက်မှာ သေချာပါသလား?' : '确认删除此支出记录吗？';
-    if (confirm(msg)) {
-        window.location.href = '/expenses/delete/' + id;
-    }
-}
 
 /* ===== Filter bar (day / month / year) — full page reload, same period
    filter language as the Daily Records page. ===== */
