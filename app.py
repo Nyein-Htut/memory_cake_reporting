@@ -1875,6 +1875,8 @@ def add_expense():
     db.session.commit()
     db.session.remove()
     flash('支出已记录。/ Expense recorded.')
+    if request.form.get('next') == 'home':
+        return _role_home_redirect(request.form.get('return_qs', ''))
     return redirect(url_for('expenses_view'))
 
 def _expenses_redirect(return_qs=None):
