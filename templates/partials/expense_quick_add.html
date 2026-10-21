@@ -1,0 +1,444 @@
+{# Manager-only "quick add expense" button + modal for the Daily (home) page.
+   - Sits directly ABOVE the green order "+" button, in amber, with a receipt icon
+     (so it can never be confused with the order "+").
+   - Fully self-contained under the `aef-` / `qe*` prefix: no collisions with
+     order_form.html (`of-`, `ofQuickAction`) or order_modals.html (`efc-`, `ef*`).
+   - Posts to /expenses/add with next=home, so the manager lands back on the
+     Daily page with the same filters still applied.
+   Requires `categories_json` from the index() route. #}
+
+<style>
+/* =========================================================
+   EXPENSE FAB — AMBER GLASS ORB (stacked above the order FAB)
+   ========================================================= */
+.add-expense-fab {
+    position: fixed;
+    right: max(1.1rem, env(safe-area-inset-right));
+    bottom: calc(max(1.1rem, calc(env(safe-area-inset-bottom) + .5rem)) + 70px);
+    z-index: 40;
+
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+
+    border: 1px solid rgba(255, 255, 255, .55);
+    background: radial-gradient(
+        circle at 50% 30%,
+        rgba(245, 158, 11, .98) 0%,
+        rgba(194, 100, 8, .98) 60%,
+        rgba(124, 58, 8, 1) 100%
+    );
+    box-shadow:
+        inset 0 3px 6px rgba(255, 255, 255, .65),
+        inset 0 -6px 12px rgba(0, 0, 0, .45),
+        inset 0 -2px 8px rgba(254, 243, 199, .35),
+        0 12px 28px rgba(180, 83, 9, .38),
+        0 4px 10px rgba(0, 0, 0, .22);
+
+    transition:
+        transform .3s cubic-bezier(.34, 1.56, .64, 1),
+        box-shadow .25s ease,
+        opacity .2s ease;
+}
+.add-expense-fab::before {
+    content: "";
+    position: absolute;
+    width: 80%; height: 44%;
+    left: 10%; top: 3%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,.9) 0%, rgba(255,255,255,.5) 40%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    z-index: 3;
+}
+.add-expense-fab svg.aef-receipt {
+    position: relative;
+    z-index: 4;
+    width: 25px;
+    height: 25px;
+}
+/* small "+" badge so it reads as "add expense", not just "expenses" */
+.aef-badge {
+    position: absolute;
+    z-index: 5;
+    top: 6px;
+    right: 6px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #fff;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.aef-badge svg { width: 11px; height: 11px; }
+
+.add-expense-fab:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        inset 0 4px 8px rgba(255,255,255,.75),
+        inset 0 -6px 14px rgba(0,0,0,.5),
+        0 16px 36px rgba(180, 83, 9, .45);
+}
+.add-expense-fab:active { transform: scale(.92); }
+
+/* tiny label to the left (desktop/tablet only, keeps mobile clean) */
+.aef-label {
+    position: fixed;
+    right: calc(max(1.1rem, env(safe-area-inset-right)) + 66px);
+    bottom: calc(max(1.1rem, calc(env(safe-area-inset-bottom) + .5rem)) + 70px + 15px);
+    z-index: 40;
+    display: none;
+    padding: 5px 11px;
+    border-radius: 9999px;
+    background: rgba(255, 251, 235, .96);
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    box-shadow: 0 4px 12px rgba(120, 53, 15, .12);
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+@media (min-width: 640px) { .aef-label { display: block; } }
+
+/* Fade out while the order form is open, so the two never compete */
+body.of-order-open .add-expense-fab,
+body.of-order-open .aef-label { opacity: 0; pointer-events: none; }
+
+@media (max-width: 640px) {
+    .add-expense-fab {
+        width: 52px; height: 52px;
+        bottom: calc(max(1.1rem, calc(env(safe-area-inset-bottom) + .5rem)) + 66px);
+    }
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+#qeModal { transition: opacity .2s ease; }
+#qeCard { transition: transform .25s cubic-bezier(.22, 1.2, .36, 1), opacity .2s ease; }
+#qeModal.qe-hidden { display: none; }
+#qeModal.qe-closing { opacity: 0; }
+#qeModal.qe-closing #qeCard { transform: translateY(24px) scale(.97); opacity: 0; }
+
+.qe-amount-wrap {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 16px;
+    padding: 12px 16px 10px;
+}
+.qe-amount-wrap:focus-within { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,.12); }
+.qe-amount-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 30px;
+    font-weight: 700;
+    color: #1c1917;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.qe-amount-input::placeholder { color: #d6d3d1; }
+.qe-field-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #a8a29e;
+    margin-bottom: 6px;
+}
+.qe-text-input {
+    width: 100%;
+    border: 1px solid #d6d3d1;
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+}
+.qe-text-input:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,.10); }
+.qe-save-btn {
+    background: #b45309;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 26px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(180,83,9,.25);
+    transition: background .15s ease, transform .15s ease;
+}
+.qe-save-btn:hover { background: #92400e; }
+.qe-save-btn:active { transform: scale(.97); }
+.qe-save-btn:disabled { opacity: .6; cursor: not-allowed; }
+</style>
+
+<!-- ===== FAB ===== -->
+<span class="aef-label no-print" id="aefLabel">记支出</span>
+<button type="button" id="fabAddExpenseHomeBtn" class="add-expense-fab no-print"
+    onclick="qeOpen()" aria-label="添加支出 (Add expense)" title="添加支出">
+    <svg class="aef-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2h9l3 3v17l-3-2-3 2-3-2-3 2V2z"/>
+        <path d="M9 9h6M9 13h6M9 17h3"/>
+    </svg>
+    <span class="aef-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+</button>
+
+<!-- ===== MODAL ===== -->
+<div id="qeModal" class="qe-hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 no-print font-sans">
+    <div id="qeCard" class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden max-h-[92vh] flex flex-col">
+
+        <div class="flex justify-between items-center px-6 py-4 border-b border-amber-100 bg-amber-50/60 shrink-0">
+            <h3 class="text-base font-bold text-stone-900 flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm">🧾</span>
+                记一笔支出
+            </h3>
+            <button type="button" onclick="qeClose()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
+
+        <form method="POST" id="qeForm" action="/expenses/add" class="p-6 space-y-4 text-sm overflow-y-auto" onsubmit="return qeSubmit(event)">
+            <input type="hidden" name="next" value="home">
+            <input type="hidden" name="return_qs" id="qeReturnQs" value="">
+
+            <div class="qe-amount-wrap">
+                <span class="qe-field-label" style="color:#b45309;">金额 · Amount (MMK)</span>
+                <input type="number" inputmode="numeric" name="price" id="qePrice" class="qe-amount-input" placeholder="0" required>
+            </div>
+
+            <div>
+                <span class="qe-field-label">主类别 · Category</span>
+                <input type="hidden" name="category_id" id="qeCategoryHidden" value="">
+                <button type="button" id="qeCategoryBtn" class="wp-trigger wp-empty text-sm p-3 w-full" onclick="qePickCategory()">
+                    <span>请选择</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+
+            <div>
+                <span class="qe-field-label">子类别 · Sub-category</span>
+                <input type="hidden" name="subcategory_id" id="qeSubcategoryHidden" value="">
+                <button type="button" id="qeSubcategoryBtn" disabled class="wp-trigger wp-empty text-sm p-3 w-full opacity-50 cursor-not-allowed" onclick="qePickSubcategory()">
+                    <span>请先选择主类别</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+
+            <div>
+                <span class="qe-field-label">备注 · Remarks</span>
+                <input type="text" name="remarks" id="qeRemarks" class="qe-text-input" autocomplete="off">
+            </div>
+
+            <div>
+                <span class="qe-field-label">日期 · Date</span>
+                <input type="hidden" name="date" id="qeDateHidden" value="">
+                <button type="button" id="qeDateBtn" class="wp-trigger text-xs p-3 w-full" onclick="qePickDate()">
+                    <span>今天</span>
+                    <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                </button>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="qeClose()"
+                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-3 px-5 rounded-xl transition-all cursor-pointer">取消</button>
+                <button type="submit" id="qeSaveBtn" class="qe-save-btn cursor-pointer">✓ 保存支出</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const QE_CATEGORIES = {{ categories_json | tojson | safe }};
+
+/* Move fixed elements to <body> so no ancestor :hover transform can trap them */
+document.addEventListener('DOMContentLoaded', function () {
+    ['fabAddExpenseHomeBtn', 'aefLabel', 'qeModal'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && el.parentNode !== document.body) document.body.appendChild(el);
+    });
+});
+
+function qeOpen() {
+    document.getElementById('qePrice').value = '';
+    document.getElementById('qeRemarks').value = '';
+
+    const dateHidden = document.getElementById('qeDateHidden');
+    dateHidden.value = wpIsoForOffset(0);
+    document.getElementById('qeDateBtn').querySelector('span').textContent = wpFormatRelativeDay(0);
+
+    // always start from a clean category state
+    const catBtn = document.getElementById('qeCategoryBtn');
+    document.getElementById('qeCategoryHidden').value = '';
+    catBtn.querySelector('span').textContent = '请选择';
+    catBtn.classList.add('wp-empty');
+    qeLockSub();
+
+    const saveBtn = document.getElementById('qeSaveBtn');
+    saveBtn.disabled = false;
+    saveBtn.textContent = '✓ 保存支出';
+
+    const modal = document.getElementById('qeModal');
+    modal.classList.remove('qe-hidden', 'qe-closing');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('qePrice').focus(), 120);
+}
+
+function qeClose() {
+    const modal = document.getElementById('qeModal');
+    modal.classList.add('qe-closing');
+    setTimeout(() => {
+        modal.classList.add('qe-hidden');
+        modal.classList.remove('flex', 'qe-closing');
+        document.body.style.overflow = '';
+    }, 200);
+}
+
+document.addEventListener('click', function (e) {
+    const modal = document.getElementById('qeModal');
+    if (modal && e.target === modal) qeClose();
+});
+document.addEventListener('keydown', function (e) {
+    const modal = document.getElementById('qeModal');
+    if (e.key === 'Escape' && modal && !modal.classList.contains('qe-hidden')) qeClose();
+});
+
+function qeLockSub() {
+    const subBtn = document.getElementById('qeSubcategoryBtn');
+    document.getElementById('qeSubcategoryHidden').value = '';
+    subBtn.disabled = true;
+    subBtn.classList.add('opacity-50', 'cursor-not-allowed', 'wp-empty');
+    subBtn.querySelector('span').textContent = '请先选择主类别';
+}
+function qeUnlockSub() {
+    const subBtn = document.getElementById('qeSubcategoryBtn');
+    document.getElementById('qeSubcategoryHidden').value = '';
+    subBtn.disabled = false;
+    subBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    subBtn.classList.add('wp-empty');
+    subBtn.querySelector('span').textContent = '请选择（可留空）';
+}
+
+/* Reuses the shared bottom-sheet (#wpSourceOverlay) from base.html */
+function qePickCategory() {
+    const btn = document.getElementById('qeCategoryBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('qeCategoryHidden');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = '主类别选择 (Select Category)';
+    listEl.innerHTML = '';
+
+    if (!QE_CATEGORIES.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-stone-400 italic py-2 px-1';
+        empty.textContent = '暂无类别，请先在"支出"页面添加类别。';
+        listEl.appendChild(empty);
+    }
+
+    QE_CATEGORIES.forEach((cat) => {
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (String(hidden.value) === String(cat.id) ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${cat.name_zh}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            const changed = String(hidden.value) !== String(cat.id);
+            hidden.value = cat.id;
+            span.textContent = cat.name_zh;
+            btn.classList.remove('wp-empty');
+            closeWheelOverlay('wpSourceOverlay');
+            if (changed) qeUnlockSub();
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
+}
+
+function qePickSubcategory() {
+    const catId = document.getElementById('qeCategoryHidden').value;
+    if (!catId) return;
+    const cat = QE_CATEGORIES.find(c => String(c.id) === String(catId));
+    const btn = document.getElementById('qeSubcategoryBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('qeSubcategoryHidden');
+    const listEl = document.getElementById('wpSourceList');
+
+    document.getElementById('wpSourceTitle').textContent = '子类别选择 (Select Sub-category)';
+    listEl.innerHTML = '';
+
+    const noneItem = document.createElement('div');
+    noneItem.className = 'wp-source-item' + (!hidden.value ? ' wp-source-selected' : '');
+    noneItem.innerHTML = `<span>无 / 不需要</span><span class="wp-source-check">✓</span>`;
+    noneItem.addEventListener('click', () => {
+        hidden.value = '';
+        span.textContent = '无 / 不需要';
+        btn.classList.add('wp-empty');
+        closeWheelOverlay('wpSourceOverlay');
+    });
+    listEl.appendChild(noneItem);
+
+    (cat ? cat.subcategories : []).forEach((sub) => {
+        const item = document.createElement('div');
+        item.className = 'wp-source-item' + (String(hidden.value) === String(sub.id) ? ' wp-source-selected' : '');
+        item.innerHTML = `<span>${sub.name_zh}</span><span class="wp-source-check">✓</span>`;
+        item.addEventListener('click', () => {
+            hidden.value = sub.id;
+            span.textContent = sub.name_zh;
+            btn.classList.remove('wp-empty');
+            closeWheelOverlay('wpSourceOverlay');
+        });
+        listEl.appendChild(item);
+    });
+
+    document.getElementById('wpSourceOverlay').classList.add('active');
+    wpLockBody();
+    document.getElementById('wpSourceCancelBtn').onclick = () => closeWheelOverlay('wpSourceOverlay');
+}
+
+function qePickDate() {
+    const btn = document.getElementById('qeDateBtn');
+    const span = btn.querySelector('span');
+    const hidden = document.getElementById('qeDateHidden');
+    openDateWheelPicker({
+        title: '选择日期 (Set Date)',
+        initialValue: hidden.value || wpIsoForOffset(0),
+        onConfirm: (value, label) => {
+            hidden.value = value;
+            span.textContent = label;
+        }
+    });
+}
+
+function qeSubmit(e) {
+    if (!document.getElementById('qeCategoryHidden').value) {
+        e.preventDefault();
+        alert('请选择主类别 (Please select a category)');
+        return false;
+    }
+    // come back to the same Daily filter (day / month / year / source)
+    try {
+        document.getElementById('qeReturnQs').value =
+            (typeof mcBuildReturnQS === 'function') ? mcBuildReturnQS() : window.location.search.replace(/^\?/, '');
+        if (typeof mcSaveClientFilters === 'function') mcSaveClientFilters();
+    } catch (err) {}
+    const btn = document.getElementById('qeSaveBtn');
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+    return true;
+}
+</script>
