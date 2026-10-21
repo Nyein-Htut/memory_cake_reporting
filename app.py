@@ -465,12 +465,14 @@ def index():
     # source if one is active) is currently active on the page, instead of
     # opening its own picker.
     export_params, period_value = _export_params_for_ctx(ctx)
+    categories_json, _cats = _serialize_categories()
 
     return render_template(
         'daily.html', active_page='daily', readonly=False, show_payment=True,
-        export_params=export_params, period_value=period_value, **ctx
+        export_params=export_params, period_value=period_value,
+        categories_json=categories_json, **ctx
     )
-
+    
 @app.route('/staff')
 @login_required
 def staff_view():
