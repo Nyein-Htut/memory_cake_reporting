@@ -1386,7 +1386,19 @@ body.nav-menu-open {
 }
     
 </style>
+<style>
+/* Prevent iOS zoom-on-focus: all form controls are 16px */
+input,
+textarea,
+select {
+    font-size: 16px !important;
+}
 
+/* File pickers don't trigger zoom, so keep them compact */
+input[type="file"] {
+    font-size: 13px !important;
+}
+</style>
 </head>
     <!-- Wheel Picker: Time (Hour / Minute) -->
 <div class="wp-overlay" id="wpTimeOverlay" onclick="if(event.target===this) closeWheelOverlay('wpTimeOverlay')">
