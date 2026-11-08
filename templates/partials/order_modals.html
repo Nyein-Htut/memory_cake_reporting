@@ -43,7 +43,7 @@
 .efc-floating-input {
     width: 100%; height: 38px;
     border: 1px solid #d6d3d1; border-radius: 10px;
-    padding: 0 11px; font-size: 12px;
+    padding: 0 11px; font-size: 16px;
     background: #fff; color: #292524; outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
 }
@@ -67,11 +67,11 @@
 .efc-items-container { display: flex; flex-direction: column; gap: 6px; }
 .efc-item-card { background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 7px 8px; position: relative; }
 .efc-item-row-main { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.efc-item-input { height: 32px; border: 1px solid #ddd9d6; border-radius: 8px; padding: 0 8px; font-size: 11px; background: #fff; outline: none; }
+.efc-item-input { height: 38px; border: 1px solid #ddd9d6; border-radius: 8px; padding: 0 8px; font-size: 16px; background: #fff; outline: none; }
 .efc-item-input:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(16,185,129,.07); }
 .efc-item-name-input { flex: 1 1 auto; min-width: 100px; }
-.efc-item-size-input { width: 58px; flex: 0 0 58px; }
-.efc-item-price-input { width: 88px; flex: 0 0 88px; }
+.efc-item-size-input { width: 76px; flex: 0 0 76px; }
+.efc-item-price-input { width: 110px; flex: 0 0 110px; }
 
 .efc-item-icon-btn {
     width: 31px; height: 31px; flex: 0 0 31px;
@@ -425,168 +425,4 @@
         editDateHidden.value = date || '';
         editTimeHidden.value = (time && /^\d{1,2}:\d{2}$/.test(time)) ? time : '';
 
-        if (editDateHidden.value && editTimeHidden.value) {
-            editSpan.textContent = `${wpShortDayLabel(editDateHidden.value)} · ${editTimeHidden.value}`;
-            editBtn.classList.remove('wp-empty');
-        } else if (editDateHidden.value) {
-            editSpan.textContent = `${wpShortDayLabel(editDateHidden.value)} · --:--`;
-            editBtn.classList.remove('wp-empty');
-        } else {
-            editSpan.textContent = '选择送达日期时间';
-            editBtn.classList.add('wp-empty');
-        }
-
-        efRefreshChipStates();
-
-        editOverlay.classList.remove('hidden');
-        editOverlay.classList.add('flex');
-        setTimeout(() => {
-            editCard.classList.remove('scale-95');
-            editCard.classList.add('scale-100');
-        }, 10);
-    }
-
-    function closeEditModal() {
-        efCloseAllQuickFields();
-        editCard.classList.remove('scale-100');
-        editCard.classList.add('scale-95');
-        setTimeout(() => {
-            editOverlay.classList.remove('flex');
-            editOverlay.classList.add('hidden');
-        }, 150);
-    }
-
-    document.getElementById('editOrderForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        if (_mcEditingOrderId) {
-            try { sessionStorage.setItem('mc_restore_order_id', String(_mcEditingOrderId)); } catch (e) {}
-        }
-        const form = event.target;
-
-        const returnQsInput = form.querySelector('input[name="return_qs"]');
-        if (returnQsInput) {
-            returnQsInput.value = window.mcBuildReturnQS
-                ? window.mcBuildReturnQS()
-                : window.location.search.replace(/^\?/, '');
-        }
-        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
-
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '图片处理中...';
-        }
-        mcCompressAndSubmit(form).catch((err) => {
-            console.error('Image compression failed, submitting originals:', err);
-            form.submit();
-        });
-    });
-
-    function _efImageBlock(fieldName, url, borderClass) {
-        const hidden = `<input type="hidden" name="${fieldName}" value="${url || ''}">`;
-        if (!url) {
-            return `${hidden}<div class="ef-image-slot"><div class="text-xs text-stone-400 ef-no-image">无图片</div></div>`;
-        }
-        return `${hidden}<div class="ef-image-slot"><div class="ef-image-preview">
-            <img src="${url}" class="w-16 h-16 object-cover rounded-lg border ${borderClass}">
-            <button type="button" class="ef-image-remove-btn" onclick="removeEditItemImage(this)" title="删除图片 (Remove photo)">✕</button>
-        </div></div>`;
-    }
-
-    function removeEditItemImage(btn) {
-        const slot = btn.closest('.ef-image-slot');
-        const hiddenInput = slot.previousElementSibling;
-        if (hiddenInput && hiddenInput.tagName === 'INPUT' && hiddenInput.type === 'hidden') {
-            hiddenInput.value = '';
-        }
-        slot.innerHTML = '<div class="ef-image-pending-removal">🗑️ 图片将被删除 (Will be removed on save)</div>';
-    }
-
-    function addEditItemRow(item = {}) {
-        const container = document.getElementById('editItemsContainer');
-        const row = document.createElement('div');
-        row.className = 'item-row efc-item-card';
-        row.innerHTML = `
-            <div class="efc-item-row-main">
-                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" placeholder="商品名称" class="efc-item-input efc-item-name-input">
-                <input type="text" name="edit_size[]" value="${item.size || ''}" placeholder="尺寸" class="efc-item-input efc-item-size-input">
-                <input type="number" name="edit_price[]" value="${item.price || ''}" placeholder="金额" class="efc-item-input efc-item-price-input item-price-input">
-                <button type="button" class="efc-item-icon-btn" onclick="efToggleCalc(this)" title="金额计算器">🧮</button>
-                <button type="button" class="efc-item-icon-btn" onclick="efToggleItemMore(this)" title="备注 / 图片">🖼️</button>
-                <button type="button" class="efc-item-icon-btn efc-item-remove-btn" onclick="this.closest('.efc-item-card').remove()" title="删除商品">✕</button>
-            </div>
-
-            <div class="efc-calc-panel hidden">
-                <div class="efc-calc-boxes"></div>
-                <div class="flex items-center justify-between gap-2 mt-1.5">
-                    <button type="button" onclick="efAddCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
-                    <button type="button" onclick="efCloseCalc(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
-                </div>
-                <div class="efc-calc-total text-[10px] text-emerald-700 font-bold text-right mt-1">合计: 0 MMK</div>
-            </div>
-
-            <div class="efc-item-more-panel efc-open">
-                <div class="space-y-2">
-                    <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" placeholder="备注" class="efc-item-input w-full">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-stone-500 text-[9px] mb-1 font-semibold">🎂 当前蛋糕图</label>
-                            ${_efImageBlock('old_cake_image[]', item.image_url, 'border-stone-200')}
-                            <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded cursor-pointer">
-                        </div>
-                        <div>
-                            <label class="block text-rose-600 text-[9px] mb-1 font-semibold">💐 当前花束图</label>
-                            ${_efImageBlock('old_flower_image[]', item.flower_image_url, 'border-rose-200')}
-                            <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(row);
-    }
-
-    /* =========================================================
-       DELETE MODAL (unchanged)
-       ========================================================= */
-
-    const modalOverlay = document.getElementById('deleteConfirmationModal');
-    const mCard = document.getElementById('modalCard');
-    const mCust = document.getElementById('modalCustomerName');
-    const mDate = document.getElementById('modalOrderDate');
-    const mBtn = document.getElementById('modalDeleteConfirmBtn');
-
-    function openDeleteModal(orderId, customerName, orderDate) {
-        mCust.textContent = customerName;
-        mDate.textContent = orderDate;
-        const _qs = window.mcBuildReturnQS
-            ? window.mcBuildReturnQS()
-            : window.location.search.replace(/^\?/, '');
-        mBtn.setAttribute('href', `/delete_order/${orderId}${_qs ? '?' + _qs : ''}`);
-        modalOverlay.classList.remove('hidden');
-        modalOverlay.classList.add('flex');
-        setTimeout(() => {
-            mCard.classList.remove('scale-95');
-            mCard.classList.add('scale-100');
-        }, 10);
-    }
-
-    function closeDeleteModal() {
-        mCard.classList.remove('scale-100');
-        mCard.classList.add('scale-95');
-        setTimeout(() => {
-            modalOverlay.classList.remove('flex');
-            modalOverlay.classList.add('hidden');
-        }, 150);
-    }
-
-    mBtn.addEventListener('click', function() {
-        try { sessionStorage.setItem('mc_restore_scroll_y', String(window.scrollY)); } catch (e) {}
-        if (window.mcSaveClientFilters) window.mcSaveClientFilters();
-    });
-
-    window.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) closeDeleteModal();
-        if (e.target === editOverlay && !editOverlay.classList.contains('hidden')) closeEditModal();
-    });
-</script>
+        if (editDateHidden.value && editTimeHidden.value)
