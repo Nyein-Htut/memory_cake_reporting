@@ -285,15 +285,15 @@
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}ဈေးနှုန်း (MMK){% else %}金额 (MMK){% endif %}
                 </label>
-                <input type="number" name="price" id="expPriceInput" required
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="number" name="price" id="expPriceInput" required inputmode="numeric"
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}မှတ်ချက်{% else %}备注{% endif %}
                 </label>
                 <input type="text" name="remarks" id="expRemarksInput"
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                    class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
@@ -388,11 +388,11 @@
         <form method="POST" id="categoryForm" action="/expenses/add_category" class="p-6 space-y-4 text-sm">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" id="categoryNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="categoryNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" id="categoryNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="categoryNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div class="flex justify-between items-center gap-3 pt-2">
                 <button type="button" id="categoryDeleteBtn" onclick="deleteCategoryFromModal()"
@@ -423,11 +423,11 @@
             <input type="hidden" name="category_id" id="subcatCategoryIdInput" value="">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" id="subcatNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="subcatNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" id="subcatNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-sm outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="subcatNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div class="flex justify-between items-center gap-3 pt-2">
                 <button type="button" id="subcategoryDeleteBtn" onclick="deleteSubcategoryFromModal()"
