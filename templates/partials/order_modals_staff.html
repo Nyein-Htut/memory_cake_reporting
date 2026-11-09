@@ -1,6 +1,10 @@
-{# Staff edit + delete modals. Compact chip + floating-field layout, matching order_form.html's
-   "add order" design, self-contained under the `efc-` prefix. Price stays manager-only — kept as
-   a hidden field so editing as staff never wipes out a price the manager already entered. #}
+{# Shared edit + delete modals: used by both manager (daily.html) and staff (staff_daily.html).
+   Edit form now uses the same compact chip + floating-field language as order_form.html's
+   "add new order" modal. Self-contained under the `efc-` prefix so it can't collide with
+   order_form.html's `.of-chip` / `ofQuickAction` (which is also loaded on this same page).
+   NOTE: "Mark as Paid" is intentionally NOT in this form — it's managed from the order card's
+   own toggle (via /toggle_payment) in daily_records.html.
+#}
 
 <style>
 .efc-quick-wrap { position: relative; z-index: 100; }
@@ -65,8 +69,9 @@
 .efc-item-row-main { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .efc-item-input { height: 38px; border: 1px solid #ddd9d6; border-radius: 8px; padding: 0 8px; font-size: 16px; background: #fff; outline: none; }
 .efc-item-input:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(16,185,129,.07); }
-.efc-item-name-input { flex: 1 1 auto; min-width: 120px; }
-.efc-item-size-input { width: 82px; flex: 0 0 82px; }
+.efc-item-name-input { flex: 1 1 auto; min-width: 100px; }
+.efc-item-size-input { width: 76px; flex: 0 0 76px; }
+.efc-item-price-input { width: 110px; flex: 0 0 110px; }
 
 .efc-item-icon-btn {
     width: 31px; height: 31px; flex: 0 0 31px;
@@ -82,6 +87,9 @@
 .efc-item-more-panel { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e7e5e4; display: none; }
 .efc-item-more-panel.efc-open { display: block; }
 
+.efc-calc-panel { margin-top: 6px; padding: 7px; border-radius: 9px; font-size: 10px; background: #ecfdf566; border: 1px solid #a7f3d0; }
+.efc-calc-box-input { }
+
 .efc-bottom-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding-top: 10px; border-top: 1px solid #f0efed; }
 .efc-cancel-btn, .efc-save-btn { height: 38px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: .04em; cursor: pointer; transition: all .15s ease; }
 .efc-cancel-btn { padding: 0 18px; background: #f5f5f4; color: #57534e; }
@@ -94,6 +102,7 @@
     .efc-floating-field { width: 100%; }
     .efc-item-name-input { flex-basis: 100%; min-width: calc(100% - 5px); }
     .efc-item-size-input { flex: 1; width: auto; }
+    .efc-item-price-input { flex: 1.4; width: auto; }
     .efc-bottom-actions { flex-direction: row; }
     .efc-cancel-btn, .efc-save-btn { flex: 1; }
 }
@@ -103,8 +112,8 @@
     <div class="bg-white max-w-lg w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden transform scale-95 transition-transform duration-200 max-h-[90vh] flex flex-col" id="editModalCard">
         <div class="flex justify-between items-start px-6 pt-5 pb-4 border-b border-stone-100 bg-stone-50/60 shrink-0">
             <div>
-                <h3 class="text-base font-semibold text-stone-900 font-sans">အော်ဒါ အချက်အလက် ပြင်ဆင်ရန်</h3>
-                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">ကုန်ပစ္စည်း အချက်အလက်များ ပြင်ဆင်ရန်</h4>
+                <h3 class="text-base font-semibold text-stone-900 font-sans">修改账单基础数据</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">Modify Voucher Metrics</h4>
             </div>
             <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm">✕</button>
         </div>
@@ -112,68 +121,73 @@
         <form id="editOrderForm" method="POST" enctype="multipart/form-data" class="text-sm font-sans p-5 overflow-y-auto space-y-4">
             <input type="hidden" name="return_qs" id="editReturnQs" value="">
 
+            <!-- QUICK ACTIONS -->
             <div class="efc-quick-wrap" id="efcQuickWrap">
                 <div class="efc-chip-row">
                     <button type="button" class="efc-chip" data-field="source" onclick="efQuickAction('source')">
-                        <span class="efc-chip-icon">🏷️</span><span>နေရာ</span><span class="efc-chip-dot"></span>
+                        <span class="efc-chip-icon">🏷️</span><span>来源</span><span class="efc-chip-dot"></span>
                     </button>
                     <button type="button" class="efc-chip" data-field="customer" onclick="efQuickAction('customer')">
-                        <span class="efc-chip-icon">👤</span><span>ဖောက်သည်</span><span class="efc-chip-dot"></span>
+                        <span class="efc-chip-icon">👤</span><span>客人</span><span class="efc-chip-dot"></span>
                     </button>
                     <button type="button" class="efc-chip" data-field="address" onclick="efQuickAction('address')">
-                        <span class="efc-chip-icon">📍</span><span>လိပ်စာ</span><span class="efc-chip-dot"></span>
+                        <span class="efc-chip-icon">📍</span><span>地址</span><span class="efc-chip-dot"></span>
                     </button>
                     <button type="button" class="efc-chip" data-field="date" onclick="efQuickAction('date')">
-                        <span class="efc-chip-icon">📅</span><span>ရက်စွဲ</span><span class="efc-chip-dot"></span>
+                        <span class="efc-chip-icon">📅</span><span>日期</span><span class="efc-chip-dot"></span>
                     </button>
                     <button type="button" class="efc-chip" data-field="fee" onclick="efQuickAction('fee')">
-                        <span class="efc-chip-icon">🚗</span><span>ကားခ</span><span class="efc-chip-dot"></span>
+                        <span class="efc-chip-icon">🚗</span><span>车费</span><span class="efc-chip-dot"></span>
                     </button>
                 </div>
 
                 <div id="efcFloat-customer" class="efc-floating-field">
-                    <span class="efc-floating-label">ဖောက်သည်အမည် · Customer</span>
+                    <span class="efc-floating-label">客人姓名 · Customer</span>
                     <input type="text" name="customer" id="editCustomer" required class="efc-floating-input" oninput="efRefreshChipStates()">
                 </div>
 
                 <div id="efcFloat-address" class="efc-floating-field">
-                    <span class="efc-floating-label">လိပ်စာ · Address</span>
+                    <span class="efc-floating-label">地址 · Address</span>
                     <input type="text" name="address" id="editAddress" class="efc-floating-input" oninput="efRefreshChipStates()">
                 </div>
 
                 <div id="efcFloat-fee" class="efc-floating-field">
-                    <span class="efc-floating-label">ကားခ · Delivery Fee</span>
-                    <input type="text" name="delivery_fee" id="editDeliveryFee" class="efc-floating-input" placeholder="ကားခ မှတ်ချက် (ဈေးနှုန်းတွင် မပါဝင်ပါ)" oninput="efRefreshChipStates()">
+                    <span class="efc-floating-label">车费 · Delivery Fee</span>
+                    <input type="text" name="delivery_fee" id="editDeliveryFee" class="efc-floating-input" placeholder="备注车费（不计入订单总额）" oninput="efRefreshChipStates()">
                 </div>
 
+                <!-- SOURCE picker proxy -->
                 <input type="hidden" name="source" id="editSourceHidden" value="">
                 <button type="button" id="editSourceTriggerBtn" class="wp-trigger wp-empty efc-picker-proxy"
-                    onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)')">
-                    <span class="text-stone-400">အော်ဒါလာသည့်နေရာ ရွေးပါ</span>
+                    onclick="openSourcePicker('editSourceTriggerBtn','editSourceHidden','订单来源选择 (Select Source)')">
+                    <span class="text-stone-400">选择订单来源</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
 
+                <!-- DATE/TIME picker proxy -->
                 <input type="hidden" name="date" id="editDateHidden" value="">
                 <input type="hidden" name="time" id="editTimeHidden" value="">
                 <button type="button" id="editTimeTriggerBtn" class="wp-trigger wp-empty efc-picker-proxy"
                     onclick="openDeliveryDateWheelPicker('editTimeTriggerBtn','editDateHidden','editTimeHidden')">
-                    <span class="text-stone-400">ရက်စွဲ နှင့် အချိန် ရွေးပါ</span>
+                    <span class="text-stone-400">选择送达日期时间</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
             </div>
 
+            <!-- BACKGROUND (blurs behind floating fields, like the add-order modal) -->
             <div id="efcFormBackground" class="efc-form-background">
+
                 <div class="efc-items-section">
                     <div class="efc-items-header">
-                        <span class="efc-items-title">ပစ္စည်းအသေးစိတ် · Order Items</span>
-                        <button type="button" onclick="addEditItemRow()" class="efc-add-item-btn">➕ ပစ္စည်းထည့်ရန်</button>
+                        <span class="efc-items-title">商品明细 · Order Items</span>
+                        <button type="button" onclick="addEditItemRow()" class="efc-add-item-btn">＋ 添加商品</button>
                     </div>
                     <div id="editItemsContainer" class="efc-items-container max-h-[360px] overflow-y-auto pr-1"></div>
                 </div>
 
                 <div class="efc-bottom-actions">
-                    <button type="button" onclick="closeEditModal()" class="efc-cancel-btn">ပယ်ဖျက်</button>
-                    <button type="submit" class="efc-save-btn">✓ မွမ်းမံမည်</button>
+                    <button type="button" onclick="closeEditModal()" class="efc-cancel-btn">取消</button>
+                    <button type="submit" class="efc-save-btn">✓ 保存修改</button>
                 </div>
             </div>
         </form>
@@ -189,22 +203,23 @@
                 </svg>
             </div>
             <div class="space-y-1">
-                <h3 class="text-base font-semibold text-stone-900 font-sans">အော်ဒါ မှတ်တမ်း ဖျက်ရန် သေချာပါသလား?</h3>
-                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">အတည်ပြု ဖျက်ရန်</h4>
+                <h3 class="text-base font-semibold text-stone-900 font-sans">确认删除账单记录？</h3>
+                <h4 class="text-xs font-bold tracking-wider text-stone-400 font-sans uppercase">Confirm Voucher Deletion?</h4>
             </div>
         </div>
 
         <div class="bg-stone-50 border border-stone-200/60 rounded p-3.5 text-xs text-stone-600 space-y-1 font-sans">
-            <p>ဤဖောက်သည်၏ အော်ဒါ မှတ်တမ်းကို အပြီးတိုင် ဖျက်ရန် ဖြစ်ပါသည်။ ဤလုပ်ဆောင်ချက်ကို နောက်ပြန်လှည့်၍ မရပါ။</p>
+            <p>您正在尝试永久删除该笔客户账单。此操作不可逆，云端数据库及关联的商品条目将同步移除。</p>
+            <p class="text-stone-400 italic">You are about to permanently delete this customer voucher. This action cannot be undone; cloud records and all sub-items will be removed immediately.</p>
             <div class="pt-2 mt-2 border-t border-stone-200/60 font-numeric text-stone-800 flex justify-between">
-                <span>ပစ်မှတ်: <strong id="modalCustomerName" class="font-semibold text-stone-950"></strong></span>
+                <span>订单目标 (Target): <strong id="modalCustomerName" class="font-semibold text-stone-950"></strong></span>
                 <span id="modalOrderDate" class="text-stone-400"></span>
             </div>
         </div>
 
         <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
-            <button type="button" onclick="closeDeleteModal()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-2.5 px-5 rounded transition-all font-sans order-2 sm:order-1 cursor-pointer">ပယ်ဖျက်</button>
-            <a id="modalDeleteConfirmBtn" href="#" class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-2.5 px-6 rounded transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">အတည်ပြု ဖျက်မည်</a>
+            <button type="button" onclick="closeDeleteModal()" class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-2.5 px-5 rounded transition-all font-sans order-2 sm:order-1 cursor-pointer">取消 / Cancel</button>
+            <a id="modalDeleteConfirmBtn" href="#" class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-2.5 px-6 rounded transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">确认移除 / Permanently Delete</a>
         </div>
     </div>
 </div>
@@ -214,6 +229,12 @@
     const editCard = document.getElementById('editModalCard');
 
     let _mcEditingOrderId = null;
+
+    /* =========================================================
+       QUICK-ACTION CHIPS + FLOATING FIELDS (edit modal only —
+       namespaced `efc-`/`ef*` so it never collides with order_form.html's
+       `.of-chip` / `ofQuickAction`, which is also loaded on this page.)
+       ========================================================= */
 
     function efCloseAllQuickFields() {
         document.querySelectorAll('#efcQuickWrap .efc-floating-field.efc-show').forEach(el => el.classList.remove('efc-show'));
@@ -227,7 +248,7 @@
             efCloseAllQuickFields();
             const chip = document.querySelector('#efcQuickWrap .efc-chip[data-field="source"]');
             if (chip) chip.classList.add('efc-open');
-            openSourcePicker('editSourceTriggerBtn', 'editSourceHidden', 'အော်ဒါလာသည့်နေရာ ရွေးပါ (Select Source)');
+            openSourcePicker('editSourceTriggerBtn', 'editSourceHidden', '订单来源选择 (Select Source)');
             return;
         }
         if (key === 'date') {
@@ -287,6 +308,78 @@
         });
     });
 
+    /* =========================================================
+       CAKE CALCULATOR (manager-only, price is editable here)
+       ========================================================= */
+
+    function efToggleCalc(btn) {
+        const itemRow = btn.closest('.item-row');
+        if (!itemRow) return;
+        const panel = itemRow.querySelector('.efc-calc-panel');
+        const boxesWrap = panel.querySelector('.efc-calc-boxes');
+        const isHidden = panel.classList.contains('hidden');
+        if (isHidden) {
+            if (boxesWrap.children.length === 0) {
+                efAddCalcBoxRow(boxesWrap);
+                efAddCalcBoxRow(boxesWrap);
+            }
+            panel.classList.remove('hidden');
+            btn.classList.add('efc-active');
+        } else {
+            panel.classList.add('hidden');
+            btn.classList.remove('efc-active');
+        }
+    }
+
+    function efAddCalcBoxRow(boxesWrap) {
+        const idx = boxesWrap.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-1.5 mt-1';
+        row.innerHTML = `
+            <span class="efc-calc-box-label text-[10px] text-stone-400 w-10 shrink-0">第${idx}层</span>
+            <input type="number" placeholder="MMK" class="efc-calc-box-input flex-1 border border-stone-300 rounded p-1.5 text-xs bg-white outline-none focus:border-emerald-500" oninput="efRecalcTotal(this.closest('.item-row'))">
+            <button type="button" onclick="efRemoveCalcBox(this)" class="text-rose-400 hover:text-rose-600 text-xs font-bold px-1 cursor-pointer">✕</button>
+        `;
+        boxesWrap.appendChild(row);
+    }
+
+    function efAddCalcBox(btn) {
+        efAddCalcBoxRow(btn.closest('.item-row').querySelector('.efc-calc-boxes'));
+    }
+
+    function efRemoveCalcBox(btn) {
+        const itemRow = btn.closest('.item-row');
+        btn.parentElement.remove();
+        efRenumberCalcBoxes(itemRow);
+        efRecalcTotal(itemRow);
+    }
+
+    function efRenumberCalcBoxes(itemRow) {
+        const boxes = itemRow.querySelector('.efc-calc-boxes');
+        Array.from(boxes.children).forEach((row, i) => {
+            const label = row.querySelector('.efc-calc-box-label');
+            if (label) label.textContent = `第${i + 1}层`;
+        });
+    }
+
+    function efRecalcTotal(itemRow) {
+        if (!itemRow) return;
+        let total = 0;
+        itemRow.querySelectorAll('.efc-calc-box-input').forEach(input => { total += parseFloat(input.value) || 0; });
+        const priceInput = itemRow.querySelector('.item-price-input');
+        if (priceInput) priceInput.value = total || '';
+        const totalLabel = itemRow.querySelector('.efc-calc-total');
+        if (totalLabel) totalLabel.textContent = `合计: ${total.toLocaleString()} MMK`;
+    }
+
+    function efCloseCalc(btn) {
+        const itemRow = btn.closest('.item-row');
+        const panel = itemRow.querySelector('.efc-calc-panel');
+        panel.classList.add('hidden');
+        const calcBtn = itemRow.querySelector('.efc-item-icon-btn');
+        if (calcBtn) calcBtn.classList.remove('efc-active');
+    }
+
     function efToggleItemMore(btn) {
         const itemRow = btn.closest('.item-row');
         if (!itemRow) return;
@@ -295,6 +388,10 @@
         const isOpen = panel.classList.toggle('efc-open');
         btn.classList.toggle('efc-active', isOpen);
     }
+
+    /* =========================================================
+       OPEN / CLOSE MODAL
+       ========================================================= */
 
     function openEditModal(orderId, date, source, customer, time, address, deliveryFee, isPaid, paymentDate, items) {
         _mcEditingOrderId = orderId;
@@ -316,7 +413,7 @@
             editSourceSpan.textContent = editSourceHidden.value;
             editSourceBtn.classList.remove('wp-empty');
         } else {
-            editSourceSpan.textContent = 'အော်ဒါလာသည့်နေရာ ရွေးပါ';
+            editSourceSpan.textContent = '选择订单来源';
             editSourceBtn.classList.add('wp-empty');
         }
 
@@ -335,7 +432,7 @@
             editSpan.textContent = `${wpShortDayLabel(editDateHidden.value)} · --:--`;
             editBtn.classList.remove('wp-empty');
         } else {
-            editSpan.textContent = 'ရက်စွဲ နှင့် အချိန် ရွေးပါ';
+            editSpan.textContent = '选择送达日期时间';
             editBtn.classList.add('wp-empty');
         }
 
@@ -377,7 +474,7 @@
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'ပုံများ လုပ်ဆောင်နေသည်...';
+            submitBtn.textContent = '图片处理中...';
         }
         mcCompressAndSubmit(form).catch((err) => {
             console.error('Image compression failed, submitting originals:', err);
@@ -388,11 +485,11 @@
     function _efImageBlock(fieldName, url, borderClass) {
         const hidden = `<input type="hidden" name="${fieldName}" value="${url || ''}">`;
         if (!url) {
-            return `${hidden}<div class="ef-image-slot"><div class="text-xs text-stone-400 ef-no-image">ပုံမရှိပါ</div></div>`;
+            return `${hidden}<div class="ef-image-slot"><div class="text-xs text-stone-400 ef-no-image">无图片</div></div>`;
         }
         return `${hidden}<div class="ef-image-slot"><div class="ef-image-preview">
             <img src="${url}" class="w-16 h-16 object-cover rounded-lg border ${borderClass}">
-            <button type="button" class="ef-image-remove-btn" onclick="removeEditItemImage(this)" title="ပုံဖျက်ရန် (Remove photo)">✕</button>
+            <button type="button" class="ef-image-remove-btn" onclick="removeEditItemImage(this)" title="删除图片 (Remove photo)">✕</button>
         </div></div>`;
     }
 
@@ -402,7 +499,7 @@
         if (hiddenInput && hiddenInput.tagName === 'INPUT' && hiddenInput.type === 'hidden') {
             hiddenInput.value = '';
         }
-        slot.innerHTML = '<div class="ef-image-pending-removal">🗑️ ပုံကို ဖျက်ပါမည် (Will be removed on save)</div>';
+        slot.innerHTML = '<div class="ef-image-pending-removal">🗑️ 图片将被删除 (Will be removed on save)</div>';
     }
 
     function addEditItemRow(item = {}) {
@@ -410,26 +507,35 @@
         const row = document.createElement('div');
         row.className = 'item-row efc-item-card';
         row.innerHTML = `
-            <input type="hidden" name="edit_price[]" value="${item.price || 0}">
-
             <div class="efc-item-row-main">
-                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" placeholder="ပစ္စည်းအမည်" class="efc-item-input efc-item-name-input">
-                <input type="text" name="edit_size[]" value="${item.size || ''}" placeholder="အရွယ်အစား" class="efc-item-input efc-item-size-input">
-                <button type="button" class="efc-item-icon-btn" onclick="efToggleItemMore(this)" title="မှတ်ချက် / ပုံ">🖼️</button>
-                <button type="button" class="efc-item-icon-btn efc-item-remove-btn" onclick="this.closest('.efc-item-card').remove()" title="ဖျက်ရန်">✕</button>
+                <input type="text" name="edit_item_name[]" value="${item.item_name || ''}" placeholder="商品名称" class="efc-item-input efc-item-name-input">
+                <input type="text" name="edit_size[]" value="${item.size || ''}" placeholder="尺寸" class="efc-item-input efc-item-size-input">
+                <input type="number" name="edit_price[]" value="${item.price || ''}" placeholder="金额" class="efc-item-input efc-item-price-input item-price-input">
+                <button type="button" class="efc-item-icon-btn" onclick="efToggleCalc(this)" title="金额计算器">🧮</button>
+                <button type="button" class="efc-item-icon-btn" onclick="efToggleItemMore(this)" title="备注 / 图片">🖼️</button>
+                <button type="button" class="efc-item-icon-btn efc-item-remove-btn" onclick="this.closest('.efc-item-card').remove()" title="删除商品">✕</button>
+            </div>
+
+            <div class="efc-calc-panel hidden">
+                <div class="efc-calc-boxes"></div>
+                <div class="flex items-center justify-between gap-2 mt-1.5">
+                    <button type="button" onclick="efAddCalcBox(this)" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 cursor-pointer">➕ 添加层</button>
+                    <button type="button" onclick="efCloseCalc(this)" class="text-[10px] font-semibold text-stone-500 hover:text-stone-700 cursor-pointer">✕ 关闭</button>
+                </div>
+                <div class="efc-calc-total text-[10px] text-emerald-700 font-bold text-right mt-1">合计: 0 MMK</div>
             </div>
 
             <div class="efc-item-more-panel efc-open">
                 <div class="space-y-2">
-                    <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" placeholder="မှတ်ချက်" class="efc-item-input w-full">
+                    <input type="text" name="edit_remarks[]" value="${item.remarks || ''}" placeholder="备注" class="efc-item-input w-full">
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-stone-500 text-[9px] mb-1 font-semibold">🎂 လက်ရှိ ကိတ်မုန့်ပုံ</label>
+                            <label class="block text-stone-500 text-[9px] mb-1 font-semibold">🎂 当前蛋糕图</label>
                             ${_efImageBlock('old_cake_image[]', item.image_url, 'border-stone-200')}
                             <input type="file" name="editCakeImage[]" accept="image/*" class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:border-0 file:bg-stone-200 file:rounded cursor-pointer">
                         </div>
                         <div>
-                            <label class="block text-rose-600 text-[9px] mb-1 font-semibold">💐 လက်ရှိ ပန်းစည်းပုံ</label>
+                            <label class="block text-rose-600 text-[9px] mb-1 font-semibold">💐 当前花束图</label>
                             ${_efImageBlock('old_flower_image[]', item.flower_image_url, 'border-rose-200')}
                             <input type="file" name="editFlowerImage[]" accept="image/*" class="w-full text-[10px] text-stone-500 file:py-1 file:px-2 file:border-0 file:bg-rose-50 file:text-rose-700 cursor-pointer">
                         </div>
@@ -439,6 +545,10 @@
         `;
         container.appendChild(row);
     }
+
+    /* =========================================================
+       DELETE MODAL (unchanged)
+       ========================================================= */
 
     const modalOverlay = document.getElementById('deleteConfirmationModal');
     const mCard = document.getElementById('modalCard');
