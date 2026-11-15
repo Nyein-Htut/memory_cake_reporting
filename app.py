@@ -316,6 +316,9 @@ def _fetch_orders_for_period(mode, value, source=None, payment_status=None):
 
     if mode == 'day' and value:
         query = query.filter(Order.date == value)
+    elif mode == 'range' and value:
+        date_from, _, date_to = value.partition('..')
+        query = query.filter(Order.date >= date_from, Order.date <= date_to)
     elif mode in ('month', 'year') and value:
         query = query.filter(Order.date.like(f"{value}%"))
     else:
@@ -354,6 +357,23 @@ def _available_years():
     }, reverse=True)
     return years or [get_myanmar_now().strftime('%Y')]
 
+def _valid_iso_date(s):
+    try:
+        datetime.strptime(s or '', '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
+
+def _parse_range_args(date_from, date_to):
+    """Returns (from, to) as valid ISO dates, swapped if reversed.
+    Anything missing/invalid falls back to today."""
+    today = get_myanmar_now().strftime('%Y-%m-%d')
+    date_from = date_from if _valid_iso_date(date_from) else today
+    date_to = date_to if _valid_iso_date(date_to) else today
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+    return date_from, date_to
+    
 def _daily_view_context(filter_action, default_view='day'):
     view_mode, filter_value, selected_day, selected_month, selected_year = _parse_daily_filters(default_view)
     # Manager-only "Filter by Source" control on the Daily Records filter
@@ -361,6 +381,13 @@ def _daily_view_context(filter_action, default_view='day'):
     # always empty for the staff view — kept in this shared helper anyway
     # so the two views can never drift apart on filtering logic.
     selected_source = (request.args.get('source') or '').strip()
+    selected_from, selected_to = _parse_range_args(
+        (request.args.get('from') or '').strip(),
+        (request.args.get('to') or '').strip()
+    )
+    if request.args.get('view') == 'range':
+        view_mode = 'range'
+        filter_value = f"{selected_from}..{selected_to}"
     orders_by_day = _fetch_orders_for_period(view_mode, filter_value, source=selected_source or None)
     total_orders = sum(d['order_count'] for d in orders_by_day)
     total_revenue = sum(d['day_total'] for d in orders_by_day)
@@ -376,6 +403,8 @@ def _daily_view_context(filter_action, default_view='day'):
         'filter_action': filter_action,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
+        'selected_from': selected_from,
+        'selected_to': selected_to,
     }
 
 def _export_params_for_ctx(ctx):
@@ -386,6 +415,9 @@ def _export_params_for_ctx(ctx):
     if ctx['view_mode'] == 'day':
         export_params = {'day': ctx['selected_day']}
         period_value = ctx['selected_day']
+    elif ctx['view_mode'] == 'range':
+        export_params = {'date_from': ctx['selected_from'], 'date_to': ctx['selected_to']}
+        period_value = f"{ctx['selected_from']}_to_{ctx['selected_to']}"
     elif ctx['view_mode'] == 'month':
         export_params = {'month': ctx['selected_month']}
         period_value = ctx['selected_month']
@@ -544,7 +576,13 @@ def api_export_orders():
     if payment_status not in ('paid', 'unpaid'):
         payment_status = ''
 
-    if day:
+    date_from = (request.args.get('date_from') or '').strip()
+    date_to = (request.args.get('date_to') or '').strip()
+
+    if date_from and date_to:
+        a, b = _parse_range_args(date_from, date_to)
+        mode, value = 'range', f"{a}..{b}"
+    elif day:
         mode, value = 'day', day
     elif month:
         mode, value = 'month', month
