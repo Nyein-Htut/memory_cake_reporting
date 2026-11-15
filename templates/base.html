@@ -2106,7 +2106,7 @@ function openDateWheelPicker(triggerBtnIdOrCfg, hiddenInputId) {
         <div class="wp-quick-btn" data-offset="-7">一周前 1wk ago</div>
     `;
 
-    const RANGE_BACK = 120, RANGE_FWD = 14;
+    const RANGE_BACK = cfg.rangeBack || 120, RANGE_FWD = cfg.rangeFwd || 14;
     const dayItems = [];
     for (let o = -RANGE_BACK; o <= RANGE_FWD; o++) {
         dayItems.push({ label: wpFormatRelativeDay(o), value: wpIsoForOffset(o) });
