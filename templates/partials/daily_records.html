@@ -811,7 +811,13 @@
                     </button>
 
                 </div>
-
+                    <button
+                        type="button"
+                        onclick="setDailyViewMode('range')"
+                        class="px-3.5 py-2.5 transition-all daily-view-tab-range {% if view_mode == 'range' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}"
+                    >
+                        {% if readonly %}အပိုင်း{% else %}范围{% endif %}
+                    </button>
 
                 <!-- Day picker -->
 
@@ -933,7 +939,27 @@
                     </button>
 
                 </div>
+                <input type="hidden" name="from" id="filterFromHidden" value="{{ selected_from }}">
+                <input type="hidden" name="to" id="filterToHidden" value="{{ selected_to }}">
 
+                <div id="dailyRangePickerWrap" class="{% if view_mode != 'range' %}hidden{% endif %} w-full">
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="wp-trigger text-xs p-3 flex-1 min-w-0" onclick="openFilterRangePicker('from')">
+                            <span class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-[10px] text-stone-400 shrink-0">{% if readonly %}မှ{% else %}从{% endif %}</span>
+                                <span id="filterFromText" class="truncate">{{ selected_from }}</span>
+                            </span>
+                            <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        </button>
+                        <button type="button" class="wp-trigger text-xs p-3 flex-1 min-w-0" onclick="openFilterRangePicker('to')">
+                            <span class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-[10px] text-stone-400 shrink-0">{% if readonly %}အထိ{% else %}到{% endif %}</span>
+                                <span id="filterToText" class="truncate">{{ selected_to }}</span>
+                            </span>
+                            <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        </button>
+                    </div>
+                </div>
             </form>
 
         </div>
@@ -2147,6 +2173,7 @@ function setDailyViewMode(mode) {
         mode !== 'day'
     );
 
+   document.getElementById('dailyRangePickerWrap').classList.toggle('hidden', mode !== 'range');
 
     document.getElementById(
         'dailyMonthPickerWrap'
@@ -2166,6 +2193,8 @@ function setDailyViewMode(mode) {
 
     const tabs = {
 
+         range: document.querySelector('.daily-view-tab-range'),
+       
         day:
             document.querySelector(
                 '.daily-view-tab-day'
@@ -2304,6 +2333,33 @@ function openFilterYearPicker() {
     });
 }
 
+   function openFilterRangePicker(which) {
+    const fromH = document.getElementById('filterFromHidden');
+    const toH = document.getElementById('filterToHidden');
+    const fromT = document.getElementById('filterFromText');
+    const toT = document.getElementById('filterToText');
+    const hidden = which === 'from' ? fromH : toH;
+
+    openDateWheelPicker({
+        title: which === 'from'
+            ? {% if readonly %}'စတင်မည့်ရက် (From)'{% else %}'开始日期 (From)'{% endif %}
+            : {% if readonly %}'ပြီးဆုံးမည့်ရက် (To)'{% else %}'结束日期 (To)'{% endif %},
+        initialValue: hidden.value,
+        rangeBack: 400,
+        rangeFwd: 30,
+        onConfirm: (value) => {
+            hidden.value = value;
+            // keep From <= To: if the user crosses them, move the other end too
+            if (fromH.value > toH.value) {
+                if (which === 'from') toH.value = fromH.value;
+                else fromH.value = toH.value;
+            }
+            fromT.textContent = fromH.value;
+            toT.textContent = toH.value;
+            refreshDailyRecords();
+        }
+    });
+}
 
 /* =========================================================
    IMAGE REVEAL
@@ -2648,7 +2704,9 @@ function mcCaptureFilterState() {
             ).value
             : '',
 
-
+        from: document.getElementById('filterFromHidden') ? document.getElementById('filterFromHidden').value : '',
+        to: document.getElementById('filterToHidden') ? document.getElementById('filterToHidden').value : '',
+       
         source:
             (
                 typeof dailySourceFilter !==
@@ -2747,6 +2805,10 @@ function mcBuildReturnQS() {
         );
     }
 
+   if (s.view === 'range' && s.from && s.to) {
+        params.set('from', s.from);
+        params.set('to', s.to);
+    }
 
     if (s.source) {
 
