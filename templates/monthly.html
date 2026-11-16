@@ -3,9 +3,11 @@
 {% block title %}月度业务报表 — Memory Cake{% endblock %}
 
 {% block content %}
+{% include 'partials/report_fx.html' %}
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans" id="monthlyReportRoot">
 
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print rf-reveal" style="--rf-i:0">
         <div class="space-y-1">
             <h1 class="text-3xl font-semibold tracking-wide text-stone-900 font-serif">
                 {% if view_mode == 'year' %}年度业务报表{% else %}月度业务报表{% endif %}
@@ -17,8 +19,7 @@
 
         <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {# No "Apply/筛选" button — picking a month/year (or switching the
-               月度/年度 tab) submits this form immediately via JS below, so
-               the report updates as soon as a choice is made. #}
+               月度/年度 tab) submits this form immediately via JS below. #}
             <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
                 <input type="hidden" name="view" id="viewModeInput" value="{{ view_mode }}">
 
@@ -32,7 +33,7 @@
                         年度
                     </button>
                 </div>
-                    
+
                 <div id="monthPicker" class="{% if view_mode == 'year' %}hidden{% endif %} flex-1 min-w-0 sm:flex-none sm:min-w-[190px]">
                     <input type="hidden" name="month" id="monthHidden" value="{{ selected_month }}">
                     <button type="button" id="monthTriggerBtn" class="wp-trigger text-xs p-3" onclick="openMonthlyMonthPicker()">
@@ -63,12 +64,16 @@
         </div>
     </header>
 
+    <!-- ==================== HEADLINE STATS ==================== -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">总营业额 (GROSS REVENUE)</h3>
+        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#059669; --rf-i:1">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">总营业额 (GROSS REVENUE)</h3>
+                <span class="rf-ico">💰</span>
+            </div>
             <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{"{:,}".format(total_revenue)}}</span>
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_revenue }}">{{"{:,}".format(total_revenue)}}</span>
                 <span class="text-xs font-semibold text-stone-400">MMK</span>
             </div>
             <div>
@@ -76,10 +81,13 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">已结订单 (COMPLETED VOUCHERS)</h3>
+        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#0d9488; --rf-i:2">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">已结订单 (COMPLETED VOUCHERS)</h3>
+                <span class="rf-ico">🧾</span>
+            </div>
             <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{ total_orders }}</span>
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_orders }}">{{ total_orders }}</span>
                 <span class="text-xs font-semibold text-stone-500">单</span>
             </div>
             <div>
@@ -87,10 +95,13 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">客单价 (AVERAGE TICKET SIZE)</h3>
+        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#57534e; --rf-i:3">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">客单价 (AVERAGE TICKET SIZE)</h3>
+                <span class="rf-ico">🎟️</span>
+            </div>
             <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{"{:,}".format(avg_ticket)}}</span>
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ avg_ticket }}">{{"{:,}".format(avg_ticket)}}</span>
                 <span class="text-xs font-semibold text-stone-400">MMK</span>
             </div>
             <div>
@@ -98,10 +109,13 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-2 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">活跃客户数 (ACTIVE CUSTOMERS)</h3>
+        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#d97706; --rf-i:4">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">活跃客户数 (ACTIVE CUSTOMERS)</h3>
+                <span class="rf-ico">👥</span>
+            </div>
             <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">{{ unique_customers }}</span>
+                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ unique_customers }}">{{ unique_customers }}</span>
                 <span class="text-xs font-semibold text-stone-500">人</span>
             </div>
             <div>
@@ -111,22 +125,22 @@
 
     </div>
 
+    <!-- ==================== CHANNELS + TOP ITEMS ==================== -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-6">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">店铺渠道贡献</h2>
+        <div class="rf-card rf-reveal lg:col-span-4 p-6 space-y-5" style="--rf-i:0">
+            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">店铺渠道贡献</h2>
 
-            <div class="space-y-4 font-numeric">
+            <div class="space-y-1 font-numeric">
                 {% set channel_colors = ['#292524', '#57534e', '#78716c', '#a8a29e', '#059669', '#b45309'] %}
                 {% for channel in channels %}
-                <div class="space-y-1.5">
-                    <div class="flex justify-between text-xs font-medium text-stone-800">
-                        <span>{{ channel.name }}</span>
-                        <span class="whitespace-nowrap">{{"{:,}".format(channel.revenue)}} MMK ({{ channel.percentage }}%)</span>
+                {% set ch_color = channel_colors[loop.index0 % channel_colors|length] %}
+                <div class="rf-row space-y-2" style="--c:{{ ch_color }}">
+                    <div class="flex justify-between items-center gap-3 text-xs font-medium text-stone-800">
+                        <span class="flex items-center gap-2 min-w-0"><span class="rf-dot"></span><span class="truncate">{{ channel.name }}</span></span>
+                        <span class="whitespace-nowrap">{{"{:,}".format(channel.revenue)}} MMK <span class="text-stone-400">({{ channel.percentage }}%)</span></span>
                     </div>
-                    <div class="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500" style="width: {{ channel.percentage }}%; background-color: {{ channel_colors[loop.index0 % channel_colors|length] }};"></div>
-                    </div>
+                    <div class="rf-bar"><i data-w="{{ channel.percentage }}"></i></div>
                 </div>
                 {% else %}
                 <p class="text-xs text-stone-400 italic py-4">暂无数据</p>
@@ -138,11 +152,12 @@
             </div>
         </div>
 
-        <div class="lg:col-span-8 bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">最畅销单品排行 (Top 10 Selling Items)</h2>
+        <div class="rf-card rf-reveal lg:col-span-8 p-6 space-y-4" style="--rf-i:1">
+            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">最畅销单品排行 (Top 10 Selling Items)</h2>
 
+            {% set max_count = (top_items | map(attribute='count') | max) if top_items else 1 %}
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                <table class="rf-table w-full text-left text-xs sm:text-sm border-collapse">
                     <thead>
                         <tr class="text-stone-400 border-b border-stone-100 font-medium">
                             <th class="py-3 px-2 w-[10%]">排名</th>
@@ -154,12 +169,15 @@
                     </thead>
                     <tbody class="divide-y divide-stone-50 font-numeric text-stone-800">
                         {% for item in top_items %}
-                        <tr class="hover:bg-stone-50/50 transition-colors">
-                            <td class="py-4 px-2 font-bold text-stone-950">{{ loop.index }}</td>
-                            <td class="py-4 px-2 text-stone-900 font-medium">{{ item.name }}</td>
-                            <td class="py-4 px-2 text-stone-400">{{ item.sizes }}</td>
-                            <td class="py-4 px-2 text-center text-stone-900 font-semibold whitespace-nowrap">{{ item.count }} 件</td>
-                            <td class="py-4 px-2 text-right font-bold text-stone-950 whitespace-nowrap">{{"{:,}".format(item.revenue)}} MMK</td>
+                        <tr>
+                            <td class="py-3.5 px-2"><span class="rf-rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% endif %}">{{ loop.index }}</span></td>
+                            <td class="py-3.5 px-2 text-stone-900 font-medium">
+                                <div>{{ item.name }}</div>
+                                <div class="rf-bar rf-thin mt-1.5 max-w-[160px]" style="--c:{% if loop.index == 1 %}#059669{% else %}#a8a29e{% endif %}"><i data-w="{{ (item.count / max_count * 100) | round(0) | int }}"></i></div>
+                            </td>
+                            <td class="py-3.5 px-2 text-stone-400">{{ item.sizes }}</td>
+                            <td class="py-3.5 px-2 text-center text-stone-900 font-semibold whitespace-nowrap">{{ item.count }} 件</td>
+                            <td class="py-3.5 px-2 text-right font-bold text-stone-950 whitespace-nowrap">{{"{:,}".format(item.revenue)}} MMK</td>
                         </tr>
                         {% else %}
                         <tr>
@@ -173,17 +191,18 @@
 
     </div>
 
-    <div class="pt-6 pb-2 border-b border-stone-200/80 mt-12">
-        <h2 class="text-xl font-semibold tracking-wide text-stone-900 font-serif">高级管理财务核心视角</h2>
-        <p class="text-xs text-stone-400 tracking-wider uppercase mt-1">Revenue Trajectory & Customer Analytics</p>
+    <div class="pt-6 pb-2 border-b border-stone-200/80 mt-12 rf-reveal" style="--rf-i:0">
+        <h2 class="text-xl font-semibold tracking-wide text-stone-900 font-serif rf-section-title">高级管理财务核心视角</h2>
+        <p class="text-xs text-stone-400 tracking-wider uppercase mt-1 ml-[14px]">Revenue Trajectory & Customer Analytics</p>
     </div>
 
+    <!-- ==================== MANAGEMENT METRICS ==================== -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-stone-950 p-6 rounded-2xl border border-stone-900 shadow-xs flex justify-between items-center text-white relative overflow-hidden">
+        <div class="rf-card rf-dark rf-lift rf-reveal p-6 flex justify-between items-center relative overflow-hidden" style="--c:#10b981; --rf-i:0">
             <div class="space-y-1 relative z-10">
                 <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">预估毛利润 (EST. GROSS PROFIT)</h3>
                 <div class="text-2xl font-bold tracking-tight font-numeric">
-                    {{"{:,}".format(estimated_profit | default(0))}} <span class="text-xs text-stone-400 font-normal">MMK</span>
+                    <span data-countup="{{ estimated_profit | default(0) }}">{{"{:,}".format(estimated_profit | default(0))}}</span> <span class="text-xs text-stone-400 font-normal">MMK</span>
                 </div>
             </div>
             <div class="text-right relative z-10">
@@ -193,11 +212,11 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs flex justify-between items-center">
+        <div class="rf-card rf-lift rf-reveal p-6 flex justify-between items-center" style="--c:#e11d48; --rf-i:1">
             <div class="space-y-1">
                 <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">非正常成交及空单率 (VOID RATE)</h3>
                 <div class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">
-                    {{ refund_rate | default(0.0) }}<span class="text-xs text-stone-400 font-normal">%</span>
+                    <span data-countup="{{ refund_rate | default(0.0) }}" data-decimals="1">{{ refund_rate | default(0.0) }}</span><span class="text-xs text-stone-400 font-normal">%</span>
                 </div>
             </div>
             <div class="text-right">
@@ -207,11 +226,11 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs flex justify-between items-center">
+        <div class="rf-card rf-lift rf-reveal p-6 flex justify-between items-center" style="--c:#57534e; --rf-i:2">
             <div class="space-y-1">
                 <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">平均客单连带率 (BASKET DEPTH)</h3>
                 <div class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">
-                    {{ items_per_order | default(0.0) }}<span class="text-xs text-stone-400 font-normal"> 件/单</span>
+                    <span data-countup="{{ items_per_order | default(0.0) }}" data-decimals="1">{{ items_per_order | default(0.0) }}</span><span class="text-xs text-stone-400 font-normal"> 件/单</span>
                 </div>
             </div>
             <div class="text-right">
@@ -222,11 +241,12 @@
         </div>
     </div>
 
+    <!-- ==================== TREND + RETENTION ==================== -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
-        <div class="xl:col-span-2 bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
+        <div class="rf-card rf-reveal xl:col-span-2 p-6 space-y-4" style="--rf-i:0">
             <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">
+                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">
                     {% if view_mode == 'year' %}年度月度销售走势 (Monthly Revenue Trend){% else %}当月每日销售走势 (Daily Revenue Trend){% endif %}
                 </h2>
                 <span class="inline-flex items-center px-2 py-0.5 rounded bg-stone-50 border border-stone-200 text-[10px] font-semibold text-stone-500">
@@ -238,8 +258,8 @@
             </div>
         </div>
 
-        <div class="xl:col-span-1 bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-6">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">客群留存及新老占比 (Customer Retention)</h2>
+        <div class="rf-card rf-reveal xl:col-span-1 p-6 space-y-6" style="--rf-i:1">
+            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">客群留存及新老占比 (Customer Retention)</h2>
 
             <div class="relative h-44 w-full flex justify-center">
                 <canvas id="customerChart"></canvas>
@@ -248,22 +268,23 @@
             <div class="grid grid-cols-2 gap-4 pt-4 border-t border-stone-100 font-numeric">
                 <div class="text-center space-y-1 border-r border-stone-100">
                     <p class="text-xs text-stone-400 font-medium">首次消费新客</p>
-                    <p class="text-lg font-bold text-stone-900">{{ new_customers | default(0) }} 人</p>
+                    <p class="text-lg font-bold text-stone-900"><span data-countup="{{ new_customers | default(0) }}">{{ new_customers | default(0) }}</span> 人</p>
                 </div>
                 <div class="text-center space-y-1">
                     <p class="text-xs text-stone-400 font-medium">历史高留存老客</p>
-                    <p class="text-lg font-bold text-emerald-700">{{ returning_customers | default(0) }} 人</p>
+                    <p class="text-lg font-bold text-emerald-700"><span data-countup="{{ returning_customers | default(0) }}">{{ returning_customers | default(0) }}</span> 人</p>
                 </div>
             </div>
         </div>
 
     </div>
 
+    <!-- ==================== WEEKDAY + TOP CUSTOMERS ==================== -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
+        <div class="rf-card rf-reveal p-6 space-y-4" style="--rf-i:0">
             <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">Weekly Sales Pattern</h2>
+                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">Weekly Sales Pattern</h2>
                 <span class="text-[10px] text-stone-400 uppercase tracking-wider">{{ period_label }}</span>
             </div>
             <div class="relative h-72 w-full">
@@ -271,14 +292,16 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-stone-100 shadow-xs space-y-4">
+        <div class="rf-card rf-reveal p-6 space-y-4" style="--rf-i:1">
             <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif">Top 10 Customers</h2>
+                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">Top 10 Customers</h2>
                 <span class="text-[10px] text-stone-400 uppercase tracking-wider">By Revenue</span>
             </div>
 
+            {% set max_rev = (top_customers | map(attribute='revenue') | max) if top_customers else 1 %}
+            {% set max_rev = max_rev if max_rev else 1 %}
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="rf-table w-full text-sm">
                     <thead>
                         <tr class="text-left text-stone-400 border-b border-stone-100 text-xs uppercase tracking-wider">
                             <th class="py-3 pr-2 w-8">#</th>
@@ -290,9 +313,18 @@
                     </thead>
                     <tbody class="font-numeric">
                         {% for c in top_customers %}
-                        <tr class="border-b border-stone-50 hover:bg-stone-50/60 transition-colors">
-                            <td class="py-3 pr-2 text-stone-400 text-xs font-bold">{{ loop.index }}</td>
-                            <td class="py-3 text-stone-900 font-medium">{{ c.name }}</td>
+                        {% set av_colors = ['#059669', '#0d9488', '#d97706', '#57534e', '#be123c'] %}
+                        <tr class="border-b border-stone-50">
+                            <td class="py-3 pr-2"><span class="rf-rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% endif %}">{{ loop.index }}</span></td>
+                            <td class="py-3 text-stone-900 font-medium">
+                                <div class="flex items-center gap-2.5" style="--c:{{ av_colors[loop.index0 % av_colors|length] }}">
+                                    <span class="rf-avatar">{{ (c.name or '?')[:1] | upper }}</span>
+                                    <div class="min-w-0">
+                                        <div class="truncate">{{ c.name }}</div>
+                                        <div class="rf-bar rf-thin mt-1 w-24"><i data-w="{{ (c.revenue / max_rev * 100) | round(0) | int }}"></i></div>
+                                    </div>
+                                </div>
+                            </td>
                             <td class="py-3">
                                 <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{{ c.source }}</span>
                             </td>
@@ -347,33 +379,10 @@ function setViewMode(mode) {
         tabMonth.className = 'px-3.5 py-2 transition-all view-tab-month bg-stone-900 text-white';
         tabYear.className = 'px-3.5 py-2 transition-all view-tab-year bg-white text-stone-500 hover:bg-stone-50';
     }
-}
-
-function setDateBasis(mode) {
-    document.getElementById('dateBasisInput').value = mode;
-
-    const tabPaid = document.querySelector('.basis-tab-paid');
-    const tabOrder = document.querySelector('.basis-tab-order');
-    if (mode === 'order') {
-        tabPaid.className = 'px-3.5 py-2 transition-all basis-tab-paid bg-white text-stone-500 hover:bg-stone-50';
-        tabOrder.className = 'px-3.5 py-2 transition-all basis-tab-order bg-emerald-700 text-white';
-    } else {
-        tabPaid.className = 'px-3.5 py-2 transition-all basis-tab-paid bg-emerald-700 text-white';
-        tabOrder.className = 'px-3.5 py-2 transition-all basis-tab-order bg-white text-stone-500 hover:bg-stone-50';
-    }
-
+    syncExportLinks();
     document.getElementById('monthlyFilterForm').submit();
 }
 
-function syncExportLinks() {
-    const view = document.getElementById('viewModeInput').value;
-    const month = document.getElementById('monthHidden').value;
-    const year = document.getElementById('yearHidden').value;
-    const basis = document.getElementById('dateBasisInput').value;
-    const csvBtn = document.getElementById('csvExportBtn');
-    csvBtn.href = `/monthly/export?view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&date_basis=${encodeURIComponent(basis)}`;
-}
-    
 function openMonthlyMonthPicker() {
     const btn = document.getElementById('monthTriggerBtn');
     const span = btn.querySelector('span');
@@ -403,9 +412,7 @@ function openMonthlyYearPicker() {
     });
 }
 
-// Keep the CSV export link's query string synced with whatever the wheel
-// pickers currently hold, so "导出 CSV" always exports the period that's
-// actually on screen (not just the one the page was first loaded with).
+// Keep the CSV export link in sync with whatever the pickers currently hold.
 function syncExportLinks() {
     const view = document.getElementById('viewModeInput').value;
     const month = document.getElementById('monthHidden').value;
@@ -413,27 +420,19 @@ function syncExportLinks() {
     const csvBtn = document.getElementById('csvExportBtn');
     csvBtn.href = `/monthly/export?view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`;
 }
-document.getElementById('monthHidden').addEventListener('change', syncExportLinks);
-document.getElementById('yearHidden').addEventListener('change', syncExportLinks);
-// Hidden inputs are set programmatically by the wheel pickers (no native
-// 'change' event fires), so also re-sync right before the CSV link is used.
 document.getElementById('csvExportBtn').addEventListener('click', syncExportLinks);
-// Switching the 月度/年度 tab now submits the form itself (see setViewMode),
-// so this wrapper just keeps the CSV link in sync right beforehand.
-const _origSetViewMode = setViewMode;
-setViewMode = function(mode) { _origSetViewMode(mode); syncExportLinks(); };
 
-/* ===== Monthly PDF export =====
-   Renders the analytics report itself (summary metrics, channel
-   breakdown, revenue/weekday/retention charts, top items, top customers)
-   via renderMonthlyReportPDF() in base.html — NOT the Daily Records
-   order-card layout, which is a different export used on the Daily page. */
+/* ===== Monthly PDF export ===== */
 async function downloadMonthlyReportPDF() {
     const btn = document.getElementById('monthlyPdfBtn');
     const original = btn.textContent;
     btn.disabled = true;
     btn.textContent = '生成中…';
     try {
+        // Charts are built lazily (when scrolled into view) — make sure they all
+        // exist and are at their final frame before they're captured.
+        if (window.rfFinalizeCharts) window.rfFinalizeCharts();
+
         await renderMonthlyReportPDF({
             periodLabel: reportData.period_label,
             viewMode: reportData.view_mode,
@@ -460,7 +459,6 @@ async function downloadMonthlyReportPDF() {
     }
 }
 
-
 document.addEventListener("DOMContentLoaded", function () {
 
     const palette = {
@@ -473,8 +471,7 @@ document.addEventListener("DOMContentLoaded", function () {
         rose: '#9f1239',
         muted: '#d6d3d1',
         grid: '#f5f5f4',
-        text: '#78716c',
-        series: ['#292524', '#44403c', '#57534e', '#78716c', '#059669', '#0d9488', '#b45309', '#9f1239']
+        text: '#78716c'
     };
 
     Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -509,122 +506,130 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Exposed so the PDF export (renderMonthlyReportPDF in base.html) can
-    // temporarily bump each chart's rendering resolution for a crisp export
-    // image, then restore it — see _wpCaptureChartHiRes.
+    // temporarily bump each chart's rendering resolution for a crisp image.
     window.mcCharts = window.mcCharts || {};
 
-    // Revenue Trend Chart
-    const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
-    const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 300);
-    trendGradient.addColorStop(0, 'rgba(41, 37, 36, 0.18)');
-    trendGradient.addColorStop(1, 'rgba(41, 37, 36, 0)');
+    // ---- Revenue Trend (line draws in when visible) ----
+    rfRegisterChart('revenueTrendChart', function () {
+        const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+        const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 300);
+        trendGradient.addColorStop(0, 'rgba(5, 150, 105, 0.20)');
+        trendGradient.addColorStop(1, 'rgba(5, 150, 105, 0)');
 
-    window.mcCharts.revenueTrendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: trendLabels,
-            datasets: [{
-                label: viewMode === 'year' ? 'Monthly Revenue' : 'Daily Revenue',
-                data: trendData,
-                borderColor: palette.primary,
-                backgroundColor: trendGradient,
-                fill: true,
-                borderWidth: 2.5,
-                tension: 0.35,
-                pointRadius: viewMode === 'year' ? 5 : 3,
-                pointHoverRadius: 7,
-                pointBackgroundColor: '#fafaf9',
-                pointBorderColor: palette.primary,
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            ...baseOptions,
-            plugins: {
-                ...baseOptions.plugins,
-                legend: { display: false },
-                tooltip: { callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
+        window.mcCharts.revenueTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: viewMode === 'year' ? 'Monthly Revenue' : 'Daily Revenue',
+                    data: trendData,
+                    borderColor: palette.success,
+                    backgroundColor: trendGradient,
+                    fill: true,
+                    borderWidth: 2.5,
+                    tension: 0.35,
+                    pointRadius: viewMode === 'year' ? 5 : 3,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#fafaf9',
+                    pointBorderColor: palette.success,
+                    pointBorderWidth: 2
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: palette.grid, drawBorder: false },
-                    ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
+            options: {
+                ...baseOptions,
+                animation: window.rfAnim.line,
+                plugins: {
+                    ...baseOptions.plugins,
+                    legend: { display: false },
+                    tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
                 },
-                x: {
-                    grid: { display: false },
-                    ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: viewMode === 'year' ? 12 : 15 }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: palette.grid, drawBorder: false },
+                        ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: viewMode === 'year' ? 12 : 15 }
+                    }
                 }
             }
-        }
+        });
     });
 
-    // Customer Retention Doughnut
-    window.mcCharts.customerChart = new Chart(document.getElementById('customerChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['New Customers', 'Returning Customers'],
-            datasets: [{
-                data: customerSplitData,
-                backgroundColor: [palette.tertiary, palette.success],
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverOffset: 8
-            }]
-        },
-        options: {
-            ...baseOptions,
-            cutout: '72%',
-            plugins: {
-                ...baseOptions.plugins,
-                legend: { position: 'bottom', labels: { padding: 12, font: { size: 10 } } }
-            }
-        }
-    });
-
-    // Weekly Sales Pattern — clean bar chart
-    const maxWeekday = Math.max(...weekdayData, 1);
-    const barColors = weekdayData.map((val, i) => {
-        const intensity = val / maxWeekday;
-        if (intensity > 0.7) return palette.primary;
-        if (intensity > 0.4) return palette.secondary;
-        if (intensity > 0.15) return palette.tertiary;
-        return palette.accent;
-    });
-
-    window.mcCharts.weekdayChart = new Chart(document.getElementById('weekdayChart'), {
-        type: 'bar',
-        data: {
-            labels: weekdayLabels,
-            datasets: [{
-                label: 'Revenue',
-                data: weekdayData,
-                backgroundColor: barColors,
-                borderRadius: 6,
-                borderSkipped: false,
-                barPercentage: 0.65,
-                categoryPercentage: 0.8
-            }]
-        },
-        options: {
-            ...baseOptions,
-            plugins: {
-                ...baseOptions.plugins,
-                legend: { display: false },
-                tooltip: { callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
+    // ---- Customer Retention Doughnut ----
+    rfRegisterChart('customerChart', function () {
+        window.mcCharts.customerChart = new Chart(document.getElementById('customerChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['New Customers', 'Returning Customers'],
+                datasets: [{
+                    data: customerSplitData,
+                    backgroundColor: [palette.accent, palette.success],
+                    borderWidth: 3,
+                    borderColor: '#fff',
+                    hoverOffset: 8
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: palette.grid, drawBorder: false },
-                    ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { weight: '500' } }
+            options: {
+                ...baseOptions,
+                cutout: '72%',
+                animation: window.rfAnim.donut,
+                plugins: {
+                    ...baseOptions.plugins,
+                    legend: { position: 'bottom', labels: { padding: 12, font: { size: 10 }, usePointStyle: true, boxWidth: 8 } }
                 }
             }
-        }
+        });
+    });
+
+    // ---- Weekly Sales Pattern (bars rise one after another) ----
+    rfRegisterChart('weekdayChart', function () {
+        const maxWeekday = Math.max(...weekdayData, 1);
+        const barColors = weekdayData.map((val) => {
+            const intensity = val / maxWeekday;
+            if (intensity > 0.7) return palette.success;
+            if (intensity > 0.4) return '#34d399';
+            if (intensity > 0.15) return '#a7f3d0';
+            return '#d1fae5';
+        });
+
+        window.mcCharts.weekdayChart = new Chart(document.getElementById('weekdayChart'), {
+            type: 'bar',
+            data: {
+                labels: weekdayLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: weekdayData,
+                    backgroundColor: barColors,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                ...baseOptions,
+                animation: window.rfAnim.bars,
+                plugins: {
+                    ...baseOptions.plugins,
+                    legend: { display: false },
+                    tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: palette.grid, drawBorder: false },
+                        ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { weight: '500' } }
+                    }
+                }
+            }
+        });
     });
 
 });
