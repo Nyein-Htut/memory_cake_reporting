@@ -1,0 +1,358 @@
+{# Expense analysis card for the Monthly Report page (manager only).
+   - Animated donut (Chart.js) with the selected slice pulled out
+   - Percentage-sorted category list with colour dots, icon bubbles, progress bars
+   - Tap a category -> highlight; tap again (or the sub-category chip) -> drill into sub-categories
+   - Own day / month / year filter, loaded via /api/expense_breakdown (no page reload)
+   Needs from the parent template: view_mode, selected_month, selected_year, available_years
+   Needs from base.html: Chart.js, openDateWheelPicker, openMonthWheelPicker, openYearListPicker,
+                          wpFormatDisplayFromISO, wpIsoForOffset #}
+
+<style>
+.ea-card { position: relative; overflow: hidden; }
+.ea-card.ea-loading .ea-body { opacity: .45; filter: saturate(.7); pointer-events: none; }
+.ea-body { transition: opacity .25s ease, filter .25s ease; }
+
+.ea-tab { padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: .06em; transition: all .2s ease; cursor: pointer; }
+.ea-tab.is-on { background: #1c1917; color: #fff; }
+.ea-tab:not(.is-on) { background: #fff; color: #78716c; }
+.ea-tab:not(.is-on):hover { background: #fafaf9; }
+
+.ea-back { display: none; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #047857;
+    background: #ecfdf5; border: 1px solid #d1fae5; border-radius: 9999px; padding: 6px 12px; cursor: pointer;
+    animation: ea-pop .35s cubic-bezier(.34,1.56,.64,1) both; }
+.ea-back.is-on { display: inline-flex; }
+.ea-back:hover { background: #d1fae5; }
+
+.ea-donut-wrap { position: relative; height: 300px; }
+@media (min-width: 640px) { .ea-donut-wrap { height: 340px; } }
+.ea-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none; text-align: center; padding: 0 22%; }
+.ea-center-name { font-size: 12px; font-weight: 600; color: #78716c; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ea-center-line { width: 26px; height: 3px; border-radius: 9999px; margin: 6px auto 8px; background: var(--ea-c, #a8a29e); transition: background .4s ease, width .4s ease; }
+.ea-center-amt { font-size: 22px; font-weight: 800; letter-spacing: -.01em; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.ea-center-amt small { font-size: 11px; font-weight: 700; color: #a8a29e; margin-left: 3px; }
+.ea-center-pct { font-size: 13px; font-weight: 800; color: var(--ea-c, #a8a29e); margin-top: 2px; transition: color .4s ease; }
+.ea-center.ea-swap { animation: ea-swap .45s ease both; }
+
+.ea-hint { text-align: center; font-size: 11px; color: #a8a29e; letter-spacing: .02em; }
+
+.ea-list { position: relative; }
+.ea-row { --c: #a8a29e; position: relative; display: grid; grid-template-columns: 10px 40px minmax(0,1fr) auto auto; align-items: center;
+    column-gap: 12px; padding: 12px 14px 14px; border-left: 4px solid transparent; border-radius: 12px; cursor: pointer;
+    transition: background .25s ease, border-color .25s ease, transform .2s ease, box-shadow .25s ease;
+    opacity: 0; animation: ea-row-in .5s cubic-bezier(.22,1,.36,1) both; }
+.ea-row:hover { background: color-mix(in srgb, var(--c) 7%, white); transform: translateX(2px); }
+.ea-row.is-sel { background: color-mix(in srgb, var(--c) 15%, white); border-left-color: var(--c);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 20%, transparent); }
+.ea-row:active { transform: scale(.992); }
+.ea-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 0 var(--c); }
+.ea-row.is-sel .ea-dot { animation: ea-pulse 1.8s ease-out infinite; }
+.ea-ico { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;
+    background: color-mix(in srgb, var(--c) 16%, white); color: var(--c); transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.ea-row.is-sel .ea-ico { transform: scale(1.12) rotate(-4deg); }
+.ea-name { font-size: 14px; font-weight: 600; color: #1c1917; overflow: hidden; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ea-name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ea-chip { flex-shrink: 0; font-size: 10px; font-weight: 800; color: var(--c); background: color-mix(in srgb, var(--c) 12%, white);
+    border: 1px solid color-mix(in srgb, var(--c) 30%, white); border-radius: 9999px; padding: 2px 8px; transition: all .2s ease; }
+.ea-chip:hover { background: var(--c); color: #fff; }
+.ea-pct { font-size: 14px; font-weight: 700; color: #44403c; text-align: right; min-width: 48px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.ea-amt { font-size: 14px; font-weight: 800; color: #1c1917; text-align: right; min-width: 78px; white-space: nowrap; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.ea-bar { position: absolute; left: 14px; right: 14px; bottom: 5px; height: 3px; border-radius: 9999px; background: #f5f5f4; overflow: hidden; }
+.ea-bar > i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--c); transition: width .9s cubic-bezier(.22,1,.36,1); }
+
+.ea-empty { text-align: center; padding: 56px 0; color: #a8a29e; font-size: 13px; font-style: italic; }
+
+@keyframes ea-row-in { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ea-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 55%, transparent); } 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@keyframes ea-swap { 0% { opacity: 0; transform: translateY(6px) scale(.96); } 100% { opacity: 1; transform: none; } }
+@keyframes ea-pop { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .ea-row, .ea-back, .ea-center.ea-swap { animation: none; opacity: 1; } .ea-bar > i { transition: none; } }
+@media (max-width: 480px) {
+    .ea-row { grid-template-columns: 10px 36px minmax(0,1fr) auto auto; column-gap: 9px; padding: 11px 10px 14px; }
+    .ea-ico { width: 36px; height: 36px; font-size: 18px; }
+    .ea-name { font-size: 13px; } .ea-pct { min-width: 40px; font-size: 13px; } .ea-amt { min-width: 64px; font-size: 13px; }
+}
+</style>
+
+<div class="bg-white p-5 sm:p-6 rounded-2xl border border-stone-100 shadow-xs space-y-5 ea-card" id="eaCard">
+
+    <!-- Header + filter -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="space-y-1">
+            <div class="flex items-center gap-3 flex-wrap">
+                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif" id="eaTitle">支出分析 (Expense Analysis)</h2>
+                <button type="button" class="ea-back" id="eaBack">‹ 返回类别</button>
+            </div>
+            <p class="text-xs text-stone-400" id="eaSummary">—</p>
+        </div>
+
+        <div class="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-stone-200 shadow-xs self-start sm:self-auto">
+            <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200">
+                <button type="button" class="ea-tab" data-mode="day">日</button>
+                <button type="button" class="ea-tab" data-mode="month">月</button>
+                <button type="button" class="ea-tab" data-mode="year">年</button>
+            </div>
+            <button type="button" id="eaPickBtn" class="wp-trigger text-xs p-2.5 min-w-[150px]">
+                <span id="eaPickLabel">—</span>
+                <svg class="w-4 h-4 wp-trigger-icon shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="ea-body space-y-4">
+        <div id="eaChartBlock">
+            <div class="ea-donut-wrap">
+                <canvas id="eaCanvas"></canvas>
+                <div class="ea-center" id="eaCenter">
+                    <div class="ea-center-name" id="eaCenterName">总支出</div>
+                    <div class="ea-center-line"></div>
+                    <div class="ea-center-amt"><span id="eaCenterAmt">0</span><small>MMK</small></div>
+                    <div class="ea-center-pct" id="eaCenterPct">100%</div>
+                </div>
+            </div>
+            <p class="ea-hint" id="eaHint">点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)</p>
+        </div>
+
+        <div class="ea-empty hidden" id="eaEmpty">该周期暂无支出记录。</div>
+        <div class="ea-list space-y-1" id="eaList"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const CFG = {
+        mode: {{ (view_mode if view_mode in ['month', 'year'] else 'month') | tojson | safe }},
+        month: {{ selected_month | tojson | safe }},
+        year: {{ selected_year | tojson | safe }},
+        years: {{ available_years | tojson | safe }}
+    };
+
+    const PAL = ['#5aa9e6', '#ff8a73', '#f0c05a', '#a77bf0', '#34b88a', '#e86a92', '#3fb6c9', '#f08a3c', '#8a94a6', '#7bc043'];
+    const ICONS = [
+        [/房|租|住|屋/, '🏠'], [/食|餐|饭|午|菜|料|吃/, '🍚'], [/车|油|交通|运/, '🚗'], [/购|买|物|采/, '🛍️'],
+        [/工资|薪|人工|员工|人/, '👥'], [/水|电|煤|网|气/, '💡'], [/蛋糕|原料|面粉|奶油|烘焙|糖/, '🎂'], [/花/, '💐'],
+        [/包装|盒|袋/, '📦'], [/娱乐|游戏/, '🎬'], [/通讯|电话|话费|手机/, '📱'], [/广告|营销|宣传/, '📣'],
+        [/维修|设备|机/, '🔧'], [/税|费/, '🧾']
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = (n) => Number(n || 0).toLocaleString();
+    const iconFor = (name) => { for (const [re, e] of ICONS) if (re.test(name)) return e; return esc((name || '?').trim().charAt(0).toUpperCase()); };
+
+    const state = { mode: CFG.mode, day: (window.wpIsoForOffset ? wpIsoForOffset(0) : new Date().toISOString().slice(0, 10)), month: CFG.month, year: CFG.year };
+    let data = null, chart = null, sel = null, drill = null, lastSel = 0, reqId = 0, lastAmt = 0;
+
+    /* ---------- data helpers ---------- */
+    function items() {
+        if (!data) return [];
+        const cats = data.category_breakdown || [];
+        if (drill == null) return cats.map((c) => ({ name: c.name, total: c.total, subs: c.subcategories || [] }));
+        const c = cats[drill];
+        return c ? (c.subcategories || []).map((s) => ({ name: s.name, total: s.total, subs: [] })) : [];
+    }
+    const colorFor = (i) => PAL[(drill == null ? i : drill + i) % PAL.length];
+    const sumOf = (its) => its.reduce((a, b) => a + (b.total || 0), 0);
+
+    /* ---------- chart ---------- */
+    const pctPlugin = {
+        id: 'eaPct',
+        afterDatasetsDraw(c) {
+            const ds = c.data.datasets[0]; const sum = ds.data.reduce((a, b) => a + b, 0);
+            if (!sum) return;
+            const ctx = c.ctx; ctx.save();
+            ctx.font = '700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            c.getDatasetMeta(0).data.forEach((arc, i) => {
+                const v = ds.data[i] / sum;
+                if (v < 0.06) return;
+                const p = arc.tooltipPosition();
+                ctx.fillText(Math.round(v * 100) + '%', p.x, p.y);
+            });
+            ctx.restore();
+        }
+    };
+
+    function buildChart() {
+        chart = new Chart($('eaCanvas').getContext('2d'), {
+            type: 'doughnut',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: [], offset: [], borderWidth: 0, borderRadius: 6, spacing: 2, hoverOffset: 8 }] },
+            plugins: [pctPlugin],
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '66%',
+                layout: { padding: 20 },
+                animation: { duration: 900, easing: 'easeOutQuart', animateRotate: true, animateScale: true },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c1917', padding: 10, cornerRadius: 8,
+                        callbacks: { label: (c) => ` ${c.label}: ${fmt(c.parsed)} MMK` }
+                    }
+                },
+                onClick: (e, els) => { if (els.length) tap(els[0].index); },
+                onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+            }
+        });
+    }
+
+    function syncChart() {
+        const its = items();
+        const ds = chart.data.datasets[0];
+        chart.data.labels = its.map((x) => x.name);
+        ds.data = its.map((x) => x.total);
+        ds.backgroundColor = its.map((_, i) => colorFor(i));
+        ds.offset = its.map((_, i) => (i === sel ? 16 : 0));
+        chart.update();
+    }
+
+    /* ---------- centre text ---------- */
+    function countUp(el, from, to, dur) {
+        const t0 = performance.now();
+        (function step(t) {
+            const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+            el.textContent = fmt(Math.round(from + (to - from) * e));
+            if (p < 1) requestAnimationFrame(step);
+        })(t0);
+    }
+
+    function syncCenter(swap) {
+        const its = items(), sum = sumOf(its), it = (sel != null) ? its[sel] : null;
+        const center = $('eaCenter');
+        let name, amt, pct, color;
+        if (it) { name = it.name; amt = it.total; pct = sum ? (it.total / sum * 100) : 0; color = colorFor(sel); }
+        else { name = drill == null ? '总支出' : (data.category_breakdown[drill] || {}).name; amt = sum; pct = 100; color = '#a8a29e'; }
+        if (swap) { center.classList.remove('ea-swap'); void center.offsetWidth; center.classList.add('ea-swap'); }
+        center.style.setProperty('--ea-c', color);
+        $('eaCenterName').textContent = name || '';
+        $('eaCenterPct').textContent = (pct >= 10 || pct === 100 ? Math.round(pct) : pct.toFixed(1)) + '%';
+        countUp($('eaCenterAmt'), lastAmt, amt, 700);
+        lastAmt = amt;
+    }
+
+    /* ---------- list ---------- */
+    function renderList() {
+        const its = items(), sum = sumOf(its), list = $('eaList');
+        const empty = !its.length;
+        $('eaEmpty').classList.toggle('hidden', !empty);
+        $('eaChartBlock').classList.toggle('hidden', empty);
+        if (empty) { list.innerHTML = ''; return; }
+
+        list.innerHTML = its.map((x, i) => {
+            const pct = sum ? (x.total / sum * 100) : 0;
+            const pctTxt = (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + '%';
+            const chip = x.subs.length ? `<span class="ea-chip" data-drill="${i}">${x.subs.length} 子类别 ›</span>` : '';
+            return `<div class="ea-row${i === sel ? ' is-sel' : ''}" data-i="${i}" style="--c:${colorFor(i)};animation-delay:${i * 70}ms">
+                <span class="ea-dot"></span>
+                <span class="ea-ico">${drill == null ? iconFor(x.name) : esc((x.name || '?').trim().charAt(0))}</span>
+                <div class="ea-name"><span>${esc(x.name)}</span>${chip}</div>
+                <div class="ea-pct">${pctTxt}</div>
+                <div class="ea-amt">${fmt(x.total)}</div>
+                <div class="ea-bar"><i data-w="${pct.toFixed(1)}"></i></div>
+            </div>`;
+        }).join('');
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            list.querySelectorAll('.ea-bar > i').forEach((b, i) => setTimeout(() => { b.style.width = b.dataset.w + '%'; }, i * 70 + 150));
+        }));
+    }
+
+    function markSelected() {
+        $('eaList').querySelectorAll('.ea-row').forEach((r) => r.classList.toggle('is-sel', Number(r.dataset.i) === sel));
+    }
+
+    /* ---------- interactions ---------- */
+    function select(i) {
+        sel = i;
+        if (drill == null) lastSel = i;
+        markSelected(); syncChart(); syncCenter(true);
+    }
+
+    function enterDrill(i) {
+        const c = (data.category_breakdown || [])[i];
+        if (!c || !(c.subcategories || []).length) return;
+        drill = i; sel = 0;
+        $('eaTitle').textContent = c.name + ' — 子类别明细';
+        $('eaBack').classList.add('is-on');
+        $('eaHint').textContent = '子类别占该类别支出的比例 (Share of this category)';
+        renderList(); syncChart(); syncCenter(true);
+    }
+
+    function exitDrill() {
+        if (drill == null) return;
+        drill = null; sel = lastSel;
+        $('eaTitle').textContent = '支出分析 (Expense Analysis)';
+        $('eaBack').classList.remove('is-on');
+        $('eaHint').textContent = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
+        renderList(); syncChart(); syncCenter(true);
+    }
+
+    function tap(i) {
+        const its = items();
+        if (drill == null && i === sel && its[i] && its[i].subs.length) enterDrill(i);
+        else select(i);
+    }
+
+    $('eaList').addEventListener('click', (e) => {
+        const chip = e.target.closest('.ea-chip');
+        if (chip) { e.stopPropagation(); enterDrill(Number(chip.dataset.drill)); return; }
+        const row = e.target.closest('.ea-row');
+        if (row) tap(Number(row.dataset.i));
+    });
+    $('eaList').addEventListener('mouseover', (e) => {
+        const row = e.target.closest('.ea-row');
+        if (!row || !chart) return;
+        chart.setActiveElements([{ datasetIndex: 0, index: Number(row.dataset.i) }]); chart.update();
+    });
+    $('eaList').addEventListener('mouseleave', () => { if (chart) { chart.setActiveElements([]); chart.update(); } });
+    $('eaBack').addEventListener('click', exitDrill);
+
+    /* ---------- filter ---------- */
+    function syncFilterUI() {
+        document.querySelectorAll('#eaCard .ea-tab').forEach((t) => t.classList.toggle('is-on', t.dataset.mode === state.mode));
+        $('eaPickLabel').textContent = state.mode === 'day' ? (window.wpFormatDisplayFromISO ? wpFormatDisplayFromISO(state.day) : state.day)
+            : state.mode === 'month' ? state.month : state.year;
+    }
+
+    document.querySelectorAll('#eaCard .ea-tab').forEach((t) => t.addEventListener('click', () => {
+        if (state.mode === t.dataset.mode) return;
+        state.mode = t.dataset.mode; syncFilterUI(); load();
+    }));
+
+    $('eaPickBtn').addEventListener('click', () => {
+        if (state.mode === 'day') {
+            openDateWheelPicker({ title: '按日期筛选 (Filter by Day)', initialValue: state.day,
+                onConfirm: (v) => { state.day = v; syncFilterUI(); load(); } });
+        } else if (state.mode === 'month') {
+            openMonthWheelPicker({ initialValue: state.month, onConfirm: (v) => { state.month = v; syncFilterUI(); load(); } });
+        } else {
+            openYearListPicker({ years: CFG.years, initialValue: state.year, onConfirm: (v) => { state.year = v; syncFilterUI(); load(); } });
+        }
+    });
+
+    /* ---------- load ---------- */
+    async function load() {
+        const card = $('eaCard'), my = ++reqId;
+        card.classList.add('ea-loading');
+        try {
+            const qs = new URLSearchParams({ view: state.mode, day: state.day, month: state.month, year: state.year });
+            const res = await fetch('/api/expense_breakdown?' + qs.toString(), { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const json = await res.json();
+            if (my !== reqId) return;           // a newer request superseded this one
+            data = json; drill = null; sel = (json.category_breakdown || []).length ? 0 : null; lastSel = 0;
+            $('eaTitle').textContent = '支出分析 (Expense Analysis)';
+            $('eaBack').classList.remove('is-on');
+            $('eaHint').textContent = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
+            $('eaSummary').textContent = `${json.value} · ${json.expense_count} 笔支出 · ${fmt(json.total_expenses)} MMK（不含车费）`;
+            renderList(); syncChart(); syncCenter(true);
+        } catch (err) {
+            console.error(err);
+            $('eaSummary').textContent = '加载失败，请重试 (Failed to load)';
+        } finally {
+            if (my === reqId) card.classList.remove('ea-loading');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { buildChart(); syncFilterUI(); load(); });
+})();
+</script>
