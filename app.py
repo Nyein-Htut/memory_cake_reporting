@@ -2153,6 +2153,52 @@ def _build_balance_ledger():
 
     return entries
 
+def _build_expense_breakdown(view_mode, filter_value):
+    """Category -> sub-category expense totals for one day/month/year.
+    Car-fee categories (flag == 1) are excluded, same as the Expense Report."""
+    q = _apply_period_filter(
+        Expense.query.options(joinedload(Expense.category), joinedload(Expense.subcategory)),
+        Expense.date, view_mode, filter_value
+    )
+    expenses = [e for e in q.all() if not (e.category and e.category.flag == 1)]
+    total = sum(e.price or 0 for e in expenses)
+
+    cats = {}
+    for e in expenses:
+        ckey = e.category.id if e.category else 0
+        cname = e.category.name_zh if e.category else '未分类'
+        c = cats.setdefault(ckey, {'name': cname, 'total': 0, 'subs': {}})
+        c['total'] += e.price or 0
+        skey = e.subcategory.id if e.subcategory else 0
+        sname = e.subcategory.name_zh if e.subcategory else '未分类子项'
+        s = c['subs'].setdefault(skey, {'name': sname, 'total': 0})
+        s['total'] += e.price or 0
+
+    breakdown = []
+    for c in cats.values():
+        subs = sorted(c['subs'].values(), key=lambda s: s['total'], reverse=True)
+        # a lone "uncategorised" sub-item isn't a real drill-down
+        if len(subs) == 1 and subs[0]['name'] == '未分类子项':
+            subs = []
+        breakdown.append({
+            'name': c['name'],
+            'total': c['total'],
+            'percentage': round(c['total'] / total * 100, 1) if total else 0,
+            'subcategories': subs,
+        })
+    breakdown.sort(key=lambda c: c['total'], reverse=True)
+    return {'total_expenses': total, 'expense_count': len(expenses), 'category_breakdown': breakdown}
+
+
+@app.route('/api/expense_breakdown')
+@manager_required
+def api_expense_breakdown():
+    db.session.remove()
+    view_mode, filter_value, _d, _m, _y = _parse_daily_filters('month')
+    payload = {'view': view_mode, 'value': filter_value, **_build_expense_breakdown(view_mode, filter_value)}
+    db.session.remove()
+    return jsonify(payload)
+    
 @app.route('/balance')
 @login_required
 def balance_view():
