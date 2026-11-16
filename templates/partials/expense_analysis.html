@@ -103,8 +103,8 @@
             </div>
             <p class="text-xs text-stone-400" id="eaSummary">—</p>
         </div>
-
-        <div class="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-stone-200 shadow-xs self-start sm:self-auto">
+       
+        <div id="eaFilterWrap" class="{% if ea_hide_filter | default(false) %}hidden{% else %}flex{% endif %} items-center gap-2 bg-white p-1.5 rounded-xl border border-stone-200 shadow-xs self-start sm:self-auto">
             <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200">
                 <button type="button" class="ea-tab" data-mode="day">日</button>
                 <button type="button" class="ea-tab" data-mode="month">月</button>
@@ -141,13 +141,14 @@
 
 <script>
 (function () {
-    const CFG = {
-        mode: {{ (view_mode if view_mode in ['month', 'year'] else 'month') | tojson | safe }},
+   const CFG = {
+        mode: {{ (view_mode if view_mode in ['day', 'month', 'year'] else 'month') | tojson | safe }},
+        day: {{ (selected_day | default('')) | tojson | safe }},
         month: {{ selected_month | tojson | safe }},
         year: {{ selected_year | tojson | safe }},
         years: {{ available_years | tojson | safe }}
     };
-
+   
     const HINT_MAIN = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
     const HINT_SUB = '子类别占该类别支出的比例 · 点击中心或空白处返回 (Tap centre or empty space to go back)';
     const TITLE_MAIN = '支出分析 (Expense Analysis)';
@@ -165,7 +166,7 @@
     const fmt = (n) => Number(n || 0).toLocaleString();
     const iconFor = (name) => { for (const [re, e] of ICONS) if (re.test(name)) return e; return esc((name || '?').trim().charAt(0).toUpperCase()); };
 
-    const state = { mode: CFG.mode, day: (window.wpIsoForOffset ? wpIsoForOffset(0) : new Date().toISOString().slice(0, 10)), month: CFG.month, year: CFG.year };
+   const state = { mode: CFG.mode, day: CFG.day || (window.wpIsoForOffset ? wpIsoForOffset(0) : new Date().toISOString().slice(0, 10)), month: CFG.month, year: CFG.year };
     let data = null, chart = null, sel = null, drill = null, lastSel = 0, reqId = 0, lastAmt = 0;
 
     /* ---------- data helpers ---------- */
