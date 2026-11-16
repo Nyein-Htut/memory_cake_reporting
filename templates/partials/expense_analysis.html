@@ -2,6 +2,7 @@
    - Animated donut (Chart.js) with the selected slice pulled out
    - Percentage-sorted category list with colour dots, icon bubbles, progress bars
    - Tap a category -> highlight; tap again (or the sub-category chip) -> drill into sub-categories
+   - Go back: back bar above the list, tap donut centre, tap empty chart area, header button, or Esc
    - Own day / month / year filter, loaded via /api/expense_breakdown (no page reload)
    Needs from the parent template: view_mode, selected_month, selected_year, available_years
    Needs from base.html: Chart.js, openDateWheelPicker, openMonthWheelPicker, openYearListPicker,
@@ -23,15 +24,32 @@
 .ea-back.is-on { display: inline-flex; }
 .ea-back:hover { background: #d1fae5; }
 
+/* Full-width back bar shown at the top of the list while drilled in */
+.ea-backbar { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    padding: 12px 14px; margin-bottom: 6px; border-radius: 12px; cursor: pointer;
+    font-size: 13px; font-weight: 800; color: #047857; letter-spacing: .02em;
+    background: #ecfdf5; border: 1.5px dashed #6ee7b7;
+    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    animation: ea-row-in .45s cubic-bezier(.22,1,.36,1) both; }
+.ea-backbar:hover { background: #d1fae5; transform: translateX(-2px); box-shadow: 0 6px 16px rgba(5,150,105,.15); }
+.ea-backbar:active { transform: scale(.99); }
+
 .ea-donut-wrap { position: relative; height: 300px; }
 @media (min-width: 640px) { .ea-donut-wrap { height: 340px; } }
 .ea-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
     pointer-events: none; text-align: center; padding: 0 22%; }
+.ea-center.is-clickable { pointer-events: none; }
+.ea-center-hit { position: absolute; left: 50%; top: 50%; width: 52%; aspect-ratio: 1 / 1; transform: translate(-50%, -50%);
+    border-radius: 50%; display: none; cursor: pointer; z-index: 3; }
+.ea-center-hit.is-on { display: block; }
+.ea-center-hit:hover { background: rgba(5,150,105,.06); }
 .ea-center-name { font-size: 12px; font-weight: 600; color: #78716c; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ea-center-line { width: 26px; height: 3px; border-radius: 9999px; margin: 6px auto 8px; background: var(--ea-c, #a8a29e); transition: background .4s ease, width .4s ease; }
 .ea-center-amt { font-size: 22px; font-weight: 800; letter-spacing: -.01em; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .ea-center-amt small { font-size: 11px; font-weight: 700; color: #a8a29e; margin-left: 3px; }
 .ea-center-pct { font-size: 13px; font-weight: 800; color: var(--ea-c, #a8a29e); margin-top: 2px; transition: color .4s ease; }
+.ea-center-back { display: none; margin-top: 6px; font-size: 11px; font-weight: 800; color: #047857; }
+.ea-center-back.is-on { display: block; }
 .ea-center.ea-swap { animation: ea-swap .45s ease both; }
 
 .ea-hint { text-align: center; font-size: 11px; color: #a8a29e; letter-spacing: .02em; }
@@ -66,7 +84,7 @@
 @keyframes ea-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 55%, transparent); } 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 @keyframes ea-swap { 0% { opacity: 0; transform: translateY(6px) scale(.96); } 100% { opacity: 1; transform: none; } }
 @keyframes ea-pop { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: scale(1); } }
-@media (prefers-reduced-motion: reduce) { .ea-row, .ea-back, .ea-center.ea-swap { animation: none; opacity: 1; } .ea-bar > i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .ea-row, .ea-back, .ea-backbar, .ea-center.ea-swap { animation: none; opacity: 1; } .ea-bar > i { transition: none; } }
 @media (max-width: 480px) {
     .ea-row { grid-template-columns: 10px 36px minmax(0,1fr) auto auto; column-gap: 9px; padding: 11px 10px 14px; }
     .ea-ico { width: 36px; height: 36px; font-size: 18px; }
@@ -108,7 +126,10 @@
                     <div class="ea-center-line"></div>
                     <div class="ea-center-amt"><span id="eaCenterAmt">0</span><small>MMK</small></div>
                     <div class="ea-center-pct" id="eaCenterPct">100%</div>
+                    <div class="ea-center-back" id="eaCenterBack">‹ 返回</div>
                 </div>
+                <!-- tappable donut hole: only active while drilled into sub-categories -->
+                <div class="ea-center-hit" id="eaCenterHit" title="返回主类别"></div>
             </div>
             <p class="ea-hint" id="eaHint">点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)</p>
         </div>
@@ -126,6 +147,10 @@
         year: {{ selected_year | tojson | safe }},
         years: {{ available_years | tojson | safe }}
     };
+
+    const HINT_MAIN = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
+    const HINT_SUB = '子类别占该类别支出的比例 · 点击中心或空白处返回 (Tap centre or empty space to go back)';
+    const TITLE_MAIN = '支出分析 (Expense Analysis)';
 
     const PAL = ['#5aa9e6', '#ff8a73', '#f0c05a', '#a77bf0', '#34b88a', '#e86a92', '#3fb6c9', '#f08a3c', '#8a94a6', '#7bc043'];
     const ICONS = [
@@ -189,8 +214,11 @@
                         callbacks: { label: (c) => ` ${c.label}: ${fmt(c.parsed)} MMK` }
                     }
                 },
-                onClick: (e, els) => { if (els.length) tap(els[0].index); },
-                onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+                onClick: (e, els) => {
+                    if (els.length) tap(els[0].index);
+                    else if (drill != null) exitDrill();      // tap empty chart space -> back to main categories
+                },
+                onHover: (e, els) => { e.native.target.style.cursor = (els.length || drill != null) ? 'pointer' : 'default'; }
             }
         });
     }
@@ -225,6 +253,8 @@
         center.style.setProperty('--ea-c', color);
         $('eaCenterName').textContent = name || '';
         $('eaCenterPct').textContent = (pct >= 10 || pct === 100 ? Math.round(pct) : pct.toFixed(1)) + '%';
+        $('eaCenterBack').classList.toggle('is-on', drill != null);
+        $('eaCenterHit').classList.toggle('is-on', drill != null);
         countUp($('eaCenterAmt'), lastAmt, amt, 700);
         lastAmt = amt;
     }
@@ -234,14 +264,18 @@
         const its = items(), sum = sumOf(its), list = $('eaList');
         const empty = !its.length;
         $('eaEmpty').classList.toggle('hidden', !empty);
-        $('eaChartBlock').classList.toggle('hidden', empty);
-        if (empty) { list.innerHTML = ''; return; }
+        $('eaChartBlock').classList.toggle('hidden', empty && drill == null);
+        if (empty && drill == null) { list.innerHTML = ''; return; }
 
-        list.innerHTML = its.map((x, i) => {
+        const backBar = drill != null
+            ? `<div class="ea-backbar" id="eaBackBar" role="button" tabindex="0">‹ 返回主类别 (Back to categories)</div>`
+            : '';
+
+        list.innerHTML = backBar + its.map((x, i) => {
             const pct = sum ? (x.total / sum * 100) : 0;
             const pctTxt = (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + '%';
             const chip = x.subs.length ? `<span class="ea-chip" data-drill="${i}">${x.subs.length} 子类别 ›</span>` : '';
-            return `<div class="ea-row${i === sel ? ' is-sel' : ''}" data-i="${i}" style="--c:${colorFor(i)};animation-delay:${i * 70}ms">
+            return `<div class="ea-row${i === sel ? ' is-sel' : ''}" data-i="${i}" style="--c:${colorFor(i)};animation-delay:${(i + (drill != null ? 1 : 0)) * 70}ms">
                 <span class="ea-dot"></span>
                 <span class="ea-ico">${drill == null ? iconFor(x.name) : esc((x.name || '?').trim().charAt(0))}</span>
                 <div class="ea-name"><span>${esc(x.name)}</span>${chip}</div>
@@ -273,16 +307,16 @@
         drill = i; sel = 0;
         $('eaTitle').textContent = c.name + ' — 子类别明细';
         $('eaBack').classList.add('is-on');
-        $('eaHint').textContent = '子类别占该类别支出的比例 (Share of this category)';
+        $('eaHint').textContent = HINT_SUB;
         renderList(); syncChart(); syncCenter(true);
     }
 
     function exitDrill() {
         if (drill == null) return;
         drill = null; sel = lastSel;
-        $('eaTitle').textContent = '支出分析 (Expense Analysis)';
+        $('eaTitle').textContent = TITLE_MAIN;
         $('eaBack').classList.remove('is-on');
-        $('eaHint').textContent = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
+        $('eaHint').textContent = HINT_MAIN;
         renderList(); syncChart(); syncCenter(true);
     }
 
@@ -293,10 +327,14 @@
     }
 
     $('eaList').addEventListener('click', (e) => {
+        if (e.target.closest('#eaBackBar')) { exitDrill(); return; }
         const chip = e.target.closest('.ea-chip');
         if (chip) { e.stopPropagation(); enterDrill(Number(chip.dataset.drill)); return; }
         const row = e.target.closest('.ea-row');
         if (row) tap(Number(row.dataset.i));
+    });
+    $('eaList').addEventListener('keydown', (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('#eaBackBar')) { e.preventDefault(); exitDrill(); }
     });
     $('eaList').addEventListener('mouseover', (e) => {
         const row = e.target.closest('.ea-row');
@@ -304,7 +342,10 @@
         chart.setActiveElements([{ datasetIndex: 0, index: Number(row.dataset.i) }]); chart.update();
     });
     $('eaList').addEventListener('mouseleave', () => { if (chart) { chart.setActiveElements([]); chart.update(); } });
+
     $('eaBack').addEventListener('click', exitDrill);
+    $('eaCenterHit').addEventListener('click', exitDrill);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drill != null) exitDrill(); });
 
     /* ---------- filter ---------- */
     function syncFilterUI() {
@@ -340,9 +381,9 @@
             const json = await res.json();
             if (my !== reqId) return;           // a newer request superseded this one
             data = json; drill = null; sel = (json.category_breakdown || []).length ? 0 : null; lastSel = 0;
-            $('eaTitle').textContent = '支出分析 (Expense Analysis)';
+            $('eaTitle').textContent = TITLE_MAIN;
             $('eaBack').classList.remove('is-on');
-            $('eaHint').textContent = '点击类别查看 · 再点一次进入子类别 (Tap to select · tap again for sub-categories)';
+            $('eaHint').textContent = HINT_MAIN;
             $('eaSummary').textContent = `${json.value} · ${json.expense_count} 笔支出 · ${fmt(json.total_expenses)} MMK（不含车费）`;
             renderList(); syncChart(); syncCenter(true);
         } catch (err) {
