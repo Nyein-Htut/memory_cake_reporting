@@ -1,0 +1,196 @@
+{# Shared "calm motion" kit for Monthly Report + Expense Report.
+   - .rf-reveal   : fade+rise once when scrolled into view (stagger with style="--rf-i:N")
+   - .rf-reveal-row : opacity-only version for <tr>
+   - [data-countup="123" data-decimals="1"] : number counts up when its card reveals
+   - .rf-bar > i[data-w="55"] : progress bar fills when its card reveals
+   - Charts: window.rfRegisterChart('canvasId', () => new Chart(...)) builds lazily when visible
+   - window.rfFinalizeCharts() : build every chart + jump to final frame (call before PDF capture)
+   Accent colour per card via style="--c:#059669". #}
+
+<style>
+.rf-js .rf-reveal,
+.rf-js .rf-reveal-row { opacity: 0; }
+
+.rf-reveal.rf-in { animation: rf-rise .6s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--rf-i, 0) * 70ms); }
+.rf-reveal-row.rf-in { animation: rf-fade .5s ease both; animation-delay: calc(var(--rf-i, 0) * 45ms); }
+.rf-reveal.rf-done, .rf-reveal-row.rf-done { animation: none; opacity: 1; }
+
+@keyframes rf-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes rf-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Cards ---------- */
+.rf-card {
+    --c: #292524;
+    position: relative;
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.04);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.rf-card.rf-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--c) 13%, transparent);
+    border-color: color-mix(in srgb, var(--c) 22%, white);
+}
+
+/* Stat card: thin accent line that draws in + icon bubble */
+.rf-stat { overflow: hidden; }
+.rf-stat::before {
+    content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 3px;
+    background: var(--c);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform .9s cubic-bezier(.22,1,.36,1) .25s;
+}
+.rf-stat.rf-in::before { transform: scaleX(1); }
+.rf-ico {
+    width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    background: color-mix(in srgb, var(--c) 12%, white);
+    color: var(--c);
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.rf-card:hover .rf-ico { transform: scale(1.1) rotate(-4deg); }
+
+/* Dark highlight card (profit / net profit) */
+.rf-dark { background: #0c0a09; border-color: #1c1917; color: #fff; }
+.rf-dark.rf-lift:hover { box-shadow: 0 16px 34px rgba(0,0,0,.28); border-color: #292524; }
+
+/* ---------- Progress bars ---------- */
+.rf-bar { height: 8px; border-radius: 9999px; background: #f5f5f4; overflow: hidden; }
+.rf-bar.rf-thin { height: 4px; }
+.rf-bar > i {
+    display: block; height: 100%; width: 0; border-radius: inherit;
+    background: var(--c, #292524);
+    transition: width 1s cubic-bezier(.22,1,.36,1);
+}
+
+/* ---------- List rows (channels / tables) ---------- */
+.rf-row { border-radius: 12px; padding: 8px 10px; margin: 0 -10px; transition: background .2s ease; }
+.rf-row:hover { background: color-mix(in srgb, var(--c, #78716c) 8%, white); }
+.rf-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+
+.rf-table tbody tr { transition: background .2s ease; }
+.rf-table tbody tr:hover { background: #fafaf9; }
+
+.rf-rank {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; background: #f5f5f4; color: #78716c;
+}
+.rf-rank.r1 { background: #d1fae5; color: #047857; }
+.rf-rank.r2 { background: #e7e5e4; color: #44403c; }
+.rf-rank.r3 { background: #fef3c7; color: #b45309; }
+
+.rf-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+    background: color-mix(in srgb, var(--c) 14%, white); color: var(--c);
+}
+
+/* Section heading with a small accent tick */
+.rf-section-title { display: flex; align-items: center; gap: 10px; }
+.rf-section-title::before {
+    content: ""; width: 4px; height: 20px; border-radius: 9999px;
+    background: linear-gradient(180deg, #059669, #34d399);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rf-js .rf-reveal, .rf-js .rf-reveal-row { opacity: 1; }
+    .rf-reveal.rf-in, .rf-reveal-row.rf-in { animation: none; }
+    .rf-stat::before { transform: scaleX(1); transition: none; }
+    .rf-bar > i { transition: none; }
+    .rf-card, .rf-ico { transition: none; }
+}
+</style>
+
+<script>
+(function () {
+    document.documentElement.classList.add('rf-js');
+
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const builders = {};   // canvasId -> builder fn
+    const built = {};      // canvasId -> true
+
+    const fmt = (n, d) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+    function countUp(el) {
+        if (el.dataset.rfCounted) return;
+        el.dataset.rfCounted = '1';
+        const to = parseFloat(el.dataset.countup);
+        if (!isFinite(to)) return;
+        const d = parseInt(el.dataset.decimals || '0', 10);
+        if (reduce) { el.textContent = fmt(to, d); return; }
+        const t0 = performance.now(), dur = 1000;
+        (function step(t) {
+            const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+            el.textContent = fmt(to * e, d);
+            if (p < 1) requestAnimationFrame(step); else el.textContent = fmt(to, d);
+        })(t0);
+    }
+
+    function buildChart(id) {
+        if (built[id] || !builders[id]) return;
+        built[id] = true;
+        try { builders[id](); } catch (e) { console.error('Chart build failed:', id, e); }
+    }
+
+    function activate(el) {
+        el.classList.add('rf-in');
+        el.addEventListener('animationend', function (e) {
+            if (e.target === el) el.classList.add('rf-done');
+        });
+
+        if (el.matches('[data-countup]')) countUp(el);
+        el.querySelectorAll('[data-countup]').forEach(countUp);
+
+        el.querySelectorAll('.rf-bar > i').forEach(function (b, i) {
+            setTimeout(function () { b.style.width = (b.dataset.w || 0) + '%'; }, 200 + i * 60);
+        });
+
+        el.querySelectorAll('canvas').forEach(function (cv) { if (cv.id) buildChart(cv.id); });
+    }
+
+    let io = null;
+    if ('IntersectionObserver' in window) {
+        io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (!e.isIntersecting) return;
+                io.unobserve(e.target);
+                activate(e.target);
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.rf-reveal, .rf-reveal-row').forEach(function (el) {
+            if (io) io.observe(el); else activate(el);
+        });
+    });
+
+    // Charts register a builder; it runs once the card is visible
+    // (or immediately if the card already revealed).
+    window.rfRegisterChart = function (id, builder) {
+        builders[id] = builder;
+        const cv = document.getElementById(id);
+        const host = cv && cv.closest('.rf-reveal');
+        if (host && host.classList.contains('rf-in')) buildChart(id);
+    };
+
+    // Used before PDF capture: make sure every chart exists and is at its final frame.
+    window.rfFinalizeCharts = function () {
+        Object.keys(builders).forEach(buildChart);
+        Object.values(window.mcCharts || {}).forEach(function (c) {
+            try { c.stop(); c.update('none'); } catch (e) {}
+        });
+    };
+
+    // Shared chart animation presets
+    window.rfAnim = {
+        line:  { duration: 1200, easing: 'easeOutQuart' },
+        bars:  { duration: 900, easing: 'easeOutQuart', delay: function (ctx) { return ctx.type === 'data' ? ctx.dataIndex * 90 : 0; } },
+        donut: { duration: 1000, easing: 'easeOutQuart', animateRotate: true, animateScale: true }
+    };
+})();
+</script>
