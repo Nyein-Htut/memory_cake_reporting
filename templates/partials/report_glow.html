@@ -168,6 +168,17 @@
     .mc-row .mc-dot, .mc-bar > i, .mc-hero::before, .mc-dark::after,
     .ea-row.is-sel .ea-dot { animation: none !important; }
 }
+   /* iOS Safari: rounded corners (overflow:hidden) don't clip animated children
+   unless the card is its own stacking context */
+.mc-stat, .mc-hero, .mc-dark, .ea-card { isolation: isolate; }
+
+/* Touch screens have no real hover: stop taps leaving rows/chips "stuck" hovered */
+@media (hover: none) {
+    .ea-row:hover { transform: none; background: transparent; }
+    .ea-row.is-sel:hover { background: rgba(var(--rgb, 168,162,158), .15); }
+    .ea-chip:hover { background: rgba(var(--rgb, 168,162,158), .12); color: rgb(var(--rgb-d, 87,83,78)); }
+    .ea-backbar:hover { transform: none; }
+}
 </style>
 
 <script>
