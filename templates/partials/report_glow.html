@@ -1,0 +1,244 @@
+{# =========================================================
+   report_glow.html — iOS-safe glow + motion layer
+   Include as the LAST line inside {% block content %} of:
+     - monthly.html
+     - expense_report.html
+   Why: color-mix() is not supported on iOS < 16.2 (declarations get dropped),
+   and :hover animations never fire on touch. This file replaces every
+   color-mix() with rgba(var(--rgb)) (JS converts each card's --c hex into
+   --rgb) and adds entrance / glow / shimmer animations that need no hover.
+   Self-contained: no changes needed to the other partials.
+   ========================================================= #}
+
+<style>
+/* ---------- keyframes (no color-mix anywhere) ---------- */
+@keyframes mcRise {
+    from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.98); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes mcBreath {
+    0%, 100% { opacity: .65; }
+    50%      { opacity: 1; }
+}
+@keyframes mcBarDraw {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+@keyframes mcShine {
+    0%   { transform: translate3d(0, 0, 0) skewX(-20deg); }
+    55%, 100% { transform: translate3d(420%, 0, 0) skewX(-20deg); }
+}
+@keyframes mcDotPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(var(--rgb, 168,162,158), .45), 0 0 10px rgba(var(--rgb, 168,162,158), .55); }
+    70%  { box-shadow: 0 0 0 7px rgba(var(--rgb, 168,162,158), 0), 0 0 10px rgba(var(--rgb, 168,162,158), .55); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--rgb, 168,162,158), 0), 0 0 10px rgba(var(--rgb, 168,162,158), .55); }
+}
+@keyframes mcFloat {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50%      { transform: translate3d(0, -3px, 0); }
+}
+@keyframes eaPulse2 {
+    0%   { box-shadow: 0 0 0 0 rgba(var(--rgb, 168,162,158), .55); }
+    70%  { box-shadow: 0 0 0 8px rgba(var(--rgb, 168,162,158), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--rgb, 168,162,158), 0); }
+}
+
+/* ---------- entrance: cards rise in, staggered ---------- */
+.mc-card, .mc-hero, .mc-dark, .ea-card {
+    -webkit-tap-highlight-color: transparent;
+    animation: mcRise .7s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+.grid > *:nth-child(2) { animation-delay: .08s; }
+.grid > *:nth-child(3) { animation-delay: .16s; }
+.grid > *:nth-child(4) { animation-delay: .24s; }
+
+/* ---------- KPI / stat cards ---------- */
+.mc-stat {
+    background: linear-gradient(180deg, rgba(var(--rgb, 168,162,158), .08) 0%, #ffffff 62%);
+    border-color: rgba(var(--rgb, 168,162,158), .22);
+    box-shadow: 0 1px 2px rgba(28,25,23,.04), 0 12px 28px rgba(var(--rgb, 168,162,158), .17);
+}
+/* colored corner glow — contained inside the card, so iOS clipping bugs can't hurt it */
+.mc-stat::after {
+    top: 0; right: 0; bottom: 0; left: 0;
+    width: auto; height: auto;
+    border-radius: inherit;
+    background: radial-gradient(circle at 100% 0%,
+        rgba(var(--rgb, 168,162,158), .34) 0%,
+        rgba(var(--rgb, 168,162,158), .11) 38%,
+        rgba(var(--rgb, 168,162,158), 0) 64%);
+    animation: mcBreath 4s ease-in-out infinite;
+}
+/* accent line that draws across the top */
+.mc-stat::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, rgb(var(--rgb, 168,162,158)), rgba(var(--rgb, 168,162,158), .2));
+    transform-origin: left center;
+    animation: mcBarDraw .9s cubic-bezier(.22, 1, .36, 1) .3s backwards;
+    z-index: 2;
+}
+/* touch-friendly: press feedback everywhere, lift only where real hover exists */
+.mc-stat:hover {
+    transform: none;
+    box-shadow: 0 1px 2px rgba(28,25,23,.04), 0 12px 28px rgba(var(--rgb, 168,162,158), .17);
+}
+.mc-stat:active { transform: scale(.985); transition: transform .12s ease; }
+@media (hover: hover) {
+    .mc-stat:hover {
+        transform: translate3d(0, -3px, 0);
+        box-shadow: 0 1px 2px rgba(28,25,23,.04), 0 18px 38px rgba(var(--rgb, 168,162,158), .28);
+    }
+}
+
+/* ---------- glossy icon bubble ---------- */
+.mc-ico {
+    background: linear-gradient(145deg, rgba(var(--rgb, 168,162,158), .32), rgba(var(--rgb, 168,162,158), .12));
+    box-shadow: 0 6px 14px rgba(var(--rgb, 168,162,158), .26), inset 0 1px 0 rgba(255,255,255,.75);
+}
+.mc-stat .mc-ico { animation: mcFloat 3.6s ease-in-out infinite; }
+.mc-hero .mc-ico { background: rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+
+/* ---------- chips + rank badges ---------- */
+.mc-chip {
+    color: rgb(var(--rgb-d, 87,83,78));
+    background: rgba(var(--rgb, 168,162,158), .14);
+    border: 1px solid rgba(var(--rgb, 168,162,158), .32);
+}
+.mc-rank {
+    color: rgb(var(--rgb-d, 87,83,78));
+    background: linear-gradient(145deg, rgba(var(--rgb, 168,162,158), .32), rgba(var(--rgb, 168,162,158), .12));
+    box-shadow: 0 4px 10px rgba(var(--rgb, 168,162,158), .22);
+}
+
+/* ---------- channel rows: glowing dot + bars that grow ---------- */
+.mc-row .mc-dot {
+    box-shadow: 0 0 0 3px rgba(var(--rgb, 168,162,158), .18);
+    animation: mcDotPulse 2.4s ease-out infinite;
+}
+.mc-bar > i {
+    background: linear-gradient(90deg, rgba(var(--rgb, 168,162,158), .6), rgb(var(--rgb, 168,162,158)));
+    box-shadow: 0 0 10px rgba(var(--rgb, 168,162,158), .55);
+    transform-origin: left center;
+    animation: mcBarDraw 1s cubic-bezier(.22, 1, .36, 1) .35s backwards;
+}
+
+/* ---------- hero (net profit) + dark card: glow + shimmer ---------- */
+.mc-hero.is-profit { box-shadow: 0 16px 36px rgba(52, 184, 138, .38); }
+.mc-hero.is-loss   { box-shadow: 0 16px 36px rgba(232, 106, 146, .36); }
+.mc-hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -60%;
+    width: 45%; height: 100%;
+    background: linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.30), rgba(255,255,255,0));
+    animation: mcShine 5s ease-in-out 1s infinite;
+    pointer-events: none;
+}
+.mc-dark { box-shadow: 0 16px 36px rgba(52, 184, 138, .24), 0 4px 12px rgba(28,25,23,.2); }
+.mc-dark::after { animation: mcBreath 4s ease-in-out infinite; }
+
+/* ---------- Expense Analysis (donut list) — replaces color-mix + broken keyframes ---------- */
+.ea-card { box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.05); }
+.ea-row { opacity: 1; }                       /* never stay invisible if an animation is skipped */
+.ea-row:hover { background: rgba(var(--rgb, 168,162,158), .07); }
+.ea-row.is-sel {
+    background: rgba(var(--rgb, 168,162,158), .15);
+    border-left-color: rgb(var(--rgb, 168,162,158));
+    box-shadow: 0 6px 18px rgba(var(--rgb, 168,162,158), .22);
+}
+.ea-row.is-sel .ea-dot { animation: eaPulse2 1.8s ease-out infinite; }
+.ea-ico {
+    background: linear-gradient(145deg, rgba(var(--rgb, 168,162,158), .30), rgba(var(--rgb, 168,162,158), .12));
+    box-shadow: 0 5px 12px rgba(var(--rgb, 168,162,158), .22), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.ea-chip {
+    background: rgba(var(--rgb, 168,162,158), .12);
+    border-color: rgba(var(--rgb, 168,162,158), .32);
+}
+.ea-bar > i { box-shadow: 0 0 8px rgba(var(--rgb, 168,162,158), .55); }
+.ea-center { top: 0; right: 0; bottom: 0; left: 0; }   /* `inset` fallback for older iOS */
+
+/* ---------- respect Reduce Motion (iOS Settings → Accessibility → Motion) ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .mc-card, .mc-hero, .mc-dark, .ea-card,
+    .mc-stat::after, .mc-stat::before, .mc-stat .mc-ico,
+    .mc-row .mc-dot, .mc-bar > i, .mc-hero::before, .mc-dark::after,
+    .ea-row.is-sel .ea-dot { animation: none !important; }
+}
+</style>
+
+<script>
+(function () {
+    /* Turns every inline "--c:#hex" into "--rgb:r,g,b" (+ a darker "--rgb-d" for
+       readable text), so CSS can use rgba(var(--rgb), alpha) on every browser.
+       A MutationObserver also handles rows the donut list renders later. */
+    function hexToRgb(h) {
+        h = (h || '').trim();
+        if (h.charAt(0) !== '#') return null;
+        if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+        if (h.length !== 7) return null;
+        var n = parseInt(h.slice(1), 16);
+        if (isNaN(n)) return null;
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    var DARK = [28, 25, 23];
+
+    function apply(el) {
+        if (!el.style) return;
+        var v = el.style.getPropertyValue('--c');
+        var c = hexToRgb(v);
+        if (!c) return;
+        el.style.setProperty('--rgb', c.join(','));
+        el.style.setProperty('--rgb-d', c.map(function (x, i) {
+            return Math.round(x * 0.62 + DARK[i] * 0.38);
+        }).join(','));
+    }
+
+    function scan(root) {
+        if (!root || root.nodeType !== 1) return;
+        apply(root);
+        var list = root.querySelectorAll('[style*="--c"]');
+        for (var i = 0; i < list.length; i++) apply(list[i]);
+    }
+
+    scan(document.body);
+    document.addEventListener('DOMContentLoaded', function () { scan(document.body); });
+
+    if (window.MutationObserver) {
+        new MutationObserver(function (muts) {
+            muts.forEach(function (m) {
+                for (var i = 0; i < m.addedNodes.length; i++) scan(m.addedNodes[i]);
+            });
+        }).observe(document.body, { childList: true, subtree: true });
+    }
+
+    /* Count-up for the big KPI numbers (skipped when Reduce Motion is on) */
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.addEventListener('DOMContentLoaded', function () {
+        if (reduce) return;
+        document.querySelectorAll('.mc-stat-value b, .mc-hero .mc-stat-value b').forEach(function (el) {
+            var raw = (el.textContent || '').trim();
+            if (!/^-?[\d,]+(\.\d+)?$/.test(raw)) return;
+            var neg = raw.charAt(0) === '-';
+            var clean = raw.replace(/[-,]/g, '');
+            var target = parseFloat(clean);
+            if (!isFinite(target) || target === 0) return;
+            var dec = (clean.split('.')[1] || '').length;
+            var t0 = performance.now(), dur = 1100;
+            (function step(t) {
+                var p = Math.min(1, (t - t0) / dur);
+                var e = 1 - Math.pow(1 - p, 3);
+                var val = target * e;
+                el.textContent = (neg ? '-' : '') + val.toLocaleString('en-US', {
+                    minimumFractionDigits: dec, maximumFractionDigits: dec
+                });
+                if (p < 1) requestAnimationFrame(step);
+                else el.textContent = raw;
+            })(t0);
+        });
+    });
+})();
+</script>
