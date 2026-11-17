@@ -4,39 +4,155 @@
 
 {% block content %}
 <style>
-    /* ===== Expense card action bar (matches the order-card action buttons) ===== */
-    .exp-card {
-        background: #fff;
-        border: 1px solid #e7e5e4;
-        border-radius: 14px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 8px rgba(28,25,23,.04);
-        transition: box-shadow .25s ease;
+/* ===== Memory Cake soft palette (same colours as the Expense Analysis donut) ===== */
+:root {
+    --mc-mint: #34b88a;
+    --mc-coral: #ff8a73;
+    --mc-blue: #5aa9e6;
+    --mc-violet: #a77bf0;
+    --mc-amber: #f0c05a;
+}
+.mc-card {
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.04);
+}
+.mc-h2 { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', 'Noto Serif SC', serif; font-size: 15px; font-weight: 700; color: #1c1917; letter-spacing: .02em; }
+.mc-h2::before { content: ""; width: 4px; height: 18px; border-radius: 9999px; background: linear-gradient(180deg, var(--mc-coral), var(--mc-amber)); }
+
+.mc-btn-primary { background: #292524; color: #fff; box-shadow: 0 4px 12px rgba(28,25,23,.18); transition: background .15s ease, transform .15s ease; }
+.mc-btn-primary:hover { background: #1c1917; }
+.mc-btn-primary:active { transform: scale(.97); }
+.mc-btn-danger { background: #ee6a52; color: #fff; box-shadow: 0 4px 12px rgba(238,106,82,.25); transition: background .15s ease; }
+.mc-btn-danger:hover { background: #dc5a43; }
+.mc-btn-soft { background: #f5f5f4; color: #57534e; transition: background .15s ease; }
+.mc-btn-soft:hover { background: #e7e5e4; }
+
+/* ===== Summary pills ===== */
+.mc-pill-stat {
+    --c: #a8a29e;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px 7px 8px; border-radius: 9999px;
+    background: color-mix(in srgb, var(--c) 10%, white);
+    border: 1px solid color-mix(in srgb, var(--c) 25%, white);
+    font-size: 12px; color: #57534e;
+}
+.mc-pill-stat .ico { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; background: color-mix(in srgb, var(--c) 22%, white); }
+.mc-pill-stat strong { color: #1c1917; font-weight: 800; }
+
+/* ===== Category management ===== */
+.cat-block {
+    --c: #a8a29e;
+    border: 1px solid #f0efed;
+    border-left: 4px solid var(--c);
+    border-radius: 14px;
+    padding: 14px;
+    background: color-mix(in srgb, var(--c) 4%, white);
+    transition: background .2s ease, box-shadow .2s ease;
+}
+.cat-block:hover { background: color-mix(in srgb, var(--c) 8%, white); box-shadow: 0 6px 16px color-mix(in srgb, var(--c) 14%, transparent); }
+.cat-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.sub-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; color: #57534e; font-size: 11px;
+    border: 1px solid color-mix(in srgb, var(--c) 28%, white);
+    border-radius: 9999px; padding: 4px 10px;
+}
+.cat-add-sub-btn { color: color-mix(in srgb, var(--c) 65%, #1c1917); }
+.cat-add-sub-btn:hover { color: #1c1917; }
+
+/* ===== Day separator: soft instead of the heavy grey bar (this page only) ===== */
+#expensesRoot .day-separator {
+    background: linear-gradient(135deg, #f7f5f3 0%, #f1eeeb 100%);
+    color: #44403c;
+    border: 1px solid #ece9e6;
+    padding-right: 18px;
+}
+#expensesRoot .day-separator-date { font-size: 14px; }
+#expensesRoot .day-separator-meta { color: #78716c; font-weight: 600; }
+
+/* ===== Expense card ===== */
+.exp-card {
+    --c: #a8a29e;
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-left: 4px solid var(--c);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 6px 18px rgba(28,25,23,.04);
+    transition: box-shadow .25s ease;
+}
+.exp-card:hover { box-shadow: 0 12px 28px color-mix(in srgb, var(--c) 18%, transparent); }
+.exp-ico {
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800;
+    background: color-mix(in srgb, var(--c) 16%, white);
+    color: color-mix(in srgb, var(--c) 80%, #1c1917);
+}
+.exp-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 9px 14px;
+    background: #fbfaf9;
+    border-top: 1px solid #f5f5f4;
+}
+.exp-actions .oc-action-btn { justify-content: center; }
+.exp-actions .oc-action-edit { color: #2f7fc1; background: #eef6fd; border-color: #d8eaf9; }
+.exp-actions .oc-action-edit:hover { background: #dcebf9; }
+.exp-actions .oc-action-delete { color: #d9573f; background: #fff1ee; border-color: #fddcd5; }
+.exp-actions .oc-action-delete:hover { background: #fde0da; }
+@media (max-width: 480px) {
+    .exp-actions { padding: 10px 12px; }
+    .exp-actions .oc-action-btn {
+        flex: 1;
+        min-height: 42px;
+        font-size: 13px;
+        border-radius: 11px;
     }
-    .exp-card:hover { box-shadow: 0 10px 24px rgba(28,25,23,.08); }
-    .exp-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        padding: 10px 14px;
-        background: rgba(250,250,249,.7);
-        border-top: 1px solid #f5f5f4;
-    }
-    .exp-actions .oc-action-btn { justify-content: center; }
-    @media (max-width: 480px) {
-        .exp-actions { padding: 10px 12px; }
-        .exp-actions .oc-action-btn {
-            flex: 1;
-            min-height: 42px;
-            font-size: 13px;
-            border-radius: 11px;
-        }
-        .exp-actions .oc-action-btn svg { width: 16px; height: 16px; }
-    }
-    @media print { .exp-actions { display: none !important; } }
+    .exp-actions .oc-action-btn svg { width: 16px; height: 16px; }
+}
+@media print { .exp-actions { display: none !important; } }
+
+/* ===== Floating add button — coral glass orb ===== */
+.exp-fab {
+    position: fixed; z-index: 40;
+    right: max(1.1rem, env(safe-area-inset-right));
+    bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + .5rem));
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; cursor: pointer; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.55);
+    background: radial-gradient(circle at 50% 30%, #ff9d88 0%, #f26f55 62%, #d4553c 100%);
+    box-shadow:
+        inset 0 3px 6px rgba(255,255,255,.6),
+        inset 0 -6px 12px rgba(120,35,20,.35),
+        0 12px 28px rgba(238,106,82,.38),
+        0 4px 10px rgba(0,0,0,.18);
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease;
+}
+.exp-fab::before {
+    content: ""; position: absolute; width: 80%; height: 44%; left: 10%; top: 3%; border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,.4) 40%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+.exp-fab svg { position: relative; z-index: 2; }
+.exp-fab:hover { transform: translateY(-3px) scale(1.05); }
+.exp-fab:active { transform: scale(.92); }
+
+/* Wheel pickers on this page: calm neutral confirm + mint selection */
+.wp-btn-set { background: #292524; }
+.wp-btn-set:hover { background: #1c1917; }
+.wp-quick-btn:hover { border-color: #34b88a; color: #1f8f69; background: #ecfaf4; }
+.wp-source-item.wp-source-selected { border-color: #34b88a; background: #ecfaf4; color: #1f8f69; }
+.wp-source-check { color: #34b88a !important; }
 </style>
+
+{% set pal = ['#5aa9e6', '#ff8a73', '#f0c05a', '#a77bf0', '#34b88a', '#e86a92', '#3fb6c9', '#f08a3c', '#8a94a6', '#7bc043'] %}
 
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
 
@@ -51,13 +167,13 @@
 
     {% if not readonly %}
     <!-- ==================== CATEGORY MANAGEMENT (manager only) ==================== -->
-    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-5 space-y-4">
+    <div class="mc-card p-5 space-y-4">
         <div class="flex justify-between items-center">
-            <h2 class="text-sm font-bold text-stone-800 uppercase tracking-wider">支出类别管理</h2>
+            <h2 class="mc-h2">支出类别管理</h2>
             <div class="flex items-center gap-2">
                 <button type="button" onclick="openAddCategoryModal()"
-                    class="flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow-sm cursor-pointer">
-                    <span class="text-base leading-none">➕</span> 添加类别
+                    class="mc-btn-primary flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl cursor-pointer">
+                    <span class="text-base leading-none">＋</span> 添加类别
                 </button>
                 <button type="button" id="categoryFoldToggle" onclick="toggleCategoryFold()"
                     class="day-fold-toggle"
@@ -72,22 +188,23 @@
 
         <div class="space-y-3" id="categoryListWrap">
             {% for cat in categories %}
-            <div class="border border-stone-200 rounded-xl p-3.5 bg-stone-50/40" data-category-id="{{ cat.id }}">
+            <div class="cat-block" style="--c:{{ pal[cat.id % pal|length] }};" data-category-id="{{ cat.id }}">
                 <div class="flex justify-between items-center gap-3">
-                    <span class="font-semibold text-stone-900 text-sm">
-                        {{ cat.name_zh }} <span class="text-stone-400 font-normal text-xs">({{ cat.name_mm }})</span>
+                    <span class="flex items-center gap-2.5 min-w-0 font-semibold text-stone-900 text-sm">
+                        <span class="cat-dot"></span>
+                        <span class="truncate">{{ cat.name_zh }} <span class="text-stone-400 font-normal text-xs">({{ cat.name_mm }})</span></span>
                     </span>
                     <div class="flex items-center gap-2 shrink-0">
-                        <button type="button" class="cat-add-sub-btn text-xs text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer whitespace-nowrap"
+                        <button type="button" class="cat-add-sub-btn text-xs font-semibold cursor-pointer whitespace-nowrap"
                             data-cat-id="{{ cat.id }}" data-cat-label="{{ cat.name_zh }}">
-                            ➕ 子类别
+                            ＋ 子类别
                         </button>
                         <button type="button" class="cat-edit-btn text-sm text-stone-500 hover:text-stone-800 cursor-pointer"
                             data-cat-id="{{ cat.id }}" data-cat-zh="{{ cat.name_zh }}" data-cat-mm="{{ cat.name_mm }}"
                             title="编辑类别 (Edit)">
                             ✏️
                         </button>
-                        <button type="button" class="cat-delete-btn text-sm text-rose-500 hover:text-rose-700 cursor-pointer"
+                        <button type="button" class="cat-delete-btn text-sm cursor-pointer"
                             data-cat-id="{{ cat.id }}" data-cat-zh="{{ cat.name_zh }}"
                             title="删除类别 (Delete)">
                             🗑️
@@ -95,16 +212,16 @@
                     </div>
                 </div>
                 {% if cat.subcategories %}
-                <div class="flex flex-wrap gap-1.5 mt-2.5">
+                <div class="flex flex-wrap gap-1.5 mt-3">
                     {% for sub in cat.subcategories %}
-                    <span class="inline-flex items-center gap-1.5 bg-white border border-stone-200 text-stone-600 text-[11px] px-2.5 py-1 rounded-full">
+                    <span class="sub-chip">
                         <span>{{ sub.name_zh }} <span class="text-stone-400">({{ sub.name_mm }})</span></span>
                         <button type="button" class="sub-edit-btn text-stone-400 hover:text-stone-700 cursor-pointer leading-none"
                             data-sub-id="{{ sub.id }}" data-sub-zh="{{ sub.name_zh }}" data-sub-mm="{{ sub.name_mm }}"
                             title="编辑子类别 (Edit)">
                             ✏️
                         </button>
-                        <button type="button" class="sub-delete-btn text-rose-400 hover:text-rose-700 cursor-pointer font-bold leading-none"
+                        <button type="button" class="sub-delete-btn text-stone-400 hover:text-[#d9573f] cursor-pointer font-bold leading-none"
                             data-sub-id="{{ sub.id }}" data-sub-zh="{{ sub.name_zh }}"
                             title="删除子类别 (Delete)">
                             ✕
@@ -122,7 +239,7 @@
     {% endif %}
 
     <!-- ==================== FILTER BAR ==================== -->
-    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs p-4 sm:p-5 space-y-3">
+    <div class="mc-card p-4 sm:p-5 space-y-3">
         <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">
             {% if readonly %}ကာလ ရွေးရန်{% else %}筛选周期{% endif %}
         </span>
@@ -169,9 +286,9 @@
             </div>
         </form>
 
-        <div class="flex flex-wrap gap-4 pt-3 border-t border-stone-200/60 text-xs font-numeric text-stone-600">
-            <span><strong class="text-stone-900">{{ total_expenses }}</strong> {% if readonly %}အသုံးစရိတ်{% else %}笔支出{% endif %}</span>
-            <span><strong class="text-stone-900">{{ "{:,}".format(total_amount) }}</strong> MMK</span>
+        <div class="flex flex-wrap gap-2.5 pt-3 border-t border-stone-100 font-numeric">
+            <span class="mc-pill-stat" style="--c:#5aa9e6;"><span class="ico">🧾</span><span><strong>{{ total_expenses }}</strong> {% if readonly %}အသုံးစရိတ်{% else %}笔支出{% endif %}</span></span>
+            <span class="mc-pill-stat" style="--c:#ff8a73;"><span class="ico">💸</span><span><strong>{{ "{:,}".format(total_amount) }}</strong> MMK</span></span>
         </div>
     </div>
 
@@ -191,7 +308,10 @@
                 {% if exp.category and exp.subcategory %}
                     {% set exp_label = exp_label ~ ' · ' ~ (exp.subcategory.name_mm if readonly else exp.subcategory.name_zh) %}
                 {% endif %}
-                <div class="exp-card" id="expense-card-{{ exp.id }}"
+                {% set card_color = pal[exp.category_id % pal|length] if exp.category_id else '#a8a29e' %}
+                {% set cat_name = ((exp.category.name_mm if readonly else exp.category.name_zh) if exp.category else '') %}
+                {% set initial = cat_name[:1] if cat_name else '·' %}
+                <div class="exp-card" id="expense-card-{{ exp.id }}" style="--c:{{ card_color }};"
                     data-exp-id="{{ exp.id }}"
                     data-cat-id="{{ exp.category_id or '' }}"
                     data-sub-id="{{ exp.subcategory_id or '' }}"
@@ -200,8 +320,9 @@
                     data-date="{{ exp.date }}"
                     data-label="{{ exp_label }}">
 
-                    <div class="p-4 flex justify-between items-start gap-3">
-                        <div class="min-w-0 space-y-1">
+                    <div class="p-4 flex items-start gap-3">
+                        <span class="exp-ico">{{ initial }}</span>
+                        <div class="min-w-0 flex-1 space-y-1">
                             <div class="text-sm font-semibold text-stone-900">
                                 {% if exp.category %}
                                     {{ exp.category.name_mm if readonly else exp.category.name_zh }}
@@ -217,7 +338,7 @@
                             {% endif %}
                         </div>
                         <div class="text-right shrink-0">
-                            <div class="text-sm font-bold text-stone-950 font-numeric whitespace-nowrap">{{ "{:,}".format(exp.price) }} MMK</div>
+                            <div class="text-sm font-extrabold text-stone-950 font-numeric whitespace-nowrap">{{ "{:,}".format(exp.price) }} <span class="text-[10px] font-bold text-stone-400">MMK</span></div>
                         </div>
                     </div>
 
@@ -251,8 +372,8 @@
 
 <!-- ==================== ADD / EDIT EXPENSE (both roles) ==================== -->
 <div id="addExpenseModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-stone-200 overflow-hidden max-h-[90vh] flex flex-col">
-        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100 shrink-0">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-200 overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100 shrink-0" style="background:linear-gradient(135deg,#fff7f4,#fffbf0);">
             <h3 class="text-base font-bold text-stone-900" id="expenseModalTitle">
                 {% if readonly %}အသုံးစရိတ် အသစ်ထည့်ရန်{% else %}添加支出{% endif %}
             </h3>
@@ -286,14 +407,14 @@
                     {% if readonly %}ဈေးနှုန်း (MMK){% else %}金额 (MMK){% endif %}
                 </label>
                 <input type="number" name="price" id="expPriceInput" required inputmode="numeric"
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                    class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
                     {% if readonly %}မှတ်ချက်{% else %}备注{% endif %}
                 </label>
                 <input type="text" name="remarks" id="expRemarksInput"
-                    class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                    class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">
@@ -307,11 +428,11 @@
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="closeAddExpenseModal()"
-                    class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">
+                    class="mc-btn-soft text-xs font-semibold py-2.5 px-4 rounded-xl cursor-pointer">
                     {% if readonly %}ပယ်ဖျက်{% else %}取消{% endif %}
                 </button>
                 <button type="submit"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">
+                    class="mc-btn-primary text-xs font-semibold py-2.5 px-6 rounded-xl cursor-pointer">
                     {% if readonly %}သိမ်းမည်{% else %}保存{% endif %}
                 </button>
             </div>
@@ -321,9 +442,9 @@
 
 <!-- ==================== DELETE EXPENSE CONFIRMATION (both roles) ==================== -->
 <div id="expDeleteModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4 transition-all duration-200">
-    <div class="bg-white max-w-md w-full rounded-2xl border border-stone-200 shadow-xl overflow-hidden p-6 space-y-5 transform scale-95 transition-transform duration-200" id="expDeleteCard">
+    <div class="bg-white max-w-md w-full rounded-3xl border border-stone-200 shadow-xl overflow-hidden p-6 space-y-5 transform scale-95 transition-transform duration-200" id="expDeleteCard">
         <div class="flex items-start gap-4">
-            <div class="bg-rose-50 p-2 rounded-full text-rose-600 shrink-0">
+            <div class="p-2 rounded-full shrink-0" style="background:#fff1ee;color:#e0634a;">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
@@ -339,7 +460,7 @@
             </div>
         </div>
 
-        <div class="bg-stone-50 border border-stone-200/60 rounded-lg p-3.5 text-xs text-stone-600 space-y-1 font-sans">
+        <div class="bg-stone-50 border border-stone-200/60 rounded-xl p-3.5 text-xs text-stone-600 space-y-1 font-sans">
             {% if readonly %}
             <p>ဤအသုံးစရိတ် မှတ်တမ်းကို အပြီးတိုင် ဖျက်ရန် ဖြစ်ပါသည်။ ဤလုပ်ဆောင်ချက်ကို နောက်ပြန်လှည့်၍ မရပါ။</p>
             {% else %}
@@ -357,11 +478,11 @@
 
         <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-1">
             <button type="button" onclick="closeDeleteExpenseModal()"
-                class="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-5 rounded-lg transition-all font-sans order-2 sm:order-1 cursor-pointer">
+                class="mc-btn-soft w-full sm:w-auto text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-5 rounded-xl transition-all font-sans order-2 sm:order-1 cursor-pointer">
                 {% if readonly %}ပယ်ဖျက်{% else %}取消 / Cancel{% endif %}
             </button>
             <a id="expDeleteConfirmBtn" href="#"
-                class="w-full sm:w-auto text-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-6 rounded-lg transition-all shadow-xs font-sans order-1 sm:order-2 cursor-pointer">
+                class="mc-btn-danger w-full sm:w-auto text-center text-xs font-semibold tracking-wider uppercase py-3 sm:py-2.5 px-6 rounded-xl transition-all font-sans order-1 sm:order-2 cursor-pointer">
                 {% if readonly %}အတည်ပြု ဖျက်မည်{% else %}确认删除 / Delete{% endif %}
             </a>
         </div>
@@ -370,8 +491,7 @@
 
 <button type="button" id="fabAddExpenseBtn" onclick="openAddExpenseModal()"
     aria-label="{% if readonly %}အသုံးစရိတ်အသစ် ထည့်ရန်{% else %}添加支出{% endif %}"
-    class="fixed z-40 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-700 hover:bg-emerald-800 active:scale-90 text-white shadow-lg shadow-stone-900/20 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-    style="right: max(1.1rem, env(safe-area-inset-right)); bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.5rem));">
+    class="exp-fab">
     <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 5v14M5 12h14"/>
     </svg>
@@ -380,7 +500,7 @@
 {% if not readonly %}
 <!-- ==================== ADD / EDIT CATEGORY (manager only) ==================== -->
 <div id="addCategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 overflow-hidden">
         <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
             <h3 class="text-base font-bold text-stone-900" id="categoryModalTitleText">添加支出类别</h3>
             <button type="button" onclick="closeAddCategoryModal()" class="text-stone-400 hover:text-stone-600 font-bold text-sm cursor-pointer">✕</button>
@@ -388,22 +508,22 @@
         <form method="POST" id="categoryForm" action="/expenses/add_category" class="p-6 space-y-4 text-sm">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" id="categoryNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="categoryNameZh" required class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" id="categoryNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="categoryNameMm" required class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div class="flex justify-between items-center gap-3 pt-2">
                 <button type="button" id="categoryDeleteBtn" onclick="deleteCategoryFromModal()"
-                    class="hidden text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer whitespace-nowrap">
+                    class="hidden text-xs font-semibold cursor-pointer whitespace-nowrap" style="color:#d9573f;">
                     🗑️ 删除此类别
                 </button>
                 <div class="flex justify-end gap-3 flex-1">
                     <button type="button" onclick="closeAddCategoryModal()"
-                        class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                        class="mc-btn-soft text-xs font-semibold py-2.5 px-4 rounded-xl cursor-pointer">取消</button>
                     <button type="submit"
-                        class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+                        class="mc-btn-primary text-xs font-semibold py-2.5 px-6 rounded-xl cursor-pointer">保存</button>
                 </div>
             </div>
         </form>
@@ -411,7 +531,7 @@
 </div>
 
 <div id="addSubcategoryModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-sm items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-stone-200 overflow-hidden">
         <div class="flex justify-between items-center px-6 py-4 border-b border-stone-100">
             <h3 class="text-base font-bold text-stone-900">
                 <span id="subcategoryModalTitleText">添加子类别</span>
@@ -423,22 +543,22 @@
             <input type="hidden" name="category_id" id="subcatCategoryIdInput" value="">
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">中文名称</label>
-                <input type="text" name="name_zh" id="subcatNameZh" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                <input type="text" name="name_zh" id="subcatNameZh" required class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div>
                 <label class="block text-xs font-bold text-stone-500 uppercase mb-1.5">缅甸文名称 (Burmese)</label>
-                <input type="text" name="name_mm" id="subcatNameMm" required class="w-full border border-stone-300 rounded-lg p-2.5 text-base outline-none focus:border-stone-950">
+                <input type="text" name="name_mm" id="subcatNameMm" required class="w-full border border-stone-300 rounded-xl p-2.5 text-base outline-none focus:border-stone-950">
             </div>
             <div class="flex justify-between items-center gap-3 pt-2">
                 <button type="button" id="subcategoryDeleteBtn" onclick="deleteSubcategoryFromModal()"
-                    class="hidden text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer whitespace-nowrap">
+                    class="hidden text-xs font-semibold cursor-pointer whitespace-nowrap" style="color:#d9573f;">
                     🗑️ 删除此子类别
                 </button>
                 <div class="flex justify-end gap-3 flex-1">
                     <button type="button" onclick="closeAddSubcategoryModal()"
-                        class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold py-2.5 px-4 rounded-lg transition-all cursor-pointer">取消</button>
+                        class="mc-btn-soft text-xs font-semibold py-2.5 px-4 rounded-xl cursor-pointer">取消</button>
                     <button type="submit"
-                        class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold py-2.5 px-6 rounded-lg transition-all shadow-sm cursor-pointer">保存</button>
+                        class="mc-btn-primary text-xs font-semibold py-2.5 px-6 rounded-xl cursor-pointer">保存</button>
                 </div>
             </div>
         </form>
@@ -580,7 +700,7 @@ function openExpDateEntryPicker() {
 
 /* ===== Category / Subcategory pickers for the Add/Edit Expense form =====
    Styled and behaved exactly like the order-source picker (the same
-   bottom-sheet + emerald "selected" state), instead of native <select>
+   bottom-sheet + "selected" state), instead of native <select>
    dropdowns. Reuses the shared #wpSourceOverlay defined in base.html. */
 function openExpCategoryPicker() {
     const btn = document.getElementById('expCategoryTriggerBtn');
@@ -847,8 +967,7 @@ document.getElementById('addSubcategoryModal').addEventListener('click', functio
 /* ===== Delegated click handling for every category/subcategory action
    button (add sub / edit / delete). Using data-* attributes read via JS,
    instead of inline onclick="...{{ jinja }}..." strings, means a category
-   or subcategory name can never accidentally break the button's markup —
-   this is also the fix for "can't click add subcategory". ===== */
+   or subcategory name can never accidentally break the button's markup. ===== */
 document.getElementById('categoryListWrap').addEventListener('click', function(e) {
     const addSubBtn = e.target.closest('.cat-add-sub-btn');
     if (addSubBtn) {

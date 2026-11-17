@@ -3,11 +3,100 @@
 {% block title %}月度业务报表 — Memory Cake{% endblock %}
 
 {% block content %}
-{% include 'partials/report_fx.html' %}
+<style>
+/* ===== Memory Cake soft palette (same colours as the Expense Analysis donut) ===== */
+:root {
+    --mc-mint: #34b88a;
+    --mc-coral: #ff8a73;
+    --mc-blue: #5aa9e6;
+    --mc-violet: #a77bf0;
+    --mc-amber: #f0c05a;
+    --mc-rose: #e86a92;
+}
+.mc-card {
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.04);
+}
+.mc-stat {
+    --c: #a8a29e;
+    position: relative;
+    overflow: hidden;
+    padding: 18px 20px 16px;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.mc-stat:hover { transform: translateY(-2px); box-shadow: 0 14px 32px color-mix(in srgb, var(--c) 16%, transparent); }
+.mc-stat::after {
+    content: ""; position: absolute; right: -34px; top: -34px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    pointer-events: none;
+}
+.mc-stat-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.mc-ico {
+    width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    background: color-mix(in srgb, var(--c) 16%, white);
+}
+.mc-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #78716c; line-height: 1.25; }
+.mc-stat-value { position: relative; z-index: 1; margin-top: 14px; display: flex; align-items: baseline; gap: 5px; }
+.mc-stat-value b { font-size: 26px; font-weight: 800; letter-spacing: -.01em; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.mc-stat-value small { font-size: 11px; font-weight: 700; color: #a8a29e; }
+.mc-chip {
+    --c: #a8a29e;
+    display: inline-block; margin-top: 8px; position: relative; z-index: 1;
+    font-size: 10px; font-weight: 800; letter-spacing: .03em;
+    color: color-mix(in srgb, var(--c) 70%, #1c1917);
+    background: color-mix(in srgb, var(--c) 14%, white);
+    border: 1px solid color-mix(in srgb, var(--c) 28%, white);
+    border-radius: 9999px; padding: 3px 10px;
+}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans" id="monthlyReportRoot">
+.mc-h2 { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', 'Noto Serif SC', serif; font-size: 16px; font-weight: 700; color: #1c1917; letter-spacing: .02em; }
+.mc-h2::before { content: ""; width: 4px; height: 18px; border-radius: 9999px; background: linear-gradient(180deg, var(--mc-mint), var(--mc-blue)); }
 
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print rf-reveal" style="--rf-i:0">
+.mc-section-title { padding-top: 22px; border-top: 1px solid #ece9e6; margin-top: 8px; }
+
+.mc-row { --c: #a8a29e; display: flex; flex-direction: column; gap: 7px; }
+.mc-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.mc-bar { height: 7px; border-radius: 9999px; background: #f5f5f4; overflow: hidden; }
+.mc-bar > i { display: block; height: 100%; border-radius: inherit; background: var(--c); transition: width .8s cubic-bezier(.22,1,.36,1); }
+
+.mc-rank {
+    --c: #a8a29e;
+    width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: color-mix(in srgb, var(--c) 75%, #1c1917);
+    background: color-mix(in srgb, var(--c) 16%, white);
+}
+.mc-pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 9999px;
+    background: #f5f5f4; color: #57534e;
+}
+
+.mc-dark {
+    position: relative; overflow: hidden; border-radius: 20px; padding: 18px 20px 16px; color: #fff;
+    background: linear-gradient(135deg, #292524 0%, #1c1917 100%);
+    box-shadow: 0 14px 32px rgba(28,25,23,.16);
+}
+.mc-dark::after {
+    content: ""; position: absolute; right: -30px; top: -40px; width: 130px; height: 130px;
+    border-radius: 50%; background: rgba(52,184,138,.22); pointer-events: none;
+}
+
+/* Wheel pickers on this page: calm neutral confirm + mint selection */
+.wp-btn-set { background: #292524; }
+.wp-btn-set:hover { background: #1c1917; }
+.wp-quick-btn:hover { border-color: #34b88a; color: #1f8f69; background: #ecfaf4; }
+.wp-source-item.wp-source-selected { border-color: #34b88a; background: #ecfaf4; color: #1f8f69; }
+.wp-source-check { color: #34b88a !important; }
+</style>
+
+{% set pal = ['#5aa9e6', '#ff8a73', '#f0c05a', '#a77bf0', '#34b88a', '#e86a92', '#3fb6c9', '#f08a3c', '#8a94a6', '#7bc043'] %}
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7 font-sans" id="monthlyReportRoot">
+
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div class="space-y-1">
             <h1 class="text-3xl font-semibold tracking-wide text-stone-900 font-serif">
                 {% if view_mode == 'year' %}年度业务报表{% else %}月度业务报表{% endif %}
@@ -19,9 +108,11 @@
 
         <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {# No "Apply/筛选" button — picking a month/year (or switching the
-               月度/年度 tab) submits this form immediately via JS below. #}
-            <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
+               月度/年度 tab) submits this form immediately via JS below, so
+               the report updates as soon as a choice is made. #}
+            <form method="GET" action="/monthly" id="monthlyFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-2xl border border-stone-200/80 shadow-xs w-full sm:w-auto">
                 <input type="hidden" name="view" id="viewModeInput" value="{{ view_mode }}">
+                <input type="hidden" name="date_basis" id="dateBasisInput" value="{{ date_basis }}">
 
                 <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
                     <button type="button" onclick="setViewMode('month')"
@@ -64,83 +155,62 @@
         </div>
     </header>
 
-    <!-- ==================== HEADLINE STATS ==================== -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- ==================== KPI CARDS ==================== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#059669; --rf-i:1">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">总营业额 (GROSS REVENUE)</h3>
-                <span class="rf-ico">💰</span>
+        <div class="mc-card mc-stat" style="--c:#34b88a;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">💰</span>
+                <span class="mc-stat-label">总营业额<br>Gross Revenue</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_revenue }}">{{"{:,}".format(total_revenue)}}</span>
-                <span class="text-xs font-semibold text-stone-400">MMK</span>
-            </div>
-            <div>
-                <span class="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">{{ period_label }}</span>
-            </div>
+            <div class="mc-stat-value"><b>{{"{:,}".format(total_revenue)}}</b><small>MMK</small></div>
+            <span class="mc-chip" style="--c:#34b88a;">{{ period_label }}</span>
         </div>
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#0d9488; --rf-i:2">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">已结订单 (COMPLETED VOUCHERS)</h3>
-                <span class="rf-ico">🧾</span>
+        <div class="mc-card mc-stat" style="--c:#5aa9e6;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🧾</span>
+                <span class="mc-stat-label">已结订单<br>Completed Vouchers</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_orders }}">{{ total_orders }}</span>
-                <span class="text-xs font-semibold text-stone-500">单</span>
-            </div>
-            <div>
-                <span class="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">包含所有成交记录</span>
-            </div>
+            <div class="mc-stat-value"><b>{{ total_orders }}</b><small>单</small></div>
+            <span class="mc-chip" style="--c:#5aa9e6;">包含所有成交记录</span>
         </div>
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#57534e; --rf-i:3">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">客单价 (AVERAGE TICKET SIZE)</h3>
-                <span class="rf-ico">🎟️</span>
+        <div class="mc-card mc-stat" style="--c:#a77bf0;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🏷️</span>
+                <span class="mc-stat-label">客单价<br>Average Ticket</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ avg_ticket }}">{{"{:,}".format(avg_ticket)}}</span>
-                <span class="text-xs font-semibold text-stone-400">MMK</span>
-            </div>
-            <div>
-                <span class="inline-block bg-stone-50 text-stone-500 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">单均收入</span>
-            </div>
+            <div class="mc-stat-value"><b>{{"{:,}".format(avg_ticket)}}</b><small>MMK</small></div>
+            <span class="mc-chip" style="--c:#a77bf0;">单均收入</span>
         </div>
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#d97706; --rf-i:4">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">活跃客户数 (ACTIVE CUSTOMERS)</h3>
-                <span class="rf-ico">👥</span>
+        <div class="mc-card mc-stat" style="--c:#f0c05a;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">👥</span>
+                <span class="mc-stat-label">活跃客户数<br>Active Customers</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ unique_customers }}">{{ unique_customers }}</span>
-                <span class="text-xs font-semibold text-stone-500">人</span>
-            </div>
-            <div>
-                <span class="inline-block bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">{% if view_mode == 'year' %}当年{% else %}当月{% endif %}不重复买家</span>
-            </div>
+            <div class="mc-stat-value"><b>{{ unique_customers }}</b><small>人</small></div>
+            <span class="mc-chip" style="--c:#f0c05a;">{% if view_mode == 'year' %}当年{% else %}当月{% endif %}不重复买家</span>
         </div>
 
     </div>
 
     <!-- ==================== CHANNELS + TOP ITEMS ==================== -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
 
-        <div class="rf-card rf-reveal lg:col-span-4 p-6 space-y-5" style="--rf-i:0">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">店铺渠道贡献</h2>
+        <div class="lg:col-span-4 mc-card p-5 sm:p-6 space-y-5">
+            <h2 class="mc-h2">店铺渠道贡献</h2>
 
-            <div class="space-y-1 font-numeric">
-                {% set channel_colors = ['#292524', '#57534e', '#78716c', '#a8a29e', '#059669', '#b45309'] %}
+            <div class="space-y-4 font-numeric">
                 {% for channel in channels %}
-                {% set ch_color = channel_colors[loop.index0 % channel_colors|length] %}
-                <div class="rf-row space-y-2" style="--c:{{ ch_color }}">
+                {% set cc = pal[loop.index0 % pal|length] %}
+                <div class="mc-row" style="--c:{{ cc }};">
                     <div class="flex justify-between items-center gap-3 text-xs font-medium text-stone-800">
-                        <span class="flex items-center gap-2 min-w-0"><span class="rf-dot"></span><span class="truncate">{{ channel.name }}</span></span>
-                        <span class="whitespace-nowrap">{{"{:,}".format(channel.revenue)}} MMK <span class="text-stone-400">({{ channel.percentage }}%)</span></span>
+                        <span class="flex items-center gap-2 min-w-0"><span class="mc-dot"></span><span class="truncate">{{ channel.name }}</span></span>
+                        <span class="whitespace-nowrap text-stone-600">{{"{:,}".format(channel.revenue)}} MMK <b class="text-stone-900">{{ channel.percentage }}%</b></span>
                     </div>
-                    <div class="rf-bar"><i data-w="{{ channel.percentage }}"></i></div>
+                    <div class="mc-bar"><i style="width: {{ channel.percentage }}%;"></i></div>
                 </div>
                 {% else %}
                 <p class="text-xs text-stone-400 italic py-4">暂无数据</p>
@@ -152,12 +222,11 @@
             </div>
         </div>
 
-        <div class="rf-card rf-reveal lg:col-span-8 p-6 space-y-4" style="--rf-i:1">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">最畅销单品排行 (Top 10 Selling Items)</h2>
+        <div class="lg:col-span-8 mc-card p-5 sm:p-6 space-y-4">
+            <h2 class="mc-h2">最畅销单品排行 (Top 10 Selling Items)</h2>
 
-            {% set max_count = (top_items | map(attribute='count') | max) if top_items else 1 %}
             <div class="overflow-x-auto">
-                <table class="rf-table w-full text-left text-xs sm:text-sm border-collapse">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
                     <thead>
                         <tr class="text-stone-400 border-b border-stone-100 font-medium">
                             <th class="py-3 px-2 w-[10%]">排名</th>
@@ -169,12 +238,9 @@
                     </thead>
                     <tbody class="divide-y divide-stone-50 font-numeric text-stone-800">
                         {% for item in top_items %}
-                        <tr>
-                            <td class="py-3.5 px-2"><span class="rf-rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% endif %}">{{ loop.index }}</span></td>
-                            <td class="py-3.5 px-2 text-stone-900 font-medium">
-                                <div>{{ item.name }}</div>
-                                <div class="rf-bar rf-thin mt-1.5 max-w-[160px]" style="--c:{% if loop.index == 1 %}#059669{% else %}#a8a29e{% endif %}"><i data-w="{{ (item.count / max_count * 100) | round(0) | int }}"></i></div>
-                            </td>
+                        <tr class="hover:bg-stone-50/60 transition-colors">
+                            <td class="py-3.5 px-2"><span class="mc-rank" style="--c:{{ pal[loop.index0 % pal|length] }};">{{ loop.index }}</span></td>
+                            <td class="py-3.5 px-2 text-stone-900 font-medium">{{ item.name }}</td>
                             <td class="py-3.5 px-2 text-stone-400">{{ item.sizes }}</td>
                             <td class="py-3.5 px-2 text-center text-stone-900 font-semibold whitespace-nowrap">{{ item.count }} 件</td>
                             <td class="py-3.5 px-2 text-right font-bold text-stone-950 whitespace-nowrap">{{"{:,}".format(item.revenue)}} MMK</td>
@@ -191,75 +257,68 @@
 
     </div>
 
-    <div class="pt-6 pb-2 border-b border-stone-200/80 mt-12 rf-reveal" style="--rf-i:0">
-        <h2 class="text-xl font-semibold tracking-wide text-stone-900 font-serif rf-section-title">高级管理财务核心视角</h2>
-        <p class="text-xs text-stone-400 tracking-wider uppercase mt-1 ml-[14px]">Revenue Trajectory & Customer Analytics</p>
+    <!-- ==================== ADVANCED ==================== -->
+    <div class="mc-section-title">
+        <h2 class="text-xl font-semibold tracking-wide text-stone-900 font-serif">高级管理财务核心视角</h2>
+        <p class="text-xs text-stone-400 tracking-wider uppercase mt-1">Revenue Trajectory & Customer Analytics</p>
     </div>
 
-    <!-- ==================== MANAGEMENT METRICS ==================== -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="rf-card rf-dark rf-lift rf-reveal p-6 flex justify-between items-center relative overflow-hidden" style="--c:#10b981; --rf-i:0">
-            <div class="space-y-1 relative z-10">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">预估毛利润 (EST. GROSS PROFIT)</h3>
-                <div class="text-2xl font-bold tracking-tight font-numeric">
-                    <span data-countup="{{ estimated_profit | default(0) }}">{{"{:,}".format(estimated_profit | default(0))}}</span> <span class="text-xs text-stone-400 font-normal">MMK</span>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        <div class="mc-dark">
+            <div class="flex items-center gap-2.5 relative z-10">
+                <span class="mc-ico" style="--c:#34b88a;background:rgba(52,184,138,.22);">📊</span>
+                <span class="mc-stat-label" style="color:#a8a29e;">预估毛利润<br>Est. Gross Profit</span>
             </div>
-            <div class="text-right relative z-10">
-                <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded tracking-wide font-sans">
+            <div class="flex items-end justify-between gap-2 mt-4 relative z-10">
+                <div class="text-2xl font-extrabold tracking-tight font-numeric">
+                    {{"{:,}".format(estimated_profit | default(0))}} <span class="text-xs text-stone-400 font-semibold">MMK</span>
+                </div>
+                <span class="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wide font-sans" style="background:rgba(52,184,138,.2);color:#6fdcb5;">
                     利润率 {{ profit_margin | default(58) }}%
                 </span>
             </div>
         </div>
 
-        <div class="rf-card rf-lift rf-reveal p-6 flex justify-between items-center" style="--c:#e11d48; --rf-i:1">
-            <div class="space-y-1">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">非正常成交及空单率 (VOID RATE)</h3>
-                <div class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">
-                    <span data-countup="{{ refund_rate | default(0.0) }}" data-decimals="1">{{ refund_rate | default(0.0) }}</span><span class="text-xs text-stone-400 font-normal">%</span>
-                </div>
+        <div class="mc-card mc-stat" style="--c:#ff8a73;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🚫</span>
+                <span class="mc-stat-label">非正常成交及空单率<br>Void Rate</span>
             </div>
-            <div class="text-right">
-                <span class="inline-block bg-rose-50 text-rose-600 text-[10px] font-bold px-2 py-1 rounded tracking-wide font-sans">
-                    {{ canceled_orders | default(0) }} 笔无收入单
-                </span>
+            <div class="flex items-end justify-between gap-2 mt-3.5 relative z-10">
+                <div class="mc-stat-value" style="margin-top:0;"><b>{{ refund_rate | default(0.0) }}</b><small>%</small></div>
+                <span class="mc-chip" style="--c:#ff8a73;margin-top:0;">{{ canceled_orders | default(0) }} 笔无收入单</span>
             </div>
         </div>
 
-        <div class="rf-card rf-lift rf-reveal p-6 flex justify-between items-center" style="--c:#57534e; --rf-i:2">
-            <div class="space-y-1">
-                <h3 class="text-[11px] font-bold tracking-wider text-stone-400 uppercase">平均客单连带率 (BASKET DEPTH)</h3>
-                <div class="text-2xl font-bold text-stone-950 tracking-tight font-numeric">
-                    <span data-countup="{{ items_per_order | default(0.0) }}" data-decimals="1">{{ items_per_order | default(0.0) }}</span><span class="text-xs text-stone-400 font-normal"> 件/单</span>
-                </div>
+        <div class="mc-card mc-stat" style="--c:#a77bf0;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🛍️</span>
+                <span class="mc-stat-label">平均客单连带率<br>Basket Depth</span>
             </div>
-            <div class="text-right">
-                <span class="inline-block bg-stone-100 text-stone-600 text-[10px] font-bold px-2 py-1 rounded tracking-wide font-sans">
-                    订单内容深度
-                </span>
+            <div class="flex items-end justify-between gap-2 mt-3.5 relative z-10">
+                <div class="mc-stat-value" style="margin-top:0;"><b>{{ items_per_order | default(0.0) }}</b><small>件/单</small></div>
+                <span class="mc-chip" style="--c:#a77bf0;margin-top:0;">订单内容深度</span>
             </div>
         </div>
     </div>
 
     <!-- ==================== TREND + RETENTION ==================== -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6 items-start">
 
-        <div class="rf-card rf-reveal xl:col-span-2 p-6 space-y-4" style="--rf-i:0">
-            <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">
+        <div class="xl:col-span-2 mc-card p-5 sm:p-6 space-y-4">
+            <div class="flex justify-between items-center gap-3">
+                <h2 class="mc-h2">
                     {% if view_mode == 'year' %}年度月度销售走势 (Monthly Revenue Trend){% else %}当月每日销售走势 (Daily Revenue Trend){% endif %}
                 </h2>
-                <span class="inline-flex items-center px-2 py-0.5 rounded bg-stone-50 border border-stone-200 text-[10px] font-semibold text-stone-500">
-                    {{ period_label }}
-                </span>
+                <span class="mc-chip" style="--c:#5aa9e6;margin-top:0;">{{ period_label }}</span>
             </div>
             <div class="relative h-72 w-full">
                 <canvas id="revenueTrendChart"></canvas>
             </div>
         </div>
 
-        <div class="rf-card rf-reveal xl:col-span-1 p-6 space-y-6" style="--rf-i:1">
-            <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">客群留存及新老占比 (Customer Retention)</h2>
+        <div class="xl:col-span-1 mc-card p-5 sm:p-6 space-y-5">
+            <h2 class="mc-h2">客群留存及新老占比 (Customer Retention)</h2>
 
             <div class="relative h-44 w-full flex justify-center">
                 <canvas id="customerChart"></canvas>
@@ -267,12 +326,12 @@
 
             <div class="grid grid-cols-2 gap-4 pt-4 border-t border-stone-100 font-numeric">
                 <div class="text-center space-y-1 border-r border-stone-100">
-                    <p class="text-xs text-stone-400 font-medium">首次消费新客</p>
-                    <p class="text-lg font-bold text-stone-900"><span data-countup="{{ new_customers | default(0) }}">{{ new_customers | default(0) }}</span> 人</p>
+                    <p class="text-xs text-stone-400 font-medium flex items-center justify-center gap-1.5"><span class="mc-dot" style="background:#5aa9e6;"></span>首次消费新客</p>
+                    <p class="text-lg font-bold text-stone-900">{{ new_customers | default(0) }} 人</p>
                 </div>
                 <div class="text-center space-y-1">
-                    <p class="text-xs text-stone-400 font-medium">历史高留存老客</p>
-                    <p class="text-lg font-bold text-emerald-700"><span data-countup="{{ returning_customers | default(0) }}">{{ returning_customers | default(0) }}</span> 人</p>
+                    <p class="text-xs text-stone-400 font-medium flex items-center justify-center gap-1.5"><span class="mc-dot" style="background:#34b88a;"></span>历史高留存老客</p>
+                    <p class="text-lg font-bold" style="color:#1f8f69;">{{ returning_customers | default(0) }} 人</p>
                 </div>
             </div>
         </div>
@@ -280,11 +339,11 @@
     </div>
 
     <!-- ==================== WEEKDAY + TOP CUSTOMERS ==================== -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
 
-        <div class="rf-card rf-reveal p-6 space-y-4" style="--rf-i:0">
-            <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">Weekly Sales Pattern</h2>
+        <div class="mc-card p-5 sm:p-6 space-y-4">
+            <div class="flex justify-between items-center gap-3">
+                <h2 class="mc-h2">Weekly Sales Pattern</h2>
                 <span class="text-[10px] text-stone-400 uppercase tracking-wider">{{ period_label }}</span>
             </div>
             <div class="relative h-72 w-full">
@@ -292,16 +351,14 @@
             </div>
         </div>
 
-        <div class="rf-card rf-reveal p-6 space-y-4" style="--rf-i:1">
-            <div class="flex justify-between items-center">
-                <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">Top 10 Customers</h2>
+        <div class="mc-card p-5 sm:p-6 space-y-4">
+            <div class="flex justify-between items-center gap-3">
+                <h2 class="mc-h2">Top 10 Customers</h2>
                 <span class="text-[10px] text-stone-400 uppercase tracking-wider">By Revenue</span>
             </div>
 
-            {% set max_rev = (top_customers | map(attribute='revenue') | max) if top_customers else 1 %}
-            {% set max_rev = max_rev if max_rev else 1 %}
             <div class="overflow-x-auto">
-                <table class="rf-table w-full text-sm">
+                <table class="w-full text-sm">
                     <thead>
                         <tr class="text-left text-stone-400 border-b border-stone-100 text-xs uppercase tracking-wider">
                             <th class="py-3 pr-2 w-8">#</th>
@@ -313,21 +370,10 @@
                     </thead>
                     <tbody class="font-numeric">
                         {% for c in top_customers %}
-                        {% set av_colors = ['#059669', '#0d9488', '#d97706', '#57534e', '#be123c'] %}
-                        <tr class="border-b border-stone-50">
-                            <td class="py-3 pr-2"><span class="rf-rank {% if loop.index == 1 %}r1{% elif loop.index == 2 %}r2{% elif loop.index == 3 %}r3{% endif %}">{{ loop.index }}</span></td>
-                            <td class="py-3 text-stone-900 font-medium">
-                                <div class="flex items-center gap-2.5" style="--c:{{ av_colors[loop.index0 % av_colors|length] }}">
-                                    <span class="rf-avatar">{{ (c.name or '?')[:1] | upper }}</span>
-                                    <div class="min-w-0">
-                                        <div class="truncate">{{ c.name }}</div>
-                                        <div class="rf-bar rf-thin mt-1 w-24"><i data-w="{{ (c.revenue / max_rev * 100) | round(0) | int }}"></i></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3">
-                                <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{{ c.source }}</span>
-                            </td>
+                        <tr class="border-b border-stone-50 hover:bg-stone-50/60 transition-colors">
+                            <td class="py-3 pr-2"><span class="mc-rank" style="--c:{{ pal[loop.index0 % pal|length] }};">{{ loop.index }}</span></td>
+                            <td class="py-3 text-stone-900 font-medium">{{ c.name }}</td>
+                            <td class="py-3"><span class="mc-pill">{{ c.source }}</span></td>
                             <td class="py-3 text-center text-stone-700">{{ c.orders }}</td>
                             <td class="py-3 text-right font-semibold text-stone-900 whitespace-nowrap">
                                 {{ "{:,}".format(c.revenue) }} MMK
@@ -351,6 +397,7 @@
 const reportData = {
     period_label: {{ period_label | tojson | safe }},
     view_mode: {{ view_mode | tojson | safe }},
+    date_basis: {{ date_basis | tojson | safe }},
     total_revenue: {{ total_revenue | tojson | safe }},
     total_orders: {{ total_orders | tojson | safe }},
     avg_ticket: {{ avg_ticket | tojson | safe }},
@@ -365,6 +412,20 @@ const reportData = {
     top_customers: {{ top_customers | tojson | safe }}
 };
 
+// Keep the CSV export link's query string synced with whatever the wheel
+// pickers currently hold, so "导出 CSV" always exports the period that's
+// actually on screen (not just the one the page was first loaded with).
+function syncExportLinks() {
+    const view = document.getElementById('viewModeInput').value;
+    const month = document.getElementById('monthHidden').value;
+    const year = document.getElementById('yearHidden').value;
+    const basis = document.getElementById('dateBasisInput').value;
+    const csvBtn = document.getElementById('csvExportBtn');
+    csvBtn.href = `/monthly/export?view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&date_basis=${encodeURIComponent(basis)}`;
+}
+
+// Switching the 月度/年度 tab submits the form itself (picker choice does
+// too), so the CSV link is synced right beforehand.
 function setViewMode(mode) {
     document.getElementById('viewModeInput').value = mode;
     document.getElementById('monthPicker').classList.toggle('hidden', mode === 'year');
@@ -379,6 +440,7 @@ function setViewMode(mode) {
         tabMonth.className = 'px-3.5 py-2 transition-all view-tab-month bg-stone-900 text-white';
         tabYear.className = 'px-3.5 py-2 transition-all view-tab-year bg-white text-stone-500 hover:bg-stone-50';
     }
+
     syncExportLinks();
     document.getElementById('monthlyFilterForm').submit();
 }
@@ -392,6 +454,7 @@ function openMonthlyMonthPicker() {
         onConfirm: (value, label) => {
             hidden.value = value;
             span.textContent = label;
+            syncExportLinks();
             document.getElementById('monthlyFilterForm').submit();
         }
     });
@@ -407,32 +470,25 @@ function openMonthlyYearPicker() {
         onConfirm: (value) => {
             hidden.value = value;
             span.textContent = value;
+            syncExportLinks();
             document.getElementById('monthlyFilterForm').submit();
         }
     });
 }
 
-// Keep the CSV export link in sync with whatever the pickers currently hold.
-function syncExportLinks() {
-    const view = document.getElementById('viewModeInput').value;
-    const month = document.getElementById('monthHidden').value;
-    const year = document.getElementById('yearHidden').value;
-    const csvBtn = document.getElementById('csvExportBtn');
-    csvBtn.href = `/monthly/export?view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`;
-}
 document.getElementById('csvExportBtn').addEventListener('click', syncExportLinks);
 
-/* ===== Monthly PDF export ===== */
+/* ===== Monthly PDF export =====
+   Renders the analytics report itself (summary metrics, channel
+   breakdown, revenue/weekday/retention charts, top items, top customers)
+   via renderMonthlyReportPDF() in base.html — NOT the Daily Records
+   order-card layout, which is a different export used on the Daily page. */
 async function downloadMonthlyReportPDF() {
     const btn = document.getElementById('monthlyPdfBtn');
     const original = btn.textContent;
     btn.disabled = true;
     btn.textContent = '生成中…';
     try {
-        // Charts are built lazily (when scrolled into view) — make sure they all
-        // exist and are at their final frame before they're captured.
-        if (window.rfFinalizeCharts) window.rfFinalizeCharts();
-
         await renderMonthlyReportPDF({
             periodLabel: reportData.period_label,
             viewMode: reportData.view_mode,
@@ -459,24 +515,23 @@ async function downloadMonthlyReportPDF() {
     }
 }
 
+
 document.addEventListener("DOMContentLoaded", function () {
 
+    // Same hues as the Expense Analysis donut
     const palette = {
-        primary: '#292524',
-        secondary: '#57534e',
-        tertiary: '#78716c',
-        accent: '#a8a29e',
-        success: '#059669',
-        warm: '#b45309',
-        rose: '#9f1239',
-        muted: '#d6d3d1',
+        blue: '#5aa9e6',
+        mint: '#34b88a',
+        coral: '#ff8a73',
+        violet: '#a77bf0',
+        amber: '#f0c05a',
         grid: '#f5f5f4',
         text: '#78716c'
     };
 
     Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
     Chart.defaults.color = palette.text;
-    Chart.defaults.borderColor = palette.muted;
+    Chart.defaults.borderColor = '#e7e5e4';
 
     const trendLabels = {{ trend_labels | tojson | safe }};
     const trendData = {{ trend_data | tojson | safe }};
@@ -498,7 +553,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 titleColor: '#fafaf9',
                 bodyColor: '#d6d3d1',
                 padding: 12,
-                cornerRadius: 8,
+                cornerRadius: 10,
                 displayColors: true,
                 boxPadding: 4
             }
@@ -506,130 +561,125 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Exposed so the PDF export (renderMonthlyReportPDF in base.html) can
-    // temporarily bump each chart's rendering resolution for a crisp image.
+    // temporarily bump each chart's rendering resolution for a crisp export
+    // image, then restore it — see _wpCaptureChartHiRes.
     window.mcCharts = window.mcCharts || {};
 
-    // ---- Revenue Trend (line draws in when visible) ----
-    rfRegisterChart('revenueTrendChart', function () {
-        const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
-        const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 300);
-        trendGradient.addColorStop(0, 'rgba(5, 150, 105, 0.20)');
-        trendGradient.addColorStop(1, 'rgba(5, 150, 105, 0)');
+    // Revenue Trend Chart
+    const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+    const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 300);
+    trendGradient.addColorStop(0, 'rgba(90, 169, 230, 0.28)');
+    trendGradient.addColorStop(1, 'rgba(90, 169, 230, 0)');
 
-        window.mcCharts.revenueTrendChart = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: trendLabels,
-                datasets: [{
-                    label: viewMode === 'year' ? 'Monthly Revenue' : 'Daily Revenue',
-                    data: trendData,
-                    borderColor: palette.success,
-                    backgroundColor: trendGradient,
-                    fill: true,
-                    borderWidth: 2.5,
-                    tension: 0.35,
-                    pointRadius: viewMode === 'year' ? 5 : 3,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#fafaf9',
-                    pointBorderColor: palette.success,
-                    pointBorderWidth: 2
-                }]
+    window.mcCharts.revenueTrendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: trendLabels,
+            datasets: [{
+                label: viewMode === 'year' ? 'Monthly Revenue' : 'Daily Revenue',
+                data: trendData,
+                borderColor: palette.blue,
+                backgroundColor: trendGradient,
+                fill: true,
+                borderWidth: 2.5,
+                tension: 0.38,
+                pointRadius: viewMode === 'year' ? 5 : 3,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: palette.blue,
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            ...baseOptions,
+            plugins: {
+                ...baseOptions.plugins,
+                legend: { display: false },
+                tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
             },
-            options: {
-                ...baseOptions,
-                animation: window.rfAnim.line,
-                plugins: {
-                    ...baseOptions.plugins,
-                    legend: { display: false },
-                    tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { color: palette.grid },
+                    ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: palette.grid, drawBorder: false },
-                        ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: viewMode === 'year' ? 12 : 15 }
-                    }
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: viewMode === 'year' ? 12 : 15 }
                 }
             }
-        });
+        }
     });
 
-    // ---- Customer Retention Doughnut ----
-    rfRegisterChart('customerChart', function () {
-        window.mcCharts.customerChart = new Chart(document.getElementById('customerChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['New Customers', 'Returning Customers'],
-                datasets: [{
-                    data: customerSplitData,
-                    backgroundColor: [palette.accent, palette.success],
-                    borderWidth: 3,
-                    borderColor: '#fff',
-                    hoverOffset: 8
-                }]
-            },
-            options: {
-                ...baseOptions,
-                cutout: '72%',
-                animation: window.rfAnim.donut,
-                plugins: {
-                    ...baseOptions.plugins,
-                    legend: { position: 'bottom', labels: { padding: 12, font: { size: 10 }, usePointStyle: true, boxWidth: 8 } }
-                }
+    // Customer Retention Doughnut
+    window.mcCharts.customerChart = new Chart(document.getElementById('customerChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['New Customers', 'Returning Customers'],
+            datasets: [{
+                data: customerSplitData,
+                backgroundColor: [palette.blue, palette.mint],
+                borderWidth: 0,
+                borderRadius: 6,
+                spacing: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            ...baseOptions,
+            cutout: '70%',
+            plugins: {
+                ...baseOptions.plugins,
+                legend: { position: 'bottom', labels: { padding: 12, font: { size: 10 }, usePointStyle: true, boxWidth: 8 } }
             }
-        });
+        }
     });
 
-    // ---- Weekly Sales Pattern (bars rise one after another) ----
-    rfRegisterChart('weekdayChart', function () {
-        const maxWeekday = Math.max(...weekdayData, 1);
-        const barColors = weekdayData.map((val) => {
-            const intensity = val / maxWeekday;
-            if (intensity > 0.7) return palette.success;
-            if (intensity > 0.4) return '#34d399';
-            if (intensity > 0.15) return '#a7f3d0';
-            return '#d1fae5';
-        });
+    // Weekly Sales Pattern — soft blue bars, busiest day pops in mint
+    const maxWeekday = Math.max(...weekdayData, 1);
+    const barColors = weekdayData.map((val) => {
+        if (val === maxWeekday && val > 0) return palette.mint;
+        const intensity = val / maxWeekday;
+        return `rgba(90, 169, 230, ${(0.25 + intensity * 0.55).toFixed(2)})`;
+    });
 
-        window.mcCharts.weekdayChart = new Chart(document.getElementById('weekdayChart'), {
-            type: 'bar',
-            data: {
-                labels: weekdayLabels,
-                datasets: [{
-                    label: 'Revenue',
-                    data: weekdayData,
-                    backgroundColor: barColors,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    barPercentage: 0.65,
-                    categoryPercentage: 0.8
-                }]
+    window.mcCharts.weekdayChart = new Chart(document.getElementById('weekdayChart'), {
+        type: 'bar',
+        data: {
+            labels: weekdayLabels,
+            datasets: [{
+                label: 'Revenue',
+                data: weekdayData,
+                backgroundColor: barColors,
+                borderRadius: 8,
+                borderSkipped: false,
+                barPercentage: 0.62,
+                categoryPercentage: 0.8
+            }]
+        },
+        options: {
+            ...baseOptions,
+            plugins: {
+                ...baseOptions.plugins,
+                legend: { display: false },
+                tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
             },
-            options: {
-                ...baseOptions,
-                animation: window.rfAnim.bars,
-                plugins: {
-                    ...baseOptions.plugins,
-                    legend: { display: false },
-                    tooltip: { ...baseOptions.plugins.tooltip, callbacks: { label: (ctx) => formatMMK(ctx.parsed.y) } }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { color: palette.grid },
+                    ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: palette.grid, drawBorder: false },
-                        ticks: { callback: (v) => v.toLocaleString(), padding: 8 }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { weight: '500' } }
-                    }
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { font: { weight: '500' } }
                 }
             }
-        });
+        }
     });
 
 });

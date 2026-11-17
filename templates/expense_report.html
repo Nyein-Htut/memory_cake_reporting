@@ -3,18 +3,85 @@
 {% block title %}支出分析报表 — Memory Cake{% endblock %}
 
 {% block content %}
-{% include 'partials/report_fx.html' %}
+<style>
+/* ===== Memory Cake soft palette (same colours as the Expense Analysis donut) ===== */
+:root {
+    --mc-mint: #34b88a;
+    --mc-coral: #ff8a73;
+    --mc-blue: #5aa9e6;
+    --mc-violet: #a77bf0;
+    --mc-amber: #f0c05a;
+    --mc-rose: #e86a92;
+}
+.mc-card {
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.04);
+}
+.mc-stat {
+    --c: #a8a29e;
+    position: relative;
+    overflow: hidden;
+    padding: 18px 20px 16px;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.mc-stat:hover { transform: translateY(-2px); box-shadow: 0 14px 32px color-mix(in srgb, var(--c) 16%, transparent); }
+.mc-stat::after {
+    content: ""; position: absolute; right: -34px; top: -34px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    pointer-events: none;
+}
+.mc-stat-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.mc-ico {
+    width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    background: color-mix(in srgb, var(--c) 16%, white);
+}
+.mc-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #78716c; line-height: 1.25; }
+.mc-stat-value { position: relative; z-index: 1; margin-top: 14px; display: flex; align-items: baseline; gap: 5px; }
+.mc-stat-value b { font-size: 26px; font-weight: 800; letter-spacing: -.01em; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.mc-stat-value small { font-size: 11px; font-weight: 700; color: #a8a29e; }
+.mc-stat-note { position: relative; z-index: 1; margin-top: 6px; font-size: 11px; color: #a8a29e; line-height: 1.5; }
 
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans" id="expenseReportRoot">
+.mc-hero {
+    position: relative; overflow: hidden; padding: 18px 20px 16px; border-radius: 20px; color: #fff;
+    box-shadow: 0 14px 32px rgba(28,25,23,.12);
+}
+.mc-hero.is-profit { background: linear-gradient(135deg, #2f9f7a 0%, #34b88a 55%, #5cc9a3 100%); }
+.mc-hero.is-loss { background: linear-gradient(135deg, #e86a92 0%, #ff8a73 100%); }
+.mc-hero::after {
+    content: ""; position: absolute; right: -30px; top: -40px; width: 130px; height: 130px;
+    border-radius: 50%; background: rgba(255,255,255,.16); pointer-events: none;
+}
+.mc-hero .mc-ico { background: rgba(255,255,255,.22); }
+.mc-hero .mc-stat-label { color: rgba(255,255,255,.85); }
+.mc-hero .mc-stat-value b { color: #fff; }
+.mc-hero .mc-stat-value small { color: rgba(255,255,255,.75); }
+.mc-hero .mc-stat-note { color: rgba(255,255,255,.8); }
 
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rf-reveal" style="--rf-i:0">
+.mc-h2 { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', 'Noto Serif SC', serif; font-size: 16px; font-weight: 700; color: #1c1917; letter-spacing: .02em; }
+.mc-h2::before { content: ""; width: 4px; height: 18px; border-radius: 9999px; background: linear-gradient(180deg, var(--mc-mint), var(--mc-blue)); }
+
+/* Wheel pickers on this page: calm neutral confirm + mint selection */
+.wp-btn-set { background: #292524; }
+.wp-btn-set:hover { background: #1c1917; }
+.wp-quick-btn:hover { border-color: #34b88a; color: #1f8f69; background: #ecfaf4; }
+.wp-source-item.wp-source-selected { border-color: #34b88a; background: #ecfaf4; color: #1f8f69; }
+.wp-source-check { color: #34b88a !important; }
+</style>
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7 font-sans" id="expenseReportRoot">
+
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div class="space-y-1">
             <h1 class="text-3xl font-semibold tracking-wide text-stone-900 font-serif">支出分析报表</h1>
             <p class="text-xs text-stone-400 tracking-wider uppercase">Revenue vs Expenses · Category Breakdown</p>
         </div>
 
         <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            <form method="GET" action="{{ filter_action }}" id="erFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-xl border border-stone-200 shadow-xs w-full sm:w-auto">
+            <form method="GET" action="{{ filter_action }}" id="erFilterForm" class="flex flex-nowrap items-center justify-center gap-2 bg-white p-2 rounded-2xl border border-stone-200/80 shadow-xs w-full sm:w-auto">
                 <input type="hidden" name="view" id="erViewModeInput" value="{{ view_mode }}">
 
                 <div class="flex shrink-0 rounded-lg overflow-hidden border border-stone-200 text-[11px] font-semibold uppercase tracking-wider">
@@ -54,67 +121,50 @@
     </header>
 
     <!-- ==================== SUMMARY CARDS ==================== -->
-    {% set spent_pct = ((total_expenses / total_revenue * 100) | round(0) | int) if total_revenue > 0 else 0 %}
-    {% set spent_pct_bar = spent_pct if spent_pct <= 100 else 100 %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#059669; --rf-i:1">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">总营业额 (Revenue)</h3>
-                <span class="rf-ico">💰</span>
+        <div class="mc-card mc-stat" style="--c:#34b88a;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">💰</span>
+                <span class="mc-stat-label">总营业额<br>Revenue</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_revenue }}">{{ "{:,}".format(total_revenue) }}</span>
-                <span class="text-xs font-semibold text-stone-400">MMK</span>
-            </div>
-            <p class="text-[10px] text-stone-400">蛋糕销售总额，不含车费</p>
+            <div class="mc-stat-value"><b>{{ "{:,}".format(total_revenue) }}</b><small>MMK</small></div>
+            <p class="mc-stat-note">蛋糕销售总额，不含车费</p>
         </div>
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#2563eb; --rf-i:2">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-blue-600 uppercase">车费净额 (Delivery Net)</h3>
-                <span class="rf-ico">🚗</span>
+        <div class="mc-card mc-stat" style="--c:#a77bf0;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🚗</span>
+                <span class="mc-stat-label">车费净额<br>Delivery Net</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold tracking-tight font-numeric {% if net_delivery >= 0 %}text-stone-950{% else %}text-rose-600{% endif %}" data-countup="{{ net_delivery }}">{{ "{:,}".format(net_delivery) }}</span>
-                <span class="text-xs font-semibold text-stone-400">MMK</span>
+            <div class="mc-stat-value">
+                <b style="{% if net_delivery < 0 %}color:#e0634a;{% endif %}">{{ "{:,}".format(net_delivery) }}</b><small>MMK</small>
             </div>
-            <p class="text-[10px] text-stone-400">
-                收车费 {{ "{:,}".format(total_delivery_fee_income) }} − 支出车费 {{ "{:,}".format(total_car_fee_expense) }}
-            </p>
+            <p class="mc-stat-note">收车费 {{ "{:,}".format(total_delivery_fee_income) }} − 支出车费 {{ "{:,}".format(total_car_fee_expense) }}</p>
         </div>
 
-        <div class="rf-card rf-stat rf-lift rf-reveal p-6 space-y-3" style="--c:#e11d48; --rf-i:3">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider text-rose-500 uppercase">总支出 (Expenses)</h3>
-                <span class="rf-ico">🧾</span>
+        <div class="mc-card mc-stat" style="--c:#ff8a73;">
+            <div class="mc-stat-top">
+                <span class="mc-ico">🧾</span>
+                <span class="mc-stat-label">总支出<br>Expenses</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-stone-950 tracking-tight font-numeric" data-countup="{{ total_expenses }}">{{ "{:,}".format(total_expenses) }}</span>
-                <span class="text-xs font-semibold text-stone-400">MMK</span>
-            </div>
-            <p class="text-[10px] text-stone-400">{{ category_breakdown|length }} 个支出类别 · 不含车费</p>
+            <div class="mc-stat-value"><b>{{ "{:,}".format(total_expenses) }}</b><small>MMK</small></div>
+            <p class="mc-stat-note">{{ category_breakdown|length }} 个支出类别 · 不含车费</p>
         </div>
 
-        <div class="rf-card rf-dark rf-lift rf-reveal p-6 space-y-3 overflow-hidden {% if net_profit >= 0 %}!bg-emerald-800 !border-emerald-900{% else %}!bg-rose-800 !border-rose-900{% endif %}" style="--c:#ffffff; --rf-i:4">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-[11px] font-bold tracking-wider uppercase opacity-80">净利润 (Net Profit)</h3>
-                <span class="text-lg">{{ '📈' if net_profit >= 0 else '📉' }}</span>
+        <div class="mc-hero {% if net_profit >= 0 %}is-profit{% else %}is-loss{% endif %}">
+            <div class="mc-stat-top">
+                <span class="mc-ico">{{ '📈' if net_profit >= 0 else '📉' }}</span>
+                <span class="mc-stat-label">净利润<br>Net Profit</span>
             </div>
-            <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold tracking-tight font-numeric" data-countup="{{ net_profit }}">{{ "{:,}".format(net_profit) }}</span>
-                <span class="text-xs font-semibold opacity-70">MMK</span>
-            </div>
-            <div class="space-y-1.5">
-                <div class="rf-bar rf-thin" style="background:rgba(255,255,255,.18); --c:rgba(255,255,255,.9)"><i data-w="{{ spent_pct_bar }}"></i></div>
-                <p class="text-[10px] opacity-75">{{ '盈利中 · Profit' if net_profit >= 0 else '亏损中 · Loss' }} · 支出占营业额 {{ spent_pct }}%</p>
-            </div>
+            <div class="mc-stat-value"><b>{{ "{:,}".format(net_profit) }}</b><small>MMK</small></div>
+            <p class="mc-stat-note">{{ '盈利中 · Profit' if net_profit >= 0 else '亏损中 · Loss' }} (Revenue − Expenses，不含车费)</p>
         </div>
     </div>
 
     <!-- ==================== REVENUE VS EXPENSES BAR CHART ==================== -->
-    <div class="rf-card rf-reveal p-6 space-y-4" style="--rf-i:0">
-        <h2 class="text-base font-bold text-stone-900 tracking-wide font-serif rf-section-title">营业额与支出对比 (Revenue vs Expenses)</h2>
+    <div class="mc-card p-5 sm:p-6 space-y-4">
+        <h2 class="mc-h2">营业额与支出对比 (Revenue vs Expenses)</h2>
         <div class="relative h-56 w-full">
             <canvas id="revenueVsExpenseChart"></canvas>
         </div>
@@ -122,11 +172,9 @@
 
     <!-- ==================== EXPENSE ANALYSIS (donut + list + drill-down) ====================
          Follows this page's own day/month/year filter, so the card's built-in filter is hidden. -->
-    <div class="rf-reveal" style="--rf-i:0">
-        {% with ea_hide_filter = true %}
-            {% include 'partials/expense_analysis.html' %}
-        {% endwith %}
-    </div>
+    {% with ea_hide_filter = true %}
+        {% include 'partials/expense_analysis.html' %}
+    {% endwith %}
 
 </div>
 
@@ -138,47 +186,40 @@ const NET_PROFIT = {{ net_profit | tojson | safe }};
 Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 Chart.defaults.color = '#78716c';
 
-document.addEventListener('DOMContentLoaded', function () {
-
-    // Built when the card scrolls into view; bars rise one after another.
-    rfRegisterChart('revenueVsExpenseChart', function () {
-        const ctx = document.getElementById('revenueVsExpenseChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['营业额 Revenue', '支出 Expenses', '净利润 Net Profit'],
-                datasets: [{
-                    data: [TOTAL_REVENUE, TOTAL_EXPENSES, NET_PROFIT],
-                    backgroundColor: ['#059669', '#e11d48', NET_PROFIT >= 0 ? '#1d4ed8' : '#9f1239'],
-                    borderRadius: 8,
-                    borderSkipped: false,
-                    barPercentage: 0.55
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: window.rfAnim.bars,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1c1917', padding: 10, cornerRadius: 8,
-                        callbacks: { label: (c) => c.parsed.y.toLocaleString() + ' MMK' }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, ticks: { callback: (v) => v.toLocaleString() }, grid: { color: '#f5f5f4' } },
-                    x: { grid: { display: false } }
+function buildRevenueVsExpenseChart() {
+    const ctx = document.getElementById('revenueVsExpenseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['营业额 Revenue', '支出 Expenses', '净利润 Net Profit'],
+            datasets: [{
+                data: [TOTAL_REVENUE, TOTAL_EXPENSES, NET_PROFIT],
+                backgroundColor: ['#34b88a', '#ff8a73', NET_PROFIT >= 0 ? '#5aa9e6' : '#e86a92'],
+                borderRadius: 10,
+                borderSkipped: false,
+                barPercentage: 0.5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1c1917', padding: 10, cornerRadius: 8,
+                    callbacks: { label: (c) => ' ' + c.parsed.y.toLocaleString() + ' MMK' }
                 }
+            },
+            scales: {
+                y: { beginAtZero: true, border: { display: false }, ticks: { callback: (v) => v.toLocaleString(), padding: 8 }, grid: { color: '#f5f5f4' } },
+                x: { grid: { display: false }, border: { display: false } }
             }
-        });
+        }
     });
+}
 
-    const dayHidden = document.getElementById('erDayHidden');
-    const dayBtn = document.getElementById('erDayTriggerBtn');
-    if (dayHidden && dayHidden.value && dayBtn) {
-        dayBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dayHidden.value);
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    buildRevenueVsExpenseChart();
 });
 
 /* ===== Filter bar ===== */
@@ -231,5 +272,13 @@ function openErYearPicker() {
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dayHidden = document.getElementById('erDayHidden');
+    const dayBtn = document.getElementById('erDayTriggerBtn');
+    if (dayHidden && dayHidden.value && dayBtn) {
+        dayBtn.querySelector('span').textContent = wpFormatDisplayFromISO(dayHidden.value);
+    }
+});
 </script>
 {% endblock %}
