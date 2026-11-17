@@ -1,3 +1,4 @@
+{% set oc_accents = ['#34b88a', '#ff8a73', '#5aa9e6', '#a77bf0', '#f0c05a'] %}
 {% for day_group in orders_by_day %}
 <div class="day-group mb-6 last:mb-0">
 
@@ -25,6 +26,7 @@
 
     <div class="order-card{% if order.is_folded %} oc-folded{% endif %}"
         id="order-card-{{ order.id }}"
+        style="--oc-accent: {{ oc_accents[loop.index0 % 5] }};"
         data-date="{{ order.date }}"
         data-customer="{{ order.customer }}"
         data-source="{{ order.source }}"
