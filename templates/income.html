@@ -3,6 +3,61 @@
 {% block title %}收入记录 — Memory Cake{% endblock %}
 
 {% block content %}
+<style>
+/* ===== Memory Cake soft palette (same colours as the Expense Analysis donut) ===== */
+.mc-card {
+    background: #fff;
+    border: 1px solid #f0efed;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.04);
+}
+.mc-total {
+    position: relative; overflow: hidden; border-radius: 20px; color: #fff;
+    background: linear-gradient(135deg, #292524 0%, #1c1917 100%);
+    box-shadow: 0 14px 32px rgba(28,25,23,.16);
+}
+.mc-total::after {
+    content: ""; position: absolute; right: -34px; top: -44px; width: 140px; height: 140px;
+    border-radius: 50%; background: rgba(52,184,138,.24); pointer-events: none;
+}
+.mc-mini {
+    --c: #a8a29e;
+    position: relative; overflow: hidden; padding: 14px 16px;
+}
+.mc-mini::after {
+    content: ""; position: absolute; right: -26px; top: -26px; width: 84px; height: 84px;
+    border-radius: 50%; background: color-mix(in srgb, var(--c) 12%, transparent); pointer-events: none;
+}
+.mc-mini-ico {
+    width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; background: color-mix(in srgb, var(--c) 16%, white);
+}
+.mc-row-ico {
+    width: 38px; height: 38px; border-radius: 11px; object-fit: cover; flex-shrink: 0;
+    border: 1px solid #ece9e6;
+}
+.mc-row-empty {
+    width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    background: #f9f2ec; border: 1px dashed #ecd9c9;
+}
+.mc-method {
+    --c: #a8a29e;
+    display: inline-block; margin-top: 2px;
+    font-size: 9px; font-weight: 800; letter-spacing: .02em;
+    padding: 1px 7px; border-radius: 9999px;
+    color: color-mix(in srgb, var(--c) 70%, #1c1917);
+    background: color-mix(in srgb, var(--c) 14%, white);
+}
+
+/* Wheel pickers on this page: calm neutral confirm + mint selection */
+.wp-btn-set { background: #292524; }
+.wp-btn-set:hover { background: #1c1917; }
+.wp-quick-btn:hover { border-color: #34b88a; color: #1f8f69; background: #ecfaf4; }
+.wp-source-item.wp-source-selected { border-color: #34b88a; background: #ecfaf4; color: #1f8f69; }
+.wp-source-check { color: #34b88a !important; }
+</style>
+
 <div class="max-w-3xl mx-auto px-3 sm:px-6 py-5 sm:py-8 space-y-4 font-sans">
 
     <header class="flex flex-row justify-between items-start gap-3">
@@ -14,11 +69,11 @@
         <div class="flex flex-col items-end gap-2 shrink-0">
             <div class="flex rounded-lg overflow-hidden border border-stone-200 text-[10px] font-semibold uppercase tracking-wider">
                 <button type="button" id="incomeBasisPaidBtn" onclick="setIncomeDateBasis('paid')"
-                    class="px-3 py-1.5 transition-all {% if date_basis != 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    class="px-3 py-1.5 transition-all {% if date_basis != 'order' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
                     按付款日期
                 </button>
                 <button type="button" id="incomeBasisOrderBtn" onclick="setIncomeDateBasis('order')"
-                    class="px-3 py-1.5 transition-all {% if date_basis == 'order' %}bg-emerald-700 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
+                    class="px-3 py-1.5 transition-all {% if date_basis == 'order' %}bg-stone-900 text-white{% else %}bg-white text-stone-500 hover:bg-stone-50{% endif %}">
                     按订单日期
                 </button>
             </div>
@@ -47,42 +102,50 @@
         </button>
     </div>
 
-        <!-- Total income card -->
-    <div class="bg-stone-950 text-white rounded-2xl px-4 py-4 sm:p-6 shadow-sm flex items-center justify-between gap-3">
-        <div>
+    <!-- Total income card -->
+    <div class="mc-total px-4 py-4 sm:p-6 flex items-center justify-between gap-3">
+        <div class="relative z-10">
             <h3 class="text-[9px] sm:text-[11px] font-bold tracking-wider text-stone-400 uppercase">本月总收入</h3>
             <div class="flex items-baseline gap-1.5 mt-1">
-                <span class="text-xl sm:text-3xl font-bold tracking-tight font-numeric">{{ "{:,}".format(total_income) }}</span>
+                <span class="text-2xl sm:text-3xl font-extrabold tracking-tight font-numeric">{{ "{:,}".format(total_income) }}</span>
                 <span class="text-[10px] sm:text-xs font-semibold text-stone-400">MMK</span>
             </div>
         </div>
-        <div class="text-right text-[10px] sm:text-[11px] text-stone-400 font-numeric shrink-0">
-            {{ rows|length }} 笔<br>已付款
+        <div class="relative z-10 text-right shrink-0">
+            <span class="inline-block text-[10px] sm:text-[11px] font-bold px-3 py-1.5 rounded-full font-numeric" style="background:rgba(52,184,138,.2);color:#6fdcb5;">
+                {{ rows|length }} 笔已付款
+            </span>
         </div>
     </div>
 
     <!-- Sub-totals: cake price vs delivery fee, separately -->
     <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
-            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">蛋糕总额</h4>
-            <div class="flex items-baseline gap-1 mt-1">
-                <span class="text-base sm:text-xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_cake_price) }}</span>
+        <div class="mc-card mc-mini" style="--c:#34b88a;">
+            <div class="flex items-center gap-2 relative z-10">
+                <span class="mc-mini-ico">🎂</span>
+                <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">蛋糕总额</h4>
+            </div>
+            <div class="flex items-baseline gap-1 mt-2 relative z-10">
+                <span class="text-base sm:text-xl font-extrabold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_cake_price) }}</span>
                 <span class="text-[9px] sm:text-[10px] font-semibold text-stone-400">MMK</span>
             </div>
         </div>
-        <div class="bg-white rounded-xl border border-stone-100 shadow-xs px-3.5 py-3">
-            <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">车费总额</h4>
-            <div class="flex items-baseline gap-1 mt-1">
-                <span class="text-base sm:text-xl font-bold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_delivery_fee) }}</span>
+        <div class="mc-card mc-mini" style="--c:#a77bf0;">
+            <div class="flex items-center gap-2 relative z-10">
+                <span class="mc-mini-ico">🚗</span>
+                <h4 class="text-[9px] sm:text-[10px] font-bold tracking-wider text-stone-400 uppercase">车费总额</h4>
+            </div>
+            <div class="flex items-baseline gap-1 mt-2 relative z-10">
+                <span class="text-base sm:text-xl font-extrabold text-stone-950 tracking-tight font-numeric">{{ "{:,}".format(total_delivery_fee) }}</span>
                 <span class="text-[9px] sm:text-[10px] font-semibold text-stone-400">MMK</span>
             </div>
         </div>
     </div>
 
     <!-- Compact row list — no horizontal scroll on mobile -->
-    <div class="bg-white rounded-2xl border border-stone-100 shadow-xs overflow-hidden">
+    <div class="mc-card overflow-hidden">
 
-        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2 bg-stone-50 border-b border-stone-100 text-[9px] sm:text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
+        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2.5 bg-stone-50/70 border-b border-stone-100 text-[9px] sm:text-[10px] font-semibold text-stone-400 uppercase tracking-wider">
             <span class="w-9 shrink-0"></span>
             <span class="flex-1">日期 / 客人</span>
             <span class="w-16 sm:w-20 text-right">价格</span>
@@ -91,14 +154,14 @@
         </div>
 
         {% for r in rows %}
-        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2 border-b border-stone-50 last:border-0 hover:bg-stone-50/60 transition-colors">
+        <div class="flex items-center gap-2.5 px-2.5 sm:px-3 py-2.5 border-b border-stone-50 last:border-0 hover:bg-stone-50/60 transition-colors">
 
             {% if r.cake_img %}
             <img src="{{ r.cake_img }}" loading="lazy" alt="Cake"
-                 class="w-9 h-9 rounded-lg object-cover border border-stone-200 shrink-0 cursor-pointer"
+                 class="mc-row-ico cursor-pointer"
                  onclick="window.open('{{ r.cake_img }}','_blank')">
             {% else %}
-            <div class="w-9 h-9 rounded-lg bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center text-stone-300 text-[11px] shrink-0">🎂</div>
+            <div class="mc-row-empty">🎂</div>
             {% endif %}
 
             <!-- date + customer -->
@@ -109,23 +172,22 @@
 
             <!-- price -->
             <div class="w-16 sm:w-20 text-right shrink-0">
-                <div class="text-[12px] font-bold text-stone-950 font-numeric leading-tight">{{ "{:,}".format(r.price) }}</div>
+                <div class="text-[12px] font-extrabold text-stone-950 font-numeric leading-tight">{{ "{:,}".format(r.price) }}</div>
                 <div class="text-[9px] text-stone-300">MMK</div>
             </div>
 
             <!-- delivery fee -->
             <div class="w-14 sm:w-20 text-right shrink-0">
-                <div class="text-[11px] text-stone-500 font-numeric truncate">{{ r.delivery_fee if r.delivery_fee else '—' }}</div>
+                <div class="text-[11px] font-numeric truncate" style="color:{{ '#8b5fd6' if r.delivery_fee else '#d6d3d1' }};">{{ r.delivery_fee if r.delivery_fee else '—' }}</div>
             </div>
 
             <!-- payment date -->
             <div class="w-[74px] sm:w-24 text-right shrink-0">
-                <div class="text-[10px] sm:text-[11px] font-semibold text-emerald-700 whitespace-nowrap">{{ r.payment_date or '—' }}</div>
+                <div class="text-[10px] sm:text-[11px] font-semibold whitespace-nowrap" style="color:#1f8f69;">{{ r.payment_date or '—' }}</div>
                 {% if r.payment_method %}
-                <div class="text-[9px] font-bold truncate"
-                    style="color: {{ '#047857' if r.payment_method == 'cash' else ('#1d4ed8' if r.payment_method == 'kpay' else '#92400e') }};">
+                <span class="mc-method" style="--c: {{ '#34b88a' if r.payment_method == 'cash' else ('#5aa9e6' if r.payment_method == 'kpay' else '#f0c05a') }};">
                     {% if r.payment_method == 'cash' %}Cash{% elif r.payment_method == 'kpay' %}KPay{% else %}Other{% endif %}
-                </div>
+                </span>
                 {% endif %}
             </div>
 

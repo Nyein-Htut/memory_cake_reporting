@@ -25,11 +25,14 @@
         }
 
         .dashboard-section {
-            box-shadow: 0 4px 12px rgba(125, 84, 58, 0.06);
+            box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.05);
+            border: 1px solid #f0efed;
         }
 
+        /* the big dashboard shouldn't float up every time the cursor crosses it */
         .dashboard-section:hover {
-            box-shadow: 0 18px 35px rgba(83, 64, 35, 0.12);
+            transform: none;
+            box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 10px 28px rgba(28,25,23,.05);
         }
 
         .section-glow {
@@ -92,6 +95,88 @@
             letter-spacing: .3em;
             font-weight: 600;
         }
+
+        /* =========================================================
+           SOFT PALETTE TOUCH-UPS (same hues as Expense Analysis)
+           mint #34b88a · coral #ff8a73 · blue #5aa9e6 · amber #f0c05a
+           Scoped to this page only (#ordersRoot / .dashboard-section).
+           ========================================================= */
+
+        /* --- Dashboard header: calm dark stone with a mint/blue accent strip --- */
+        .mc-dash-strip {
+            height: 4px;
+            background: linear-gradient(90deg, #34b88a 0%, #5aa9e6 55%, #a77bf0 100%);
+        }
+        .mc-dash-header {
+            background: linear-gradient(135deg, #292524 0%, #1c1917 100%);
+            border-bottom: 1px solid #292524;
+        }
+        .mc-dash-header .section-icon { background: rgba(52,184,138,.22); }
+
+        /* --- Day separator: soft instead of the heavy grey bar --- */
+        #ordersRoot .day-separator {
+            background: linear-gradient(135deg, #f7f5f3 0%, #f1eeeb 100%);
+            color: #44403c;
+            border: 1px solid #ece9e6;
+        }
+        #ordersRoot .day-separator-meta { color: #78716c; font-weight: 600; }
+
+        /* --- Order card: softer corners/shadow + a left accent showing paid state --- */
+        #ordersRoot .order-card {
+            border: 1px solid #f0efed;
+            border-left: 4px solid #f0c05a;          /* unpaid = amber */
+            border-radius: 18px;
+            box-shadow: 0 1px 2px rgba(28,25,23,.03), 0 8px 22px rgba(28,25,23,.04);
+        }
+        #ordersRoot .order-card[data-paid="true"] { border-left-color: #34b88a; }   /* paid = mint */
+        #ordersRoot .order-card:hover { box-shadow: 0 14px 30px rgba(28,25,23,.08); }
+
+        #ordersRoot .oc-header {
+            background: linear-gradient(180deg, #fbfaf9 0%, #f8f6f4 100%);
+            border-bottom: 1px solid #f3f1ef;
+        }
+        #ordersRoot .oc-footer { background: #fbfaf9; }
+
+        /* --- Price line follows the same paid colours (overrides the inline emerald/orange) --- */
+        #ordersRoot .order-card .oc-price-line { color: #d99a1c !important; }
+        #ordersRoot .order-card[data-paid="true"] .oc-price-line { color: #1f8f69 !important; }
+
+        /* --- Paid toggle + badges --- */
+        #ordersRoot .oc-payment-toggle { color: #b9770e; background: #fff8e6; border-color: #fbe3a6; }
+        #ordersRoot .oc-payment-toggle.is-paid { color: #1f8f69; background: #ecfaf4; border-color: #c4ecdc; }
+        #ordersRoot .oc-payment-checkbox { accent-color: #34b88a; }
+        #ordersRoot .oc-paid { background: #ecfaf4; color: #1f8f69; }
+        #ordersRoot .oc-unpaid { background: #fff8e6; color: #b9770e; }
+
+        /* --- Delivered toggle: blue while pending, mint once delivered --- */
+        #ordersRoot .oc-delivered-toggle { color: #2f7fc1; background: #eef6fd; border-color: #d8eaf9; }
+        #ordersRoot .oc-delivered-toggle.is-delivered { color: #1f8f69; background: #ecfaf4; border-color: #c4ecdc; }
+
+        /* --- Remarks + size text --- */
+        #ordersRoot .oc-item-remarks { color: #d9573f; }
+        #ordersRoot .oc-item-size { color: #57534e; }
+
+        /* --- Edit / delete buttons: soft blue / soft coral --- */
+        #ordersRoot .oc-action-edit { color: #2f7fc1; background: #eef6fd; border-color: #d8eaf9; }
+        #ordersRoot .oc-action-edit:hover { background: #dcebf9; }
+        #ordersRoot .oc-action-delete { color: #d9573f; background: #fff1ee; border-color: #fddcd5; }
+        #ordersRoot .oc-action-delete:hover { background: #fde0da; }
+
+        /* --- Item thumbnails: slightly softer frames --- */
+        #ordersRoot .oc-img-flower > img, #ordersRoot .oc-img-flower > .oc-img-empty { border: 2px solid #f9d3de; }
+        #ordersRoot .oc-img-cake > img, #ordersRoot .oc-img-cake > .oc-img-empty { border: 2px solid #ece9e6; }
+
+        /* --- Add-order button: mint glass orb (body prefix beats the partial's own rule) --- */
+        body .add-order-fab {
+            background: radial-gradient(circle at 50% 30%, #62d4aa 0%, #34b88a 60%, #23876a 100%);
+            box-shadow:
+                inset 0 3px 6px rgba(255,255,255,.6),
+                inset 0 -6px 12px rgba(10,70,50,.35),
+                0 12px 28px rgba(52,184,138,.38),
+                0 4px 10px rgba(0,0,0,.18);
+        }
+        body .of-save-btn { background: #292524; box-shadow: 0 4px 12px rgba(28,25,23,.18); }
+        body .of-save-btn:hover { background: #1c1917; }
     </style>
 
     <header class="pt-8 pb-3 px-4 sm:px-6 lg:px-8 no-print">
@@ -124,11 +209,11 @@
         </div>-->
 
         <section class="bg-white mb-12 section-card dashboard-section">
-            <div class="h-1 bg-gradient-to-r from-emerald-800 via-emerald-500 to-emerald-800"></div>
-            <div class="section-glow dashboard-glow"></div>    
-            <div class="p-5 bg-gradient-to-r from-emerald-800 to-emerald-700 border-b border-emerald-900 flex justify-between items-center no-print font-sans relative z-10">
+            <div class="mc-dash-strip"></div>
+            <div class="section-glow dashboard-glow"></div>
+            <div class="mc-dash-header p-5 flex justify-between items-center no-print font-sans relative z-10">
                 <h2 class="section-title text-white">
-                    <span class="section-icon bg-white/10">📊</span>
+                    <span class="section-icon">📊</span>
                     流水汇总看板
                 </h2>
             </div>
