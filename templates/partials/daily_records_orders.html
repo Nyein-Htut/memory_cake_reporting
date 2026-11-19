@@ -152,6 +152,12 @@
                     {{ "{:,}".format(order.total_price) }} MMK
                 </div>
 
+                {% if order.source == 'Nawaday Flower Shop' %}
+                {% set gross_total = order.items | sum(attribute='price') %}
+                <div style="font-size:10.5px;font-weight:700;margin-top:2px;text-align:right;color:#e86a92;">
+                    🌸 -10% · {% if readonly %}မူလ{% else %}原价{% endif %} {{ "{:,}".format(gross_total) }}
+                </div>
+                {% endif %}
 
                 <!-- DELIVERY FEE -->
 
