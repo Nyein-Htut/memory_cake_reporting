@@ -136,6 +136,17 @@ class StaffFunding(db.Model):
     remarks = db.Column(db.Text, default='')
     recorded_by_role = db.Column(db.String(20), default='')
     created_at = db.Column(db.DateTime, default=lambda: get_myanmar_now().replace(tzinfo=None))
+
+NAWADAY_SOURCE = 'Nawaday Flower Shop'
+NAWADAY_DISCOUNT_PERCENT = 10
+
+def _apply_source_discount(source, gross):
+    """Order total after source-based discount. Integer MMK, rounded to nearest."""
+    gross = int(gross or 0)
+    if (source or '').strip() == NAWADAY_SOURCE:
+        return (gross * (100 - NAWADAY_DISCOUNT_PERCENT) + 50) // 100
+    return gross
+    
 # ==========================================
 # AUTHENTICATION DECORATORS
 # ==========================================
@@ -714,7 +725,7 @@ def add_order():
         )
         db.session.add(sub_item)
 
-        new_order.total_price = calculated_total
+        new_order.total_price = _apply_source_discount(source, calculated_total)
     db.session.commit()
     db.session.remove()
     return _role_home_redirect(request.form.get('return_qs', ''))
@@ -840,7 +851,7 @@ def edit_order(order_id):
             )
             db.session.add(new_item)
 
-        order.total_price = total_price
+        order.total_price = _apply_source_discount(order.source, total_price)
         db.session.commit()
 
         # Anything that existed before but isn't referenced anymore = orphaned. Clean it up.
@@ -1495,10 +1506,22 @@ def update_cell():
             "message": "Not found"
         }
 
-    if field == "is_paid":
+       if field == "is_paid":
         value = True if value == "1" else False
 
+    if table == "item" and field == "price":
+        try:
+            value = int(float(value or 0))
+        except (ValueError, TypeError):
+            value = 0
+
     setattr(obj, field, value)
+
+    # Keep the order total in sync (item price edits, source edits, 10% rule)
+    if (table == "order" and field == "source") or (table == "item" and field == "price"):
+        order = obj if table == "order" else obj.order
+        gross = sum(i.price or 0 for i in order.items)
+        order.total_price = _apply_source_discount(order.source, gross)
 
     db.session.commit()
 
