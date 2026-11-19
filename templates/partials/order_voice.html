@@ -511,7 +511,7 @@
 
     /* =========================================================
        TOAST
-       ========================================================= 
+       =========================================================  */
     let toastTimer = null;
     function dayLabel(iso) {
         const a = new Date(iso + 'T12:00:00'), b = new Date(); b.setHours(12, 0, 0, 0);
@@ -549,7 +549,7 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(vcHideToast, 8000);
     }
-    window.vcHideToast = function () { $('vcToast').classList.remove('show'); clearTimeout(toastTimer); }; */
+    window.vcHideToast = function () { $('vcToast').classList.remove('show'); clearTimeout(toastTimer); };
 
     /* =========================================================
        SPEECH RECOGNITION
