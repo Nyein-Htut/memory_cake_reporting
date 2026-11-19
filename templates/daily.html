@@ -114,11 +114,26 @@
         .mc-dash-header .section-icon { background: rgba(52,184,138,.22); }
 
         /* --- Day separator: soft instead of the heavy grey bar --- */
-        #ordersRoot .day-separator {
-            background: linear-gradient(135deg, #f7f5f3 0%, #f1eeeb 100%);
-            color: #44403c;
-            border: 1px solid #ece9e6;
-        }
+        /* --- Day separator: soft mint-tinted bar with accent edge --- */
+#ordersRoot .day-separator {
+    background: linear-gradient(135deg, #e8f6ef 0%, #eef4fa 100%);
+    color: #1c1917;
+    border: 1px solid #cfe9dd;
+    border-left: 5px solid #34b88a;
+    box-shadow: 0 4px 14px rgba(52,184,138,.13);
+}
+#ordersRoot .day-separator-date { font-weight: 700; color: #1c1917; }
+#ordersRoot .day-separator-meta { color: #1f8f69; font-weight: 700; }
+
+/* the fold button blends in with the new tint */
+#ordersRoot .day-separator .day-fold-toggle { border: 1px solid #cfe9dd; box-shadow: 0 1px 3px rgba(52,184,138,.18); }
+
+/* mobile: more breathing room so each day reads as its own section */
+@media (max-width: 767px) {
+    #ordersRoot .day-group + .day-group { margin-top: 20px; }
+    #ordersRoot .day-separator { padding-top: 14px; padding-bottom: 14px; }
+    #ordersRoot .day-separator-date { font-size: 16px; }
+}
         #ordersRoot .day-separator-meta { color: #78716c; font-weight: 600; }
 
         /* --- Order card: soft frame, colour accent lives only in the header --- */
