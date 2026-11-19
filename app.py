@@ -2323,54 +2323,214 @@ def health():
 @app.route('/api/transcribe', methods=['POST'])
 @login_required
 def api_transcribe():
-    """Speech-to-text for browsers without working built-in recognition
-    (e.g. Huawei). Receives a short audio clip, returns {success, text}."""
-    api_key = os.environ.get('OPENAI_API_KEY', '')
-    if not api_key:
-        return jsonify({'success': False, 'error': 'OPENAI_API_KEY 未设置'}), 500
+    """
+    Speech-to-text for browsers without working built-in recognition
+    (e.g. Huawei / some Android browsers).
 
+    Receives:
+        multipart/form-data
+        audio=<recorded audio>
+
+    Returns:
+        {
+            "success": true,
+            "text": "Ko Kyaw 六寸蓝莓蛋糕 160000 明天三点半 车费 20000"
+        }
+
+    Uses Groq Whisper instead of OpenAI.
+    """
+
+    # ---------------------------------------------------------
+    # 1. Get Groq API key
+    # ---------------------------------------------------------
+    api_key = os.environ.get('GROQ_API_KEY', '').strip()
+
+    if not api_key:
+        return jsonify({
+            'success': False,
+            'error': 'GROQ_API_KEY 未设置'
+        }), 500
+
+    # ---------------------------------------------------------
+    # 2. Get uploaded audio
+    # ---------------------------------------------------------
     f = request.files.get('audio')
+
     if not f:
-        return jsonify({'success': False, 'error': '没有收到音频'}), 400
+        return jsonify({
+            'success': False,
+            'error': '没有收到音频'
+        }), 400
 
     data = f.read()
-    if not data:
-        return jsonify({'success': False, 'error': '音频为空'}), 400
-    if len(data) > 4 * 1024 * 1024:   # Vercel request body limit is ~4.5MB
-        return jsonify({'success': False, 'error': '录音太长，请说短一点'}), 413
 
+    if not data:
+        return jsonify({
+            'success': False,
+            'error': '音频为空'
+        }), 400
+
+    # Your frontend currently records for max 60 seconds.
+    # Groq's documented free-tier file upload limit is 25 MB.
+    if len(data) > 25 * 1024 * 1024:
+        return jsonify({
+            'success': False,
+            'error': '录音太长，请说短一点'
+        }), 413
+
+    # ---------------------------------------------------------
+    # 3. Order-specific prompt
+    # ---------------------------------------------------------
     hint = (
         "以下是普通话简体中文的蛋糕订单口述。"
-        "订单来源有：Ko Kyaw, Memory Cake, Iris, Ama Gyi, Ama Nge, Nawaday Flower Shop, Khaing Win Kyi。"
+        "订单来源有："
+        "Ko Kyaw, "
+        "Memory Cake, "
+        "Iris, "
+        "Ama Gyi, "
+        "Ama Nge, "
+        "Nawaday Flower Shop, "
+        "Khaing Win Kyi。"
+        "请保留英文人名、英文店铺名称、数字、价格、尺寸、日期和时间。"
+        "不要翻译成英文。"
+        "不要添加没有说过的内容。"
         "例如：Ko Kyaw 六寸蓝莓蛋糕 160,000 明天三点半 车费 20000。"
     )
 
+    # ---------------------------------------------------------
+    # 4. Send audio to Groq Whisper
+    # ---------------------------------------------------------
     try:
         r = requests.post(
-            'https://api.openai.com/v1/audio/transcriptions',
-            headers={'Authorization': f'Bearer {api_key}'},
-            files={'file': (f.filename or 'audio.webm', data, f.mimetype or 'audio/webm')},
+            'https://api.groq.com/openai/v1/audio/transcriptions',
+
+            headers={
+                'Authorization': f'Bearer {api_key}'
+            },
+
+            files={
+                'file': (
+                    f.filename or 'audio.webm',
+                    data,
+                    f.mimetype or 'audio/webm'
+                )
+            },
+
             data={
-                'model': os.environ.get('STT_MODEL', 'whisper-1'),
+                # Fast multilingual Whisper model
+                'model': os.environ.get(
+                    'STT_MODEL',
+                    'whisper-large-v3-turbo'
+                ),
+
+                # We expect Mandarin Chinese
                 'language': 'zh',
+
+                # Help Whisper recognize your order vocabulary
                 'prompt': hint,
+
+                # JSON response: {"text": "..."}
                 'response_format': 'json',
+
+                # Deterministic transcription
                 'temperature': '0',
             },
+
             timeout=45,
         )
-        if r.status_code != 200:
-            print("TRANSCRIBE ERROR:", r.status_code, r.text[:300])
-            return jsonify({'success': False, 'error': f'识别服务返回 {r.status_code}'}), 502
 
-        text = (r.json().get('text') or '').strip()
-        # Whisper sometimes echoes the prompt back on silent audio
-        if '以下是普通话简体中文' in text or '订单来源有' in text:
+        # -----------------------------------------------------
+        # 5. Handle Groq errors
+        # -----------------------------------------------------
+        if r.status_code != 200:
+            print(
+                "TRANSCRIBE ERROR:",
+                r.status_code,
+                r.text[:500]
+            )
+
+            try:
+                error_data = r.json()
+                groq_error = (
+                    error_data.get('error', {}).get('message')
+                    or error_data.get('message')
+                )
+            except Exception:
+                groq_error = None
+
+            # Don't expose your API key or unnecessary internals
+            if groq_error:
+                error_message = f'识别服务错误：{groq_error}'
+            else:
+                error_message = (
+                    f'识别服务返回 {r.status_code}'
+                )
+
+            return jsonify({
+                'success': False,
+                'error': error_message
+            }), 502
+
+        # -----------------------------------------------------
+        # 6. Extract transcript
+        # -----------------------------------------------------
+        try:
+            result = r.json()
+        except Exception:
+            print(
+                "TRANSCRIBE INVALID JSON:",
+                r.text[:500]
+            )
+
+            return jsonify({
+                'success': False,
+                'error': '识别服务返回了无效结果'
+            }), 502
+
+        text = (result.get('text') or '').strip()
+
+        # -----------------------------------------------------
+        # 7. Ignore empty / prompt-echo responses
+        # -----------------------------------------------------
+        if (
+            not text
+            or '以下是普通话简体中文' in text
+            or '订单来源有' in text
+        ):
             text = ''
-        return jsonify({'success': True, 'text': text})
+
+        # -----------------------------------------------------
+        # 8. Return exactly what your existing order_voice.js
+        #    expects
+        # -----------------------------------------------------
+        return jsonify({
+            'success': True,
+            'text': text
+        })
+
+    except requests.exceptions.Timeout:
+        print("TRANSCRIBE TIMEOUT")
+
+        return jsonify({
+            'success': False,
+            'error': '语音识别超时，请再试一次'
+        }), 504
+
+    except requests.exceptions.RequestException as e:
+        print("TRANSCRIBE REQUEST EXCEPTION:", e)
+
+        return jsonify({
+            'success': False,
+            'error': '识别服务连接失败'
+        }), 502
+
     except Exception as e:
         print("TRANSCRIBE EXCEPTION:", e)
-        return jsonify({'success': False, 'error': '识别服务连接失败'}), 502
+
+        return jsonify({
+            'success': False,
+            'error': '语音识别失败'
+        }), 500
         
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
