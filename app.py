@@ -1506,7 +1506,7 @@ def update_cell():
             "message": "Not found"
         }
 
-       if field == "is_paid":
+    if field == "is_paid":
         value = True if value == "1" else False
 
     if table == "item" and field == "price":
