@@ -1,8 +1,7 @@
 {# Voice entry for the manager "add new order" form (Chinese).
-   - Mic chip lives in the chip row of order_form.html -> vcOpen()
-   - Bottom sheet with live transcript; STOP parses the sentence and fills the form
-   - Uses webkitSpeechRecognition (Safari iOS 14.5+ / macOS) with a typed-text fallback
-   - Panel + toast are moved to <body> so the modal's CSS transform can't trap them
+   - Safari (iOS / macOS): built-in webkitSpeechRecognition
+   - Huawei / other browsers: records audio (MediaRecorder) -> POST /api/transcribe -> text
+   - Last resort: typed text / keyboard dictation
    Example: "Ko Kyaw 六寸蓝莓蛋糕 160,000 明天三点半 车费 20000" #}
 
 <style>
@@ -81,6 +80,7 @@
     background: radial-gradient(circle at 50% 30%, #ff9d88 0%, #f26f55 62%, #d4553c 100%);
     box-shadow: inset 0 3px 6px rgba(255,255,255,.6), inset 0 -6px 12px rgba(120,35,20,.35), 0 12px 28px rgba(238,106,82,.42), 0 4px 10px rgba(0,0,0,.18);
 }
+.vc-sheet.is-busy .vc-orb { opacity: .55; pointer-events: none; }
 .vc-ring {
     position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px;
     border-radius: 50%; border: 2px solid rgba(255,138,115,.6); opacity: 0; z-index: 1; pointer-events: none;
@@ -130,29 +130,6 @@
 .vc-btn-main:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 .vc-sheet.is-listening .vc-btn-main { background: #ee6a52; box-shadow: 0 6px 16px rgba(238,106,82,.3); }
 
-/* ===== result toast ===== */
-.vc-toast {
-    position: fixed; z-index: 320; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 12px);
-    width: min(430px, calc(100vw - 24px));
-    background: rgba(255,255,255,.97); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-    border: 1px solid #ece9e6; border-radius: 18px; padding: 12px 14px 12px;
-    box-shadow: 0 20px 50px rgba(28,25,23,.22), 0 4px 14px rgba(28,25,23,.08);
-    transform: translate(-50%, -140%); opacity: 0; pointer-events: none;
-    transition: transform .5s cubic-bezier(.22,1.25,.36,1), opacity .25s ease;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", 'Noto Sans SC', sans-serif;
-}
-.vc-toast.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
-.vc-toast-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 800; color: #1f8f69; margin-bottom: 9px; }
-.vc-toast-head button { border: 0; background: #f5f5f4; color: #78716c; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; cursor: pointer; }
-.vc-toast-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.vc-pill { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-radius: 11px; border: 1px solid; min-width: 0; }
-.vc-pill.wide { grid-column: 1 / -1; }
-.vc-pill b { font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #78716c; }
-.vc-pill span { font-size: 13px; font-weight: 700; color: #1c1917; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.vc-pill.miss { background: #fafaf9 !important; border-color: #ece9e6 !important; }
-.vc-pill.miss span { color: #c7c2be; font-weight: 600; }
-.vc-toast-raw { margin-top: 8px; font-size: 11px; color: #a8a29e; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-
 @media (prefers-reduced-motion: reduce) {
     .vc-ring, .vc-bars i, .of-voice-chip .vc-live-dot { animation: none !important; }
 }
@@ -200,13 +177,6 @@
     </div>
 </div>
 
-<!-- ===== Result toast ===== -->
-<div class="vc-toast no-print" id="vcToast" role="status">
-    <div class="vc-toast-head"><span>✨ 已识别并填入</span><button type="button" onclick="vcHideToast()">✕</button></div>
-    <div class="vc-toast-rows" id="vcToastRows"></div>
-    <div class="vc-toast-raw" id="vcToastRaw"></div>
-</div>
-
 <script>
 (function () {
     'use strict';
@@ -215,6 +185,8 @@
        SETTINGS — tweak freely
        ========================================================= */
     const VC_LANG = 'zh-CN';
+    const VC_MAX_RECORD_SECONDS = 60;            // auto-stop for server transcription
+    const VC_TRANSCRIBE_URL = '/api/transcribe';
 
     // "三点半" with no 上午/下午: false = literally 03:30, true = 1–6 o'clock become PM (15:30)
     const VC_BARE_HOURS_1_TO_6_ARE_PM = false;
@@ -222,8 +194,6 @@
     // How the size is written into the Size field: "六寸" -> "6"  (use n => n + 'in' for "6in")
     const VC_SIZE_FORMAT = (n) => String(n);
 
-    // Chinese / phonetic spellings the speech engine may produce for each source.
-    // The Latin name itself (e.g. "Ko Kyaw", with or without spaces) is always matched too.
     const VC_SOURCE_ALIASES = {
         'Ko Kyaw': ['哥乔', '科乔', '高乔', '果乔', '阁乔', '可乔', '哥觉', '科觉', 'Ko Chaw', 'Ko Jaw'],
         'Memory Cake': ['记忆蛋糕', '麦莫瑞'],
@@ -245,7 +215,7 @@
 
     function cnSection(s) {
         if (!s) return 0;
-        if (!/[十百千]/.test(s)) {            // "一六零零零零" style, digit by digit
+        if (!/[十百千]/.test(s)) {
             let out = '';
             for (const ch of s) { if (CN_DIGIT[ch] === undefined) return NaN; out += CN_DIGIT[ch]; }
             return parseInt(out, 10);
@@ -257,7 +227,7 @@
             else if (U[ch]) { total += (num || 1) * U[ch]; lastUnit = U[ch]; num = 0; }
             else return NaN;
         }
-        if (num) total += (lastUnit >= 100 && s.indexOf('零') === -1) ? num * lastUnit / 10 : num;  // 一百六 = 160
+        if (num) total += (lastUnit >= 100 && s.indexOf('零') === -1) ? num * lastUnit / 10 : num;
         return total;
     }
 
@@ -270,7 +240,7 @@
             const i = s.indexOf('万');
             const a = s.slice(0, i), b = s.slice(i + 1);
             let tail = 0;
-            if (b) tail = (b.length === 1 && CN_DIGIT[b] !== undefined) ? CN_DIGIT[b] * 1000 : cnSection(b);  // 一万六 = 16000
+            if (b) tail = (b.length === 1 && CN_DIGIT[b] !== undefined) ? CN_DIGIT[b] * 1000 : cnSection(b);
             return (a ? cnSection(a) : 1) * 10000 + tail;
         }
         return cnSection(s);
@@ -440,7 +410,7 @@
         out.name = cleanName(t) || null;
         return out;
     }
-    window.vcParseOrderSpeech = parseOrderSpeech;   // handy for console testing
+    window.vcParseOrderSpeech = parseOrderSpeech;
 
     /* =========================================================
        FILL THE FORM
@@ -449,7 +419,6 @@
     function fire(el, type) { if (el) el.dispatchEvent(new Event(type, { bubbles: true })); }
 
     function fillForm(p) {
-        // Source
         if (p.source) {
             const hidden = $('sourceHidden'), btn = $('sourceTriggerBtn');
             if (hidden && btn) {
@@ -461,7 +430,6 @@
             }
         }
 
-        // Item (first empty row, otherwise a new row)
         if (p.name || p.size || p.price != null) {
             const container = $('itemsContainer');
             if (container) {
@@ -475,7 +443,7 @@
                     if (typeof addNewItemRow === 'function') addNewItemRow();
                     const rows = container.querySelectorAll('.item-row');
                     row = rows[rows.length - 1];
-                    if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // don't pop the keyboard
+                    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
                 }
                 if (row) {
                     const set = (sel, v) => { const el = row.querySelector(sel); if (el && v != null) { el.value = v; fire(el, 'input'); } };
@@ -486,13 +454,11 @@
             }
         }
 
-        // Delivery fee
         if (p.fee != null) {
             const fee = $('ofFeeInput');
             if (fee) { fee.value = String(p.fee); fire(fee, 'input'); }
         }
 
-        // Date / time
         if (p.dateIso || p.time) {
             const dh = $('dateHidden'), th = $('timeHidden'), btn = $('deliveryTriggerBtn');
             if (dh && th && btn) {
@@ -510,54 +476,28 @@
     }
 
     /* =========================================================
-       TOAST
-       =========================================================  */
-    let toastTimer = null;
-    function dayLabel(iso) {
-        const a = new Date(iso + 'T12:00:00'), b = new Date(); b.setHours(12, 0, 0, 0);
-        const diff = Math.round((a - b) / 86400000);
-        const base = { '-1': '昨天', '0': '今天', '1': '明天', '2': '后天', '3': '大后天' }[String(diff)];
-        return base || ((a.getMonth() + 1) + '月' + a.getDate() + '日');
-    }
-    function showToast(p) {
-        const dt = (p.dateIso || p.time)
-            ? ((p.dateIso ? dayLabel(p.dateIso) : (($('dateHidden') && $('dateHidden').value) ? dayLabel($('dateHidden').value) : '今天')) + (p.time ? ' ' + p.time : ''))
-            : null;
-        const rows = [
-            ['来源', p.source, '#5aa9e6', false],
-            ['商品', p.name, '#ff8a73', false],
-            ['尺寸', p.size, '#f0c05a', false],
-            ['金额', p.price != null ? p.price.toLocaleString() + ' MMK' : null, '#34b88a', false],
-            ['日期时间', dt, '#a77bf0', false],
-            ['车费', p.fee != null ? p.fee.toLocaleString() + ' MMK' : null, '#3fb6c9', false]
-        ];
-        const wrap = $('vcToastRows');
-        wrap.innerHTML = '';
-        rows.forEach((r) => {
-            const el = document.createElement('div');
-            const has = r[1] != null && r[1] !== '';
-            el.className = 'vc-pill' + (has ? '' : ' miss') + ((r[0] === '商品' || r[0] === '日期时间') ? ' wide' : '');
-            if (has) { el.style.background = r[2] + '1f'; el.style.borderColor = r[2] + '55'; }
-            const b = document.createElement('b'); b.textContent = r[0];
-            const s = document.createElement('span'); s.textContent = has ? String(r[1]) : '未识别';
-            el.appendChild(b); el.appendChild(s);
-            wrap.appendChild(el);
-        });
-        $('vcToastRaw').textContent = '“' + p.raw + '”';
-        const toast = $('vcToast');
-        toast.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(vcHideToast, 8000);
-    }
-    window.vcHideToast = function () { $('vcToast').classList.remove('show'); clearTimeout(toastTimer); };
-
-    /* =========================================================
-       SPEECH RECOGNITION
+       ENGINE SELECTION
+       'sr'     = built-in browser recognition (Safari)
+       'rec'    = record audio -> server transcription (Huawei etc.)
+       'manual' = typed / keyboard dictation
        ========================================================= */
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let rec = null, listening = false, userStop = false, finished = true, fatal = false;
-    let committed = '', sessText = '', sessStart = 0, startedAt = 0, restarts = 0, errMsg = '';
-    let tickTimer = null, stopTimeout = null;
+    const CAN_RECORD = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+    const IS_SAFARI = /^((?!chrome|chromium|android|crios|fxios|edg|huawei|hmscore|harmony|miui|vivo|oppo).)*safari/i.test(navigator.userAgent);
+
+    function chooseMode() {
+        if (SR && IS_SAFARI) return 'sr';
+        if (CAN_RECORD) return 'rec';
+        if (SR) return 'sr';
+        return 'manual';
+    }
+
+    /* =========================================================
+       SHARED UI STATE
+       ========================================================= */
+    let mode = 'manual';
+    let listening = false, busy = false, userStop = false, finished = true, cancelled = false;
+    let startedAt = 0, tickTimer = null;
 
     function setStatus(msg, kind) {
         const el = $('vcStatus');
@@ -567,24 +507,24 @@
     function setListening(on) {
         listening = on;
         $('vcSheet').classList.toggle('is-listening', on);
-        const ta = $('vcText');
-        ta.readOnly = on;
+        $('vcText').readOnly = on || busy;
+        vcUpdateButtons();
+    }
+    function setBusy(on) {
+        busy = on;
+        $('vcSheet').classList.toggle('is-busy', on);
         vcUpdateButtons();
     }
     window.vcUpdateButtons = function () {
         const btn = $('vcMainBtn'), has = $('vcText').value.trim().length > 0;
-        if (listening) { btn.textContent = '■ 停止并填入'; btn.disabled = false; }
+        if (busy) { btn.textContent = '识别中…'; btn.disabled = true; }
+        else if (listening) { btn.textContent = '■ 停止并填入'; btn.disabled = false; }
         else { btn.textContent = '✓ 识别并填入'; btn.disabled = !has; }
     };
-    function renderText() {
-        const ta = $('vcText');
-        ta.value = (committed + ' ' + sessText).trim();
-        ta.scrollTop = ta.scrollHeight;
-        vcUpdateButtons();
-    }
     function tick() {
         const s = Math.floor((Date.now() - startedAt) / 1000);
         $('vcTimer').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+        if (mode === 'rec' && listening && s >= VC_MAX_RECORD_SECONDS) vcStopAndApply();
     }
 
     function buildBars() {
@@ -599,7 +539,45 @@
         }
     }
 
-    function startSession() {
+    function closePanel() {
+        const ov = $('vcOverlay');
+        ov.classList.remove('vc-in');
+        setTimeout(() => ov.classList.remove('active'), 300);
+    }
+
+    function applyText(text) {
+        const parsed = parseOrderSpeech(text);
+        fillForm(parsed);
+        closePanel();
+    }
+
+    function enableManual(msg) {
+        finished = true;
+        clearInterval(tickTimer);
+        busy = false;
+        $('vcSheet').classList.remove('is-busy');
+        setListening(false);
+        $('vcText').readOnly = false;
+        $('vcText').placeholder = '在这里输入或粘贴订单语句，例如：Ko Kyaw 六寸蓝莓蛋糕 160000 明天三点半 车费 20000';
+        setStatus(msg, 'err');
+        vcUpdateButtons();
+    }
+
+    /* =========================================================
+       ENGINE A: Safari built-in recognition
+       ========================================================= */
+    let rec = null, fatal = false;
+    let committed = '', sessText = '', sessStart = 0, restarts = 0, errMsg = '', lastErrCode = '';
+    let stopTimeout = null;
+
+    function renderText() {
+        const ta = $('vcText');
+        ta.value = (committed + ' ' + sessText).trim();
+        ta.scrollTop = ta.scrollHeight;
+        vcUpdateButtons();
+    }
+
+    function srStartSession() {
         const r = new SR();
         rec = r;
         r.lang = VC_LANG;
@@ -620,6 +598,7 @@
         r.onerror = function (e) {
             if (r !== rec) return;
             const code = e.error;
+            lastErrCode = code;
             if (code === 'no-speech' || code === 'aborted') return;
             fatal = true;
             if (code === 'not-allowed' || code === 'service-not-allowed') {
@@ -636,19 +615,18 @@
             if (r !== rec || finished) return;
             committed = (committed + ' ' + sessText).trim();
             sessText = '';
-            if (userStop) { finish(); return; }
-            // Ended by itself (silence timeout). Keep listening if we can, otherwise apply what we have.
+            if (userStop) { srFinish(); return; }
             if (!fatal && Date.now() - sessStart > 1200 && restarts < 10) {
                 restarts++;
-                try { startSession(); return; } catch (err) { /* fall through */ }
+                try { srStartSession(); return; } catch (err) { /* fall through */ }
             }
-            finish();
+            srFinish();
         };
 
         r.start();
     }
 
-    function finish() {
+    function srFinish() {
         if (finished) return;
         finished = true;
         clearInterval(tickTimer); clearTimeout(stopTimeout);
@@ -657,102 +635,208 @@
         $('vcText').value = text;
         vcUpdateButtons();
         if (!text) {
-            setStatus(errMsg || '没有听到内容，点击麦克风再试一次。', 'err');
+            if (Date.now() - startedAt < 4000) {
+                enableManual('语音识别在此设备上不可用' + (lastErrCode ? '（' + lastErrCode + '）' : '') +
+                    '。请点下面输入框，用键盘上的 🎙️ 听写，再点「识别并填入」。');
+            } else {
+                setStatus(errMsg || '没有听到内容，点击麦克风再试一次。', 'err');
+            }
             return;
         }
         if (fatal && errMsg) { setStatus(errMsg, 'err'); return; }
         applyText(text);
     }
 
-    function applyText(text) {
-        const parsed = parseOrderSpeech(text);
-        fillForm(parsed);
-        closePanel();
-        /*setTimeout(() => showToast(parsed), 260);*/
-    }
-
-    function enableManual(msg) {
-        setListening(false);
-        $('vcText').readOnly = false;
-        $('vcText').placeholder = '在这里输入或粘贴订单语句，例如：Ko Kyaw 六寸蓝莓蛋糕 160000 明天三点半 车费 20000';
-        setStatus(msg, 'err');
-        vcUpdateButtons();
-    }
-
-    function vcStart() {
-        committed = ''; sessText = ''; restarts = 0; errMsg = ''; fatal = false; userStop = false; finished = false;
-        $('vcText').value = '';
-        $('vcTimer').textContent = '00:00';
-        startedAt = Date.now();
-
-        if (!SR) {
-            finished = true;
-            enableManual('此浏览器不支持语音识别。请用 Safari；或点输入框，用键盘上的 🎙️ 听写，再点「识别并填入」。');
-            return;
-        }
-        if (window.isSecureContext === false) {
-            finished = true;
-            enableManual('麦克风需要 HTTPS 网址才能使用。');
-            return;
-        }
+    function srStart() {
+        committed = ''; sessText = ''; restarts = 0; errMsg = ''; lastErrCode = ''; fatal = false;
         try {
             setListening(true);
             setStatus('请允许麦克风… 然后开始说话', null);
-            startSession();
+            srStartSession();
             clearInterval(tickTimer);
             tickTimer = setInterval(tick, 250);
         } catch (err) {
-            finished = true;
             enableManual('无法启动语音识别，请重试。');
         }
     }
 
+    function srStop() {
+        userStop = true;
+        setStatus('正在处理…', null);
+        try { rec.stop(); } catch (e) {}
+        clearTimeout(stopTimeout);
+        stopTimeout = setTimeout(function () {
+            if (!finished) { committed = (committed + ' ' + sessText).trim(); sessText = ''; srFinish(); }
+        }, 1800);
+    }
+
+    /* =========================================================
+       ENGINE B: record audio -> server transcription
+       ========================================================= */
+    let mediaStream = null, recorder = null, chunks = [], recMime = '';
+
+    function releaseStream() {
+        try { if (mediaStream) mediaStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        mediaStream = null;
+    }
+
+    function extFor(type) {
+        type = (type || '').toLowerCase();
+        if (type.indexOf('mp4') !== -1 || type.indexOf('aac') !== -1) return 'mp4';
+        if (type.indexOf('ogg') !== -1) return 'ogg';
+        if (type.indexOf('wav') !== -1) return 'wav';
+        return 'webm';
+    }
+
+    function recFinishWithText(text) {
+        busy = false;
+        finished = true;
+        $('vcSheet').classList.remove('is-busy');
+        setListening(false);
+        $('vcText').value = text || '';
+        vcUpdateButtons();
+        if (!text) { setStatus('没有听到内容，点击麦克风再试一次。', 'err'); return; }
+        applyText(text);
+    }
+
+    async function onRecStop() {
+        clearInterval(tickTimer);
+        releaseStream();
+        if (cancelled) return;
+
+        const type = (recorder && recorder.mimeType) || recMime || 'audio/webm';
+        const blob = new Blob(chunks, { type: type });
+        chunks = [];
+
+        if (blob.size < 1500) { recFinishWithText(''); return; }
+
+        setStatus('正在识别…', null);
+        try {
+            const fd = new FormData();
+            fd.append('audio', blob, 'audio.' + extFor(type));
+            const res = await fetch(VC_TRANSCRIBE_URL, { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json().catch(() => ({}));
+            if (cancelled) return;
+            if (!res.ok || !data.success) throw new Error(data.error || ('HTTP ' + res.status));
+            recFinishWithText((data.text || '').trim());
+        } catch (err) {
+            if (cancelled) return;
+            enableManual('语音识别服务出错：' + (err.message || '未知错误') +
+                '。你可以点下面输入框，用键盘上的 🎙️ 听写，再点「识别并填入」。');
+        }
+    }
+
+    async function recStart() {
+        setListening(true);
+        setStatus('请允许麦克风… 然后开始说话', null);
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+            const denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+            enableManual(denied
+                ? '没有麦克风权限。请在浏览器设置中允许本网站使用麦克风。'
+                : '找不到麦克风或无法录音。');
+            return;
+        }
+        if (cancelled) { releaseStream(); return; }
+
+        const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+        recMime = '';
+        for (let i = 0; i < types.length; i++) {
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) { recMime = types[i]; break; }
+        }
+        try {
+            recorder = recMime
+                ? new MediaRecorder(mediaStream, { mimeType: recMime, audioBitsPerSecond: 32000 })
+                : new MediaRecorder(mediaStream);
+        } catch (err) {
+            releaseStream();
+            enableManual('此浏览器无法录音。请用键盘上的 🎙️ 听写后再点「识别并填入」。');
+            return;
+        }
+        chunks = [];
+        recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        recorder.onstop = onRecStop;
+        recorder.onerror = function () { enableManual('录音出错，请重试。'); };
+        recorder.start(250);
+
+        startedAt = Date.now();
+        clearInterval(tickTimer);
+        tickTimer = setInterval(tick, 250);
+        setStatus('正在录音… 说完点「停止」', null);
+    }
+
+    function recStop() {
+        userStop = true;
+        setListening(false);
+        setBusy(true);
+        setStatus('正在识别…', null);
+        try {
+            if (recorder && recorder.state !== 'inactive') recorder.stop();
+            else onRecStop();
+        } catch (e) { onRecStop(); }
+    }
+
+    /* =========================================================
+       START / STOP / CANCEL / OPEN
+       ========================================================= */
+    function vcStart() {
+        userStop = false; finished = false; cancelled = false; busy = false;
+        $('vcSheet').classList.remove('is-busy');
+        $('vcText').value = '';
+        $('vcTimer').textContent = '00:00';
+        startedAt = Date.now();
+
+        if (window.isSecureContext === false) {
+            enableManual('麦克风需要 HTTPS 网址才能使用。');
+            return;
+        }
+
+        mode = chooseMode();
+        if (mode === 'manual') {
+            enableManual('此浏览器不支持语音。请点输入框，用键盘上的 🎙️ 听写，再点「识别并填入」。');
+            return;
+        }
+        if (mode === 'sr') srStart();
+        else recStart();      // must be called directly from the tap so the mic prompt is allowed
+    }
+
     window.vcOrbTap = function () {
+        if (busy) return;
         if (listening) vcStopAndApply();
         else vcStart();
     };
 
     window.vcStopAndApply = function () {
-        if (!listening) {                       // idle: use whatever text is in the box (typed / dictated)
+        if (busy) return;
+        if (!listening) {
             const t = $('vcText').value.trim();
             if (t) applyText(t);
             return;
         }
-        userStop = true;
-        setStatus('正在处理…', null);
-        try { rec.stop(); } catch (e) {}
-        clearTimeout(stopTimeout);
-        // Safari can be slow to fire onend — don't leave the user hanging.
-        stopTimeout = setTimeout(function () {
-            if (!finished) { committed = (committed + ' ' + sessText).trim(); sessText = ''; finish(); }
-        }, 1800);
+        if (mode === 'rec') recStop();
+        else srStop();
     };
 
-    /* =========================================================
-       OPEN / CLOSE
-       ========================================================= */
-    function closePanel() {
-        const ov = $('vcOverlay');
-        ov.classList.remove('vc-in');
-        setTimeout(() => ov.classList.remove('active'), 300);
-    }
-
     window.vcCancel = function () {
-        finished = true; userStop = true;
+        cancelled = true; finished = true; userStop = true;
         clearInterval(tickTimer); clearTimeout(stopTimeout);
         try { if (rec) rec.abort(); } catch (e) {}
+        try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (e) {}
+        releaseStream();
+        busy = false;
+        $('vcSheet').classList.remove('is-busy');
         setListening(false);
         closePanel();
     };
 
     window.vcOpen = function () {
         if (typeof closeAllQuickFields === 'function') closeAllQuickFields();
-        vcHideToast();
         buildBars();
         const ov = $('vcOverlay');
         ov.classList.add('active');
         requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('vc-in')));
-        vcStart();                              // must run inside the tap so Safari allows the mic
+        vcStart();
     };
 
     document.addEventListener('keydown', function (e) {
@@ -760,10 +844,8 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        ['vcOverlay', 'vcToast'].forEach(function (id) {
-            const el = $(id);
-            if (el && el.parentNode !== document.body) document.body.appendChild(el);
-        });
+        const el = $('vcOverlay');
+        if (el && el.parentNode !== document.body) document.body.appendChild(el);
         buildBars();
     });
 })();
