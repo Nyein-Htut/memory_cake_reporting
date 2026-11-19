@@ -486,11 +486,10 @@
     const IS_SAFARI = /^((?!chrome|chromium|android|crios|fxios|edg|huawei|hmscore|harmony|miui|vivo|oppo).)*safari/i.test(navigator.userAgent);
 
     function chooseMode() {
-        if (SR && IS_SAFARI) return 'sr';
-        if (CAN_RECORD) return 'rec';
-        if (SR) return 'sr';
-        return 'manual';
-    }
+       if (CAN_RECORD) return 'rec';   // Groq Whisper on every browser, including Safari
+       if (SR) return 'sr';            // fallback only if recording isn't possible
+       return 'manual';
+   }
 
     /* =========================================================
        SHARED UI STATE
@@ -758,7 +757,7 @@
         recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
         recorder.onstop = onRecStop;
         recorder.onerror = function () { enableManual('录音出错，请重试。'); };
-        recorder.start(250);
+        recorder.start();   // no timeslice: Safari's fragmented mp4 chunks can produce a broken file
 
         startedAt = Date.now();
         clearInterval(tickTimer);
