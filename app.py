@@ -11,6 +11,7 @@ import cloudinary.uploader
 import cloudinary.api
 import csv
 import io
+import requests
 
 app = Flask(__name__)
 
@@ -2319,5 +2320,57 @@ def delete_staff_funding(funding_id):
 def health():
     return "OK", 200
 
+@app.route('/api/transcribe', methods=['POST'])
+@login_required
+def api_transcribe():
+    """Speech-to-text for browsers without working built-in recognition
+    (e.g. Huawei). Receives a short audio clip, returns {success, text}."""
+    api_key = os.environ.get('OPENAI_API_KEY', '')
+    if not api_key:
+        return jsonify({'success': False, 'error': 'OPENAI_API_KEY 未设置'}), 500
+
+    f = request.files.get('audio')
+    if not f:
+        return jsonify({'success': False, 'error': '没有收到音频'}), 400
+
+    data = f.read()
+    if not data:
+        return jsonify({'success': False, 'error': '音频为空'}), 400
+    if len(data) > 4 * 1024 * 1024:   # Vercel request body limit is ~4.5MB
+        return jsonify({'success': False, 'error': '录音太长，请说短一点'}), 413
+
+    hint = (
+        "以下是普通话简体中文的蛋糕订单口述。"
+        "订单来源有：Ko Kyaw, Memory Cake, Iris, Ama Gyi, Ama Nge, Nawaday Flower Shop, Khaing Win Kyi。"
+        "例如：Ko Kyaw 六寸蓝莓蛋糕 160,000 明天三点半 车费 20000。"
+    )
+
+    try:
+        r = requests.post(
+            'https://api.openai.com/v1/audio/transcriptions',
+            headers={'Authorization': f'Bearer {api_key}'},
+            files={'file': (f.filename or 'audio.webm', data, f.mimetype or 'audio/webm')},
+            data={
+                'model': os.environ.get('STT_MODEL', 'whisper-1'),
+                'language': 'zh',
+                'prompt': hint,
+                'response_format': 'json',
+                'temperature': '0',
+            },
+            timeout=45,
+        )
+        if r.status_code != 200:
+            print("TRANSCRIBE ERROR:", r.status_code, r.text[:300])
+            return jsonify({'success': False, 'error': f'识别服务返回 {r.status_code}'}), 502
+
+        text = (r.json().get('text') or '').strip()
+        # Whisper sometimes echoes the prompt back on silent audio
+        if '以下是普通话简体中文' in text or '订单来源有' in text:
+            text = ''
+        return jsonify({'success': True, 'text': text})
+    except Exception as e:
+        print("TRANSCRIBE EXCEPTION:", e)
+        return jsonify({'success': False, 'error': '识别服务连接失败'}), 502
+        
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
